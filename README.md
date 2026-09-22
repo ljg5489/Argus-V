@@ -134,26 +134,6 @@ E2와 E3는 동일한 관찰 시점·데이터·행동 후보로 오프라인 �
 | **C · [@ljg5489](https://github.com/ljg5489)** | **Representation Analysis / AI Security** | **표현 추출·hook, Probe, 레이어·시점 비교, OOD·위협 유형별 탐지 분석** |
 | D | Evaluation / Product Validation | E0~E3 공통 평가 도구, 최종 split 관리, 운영 지표·데모 검증, 고객 검증 근거 |
 
-A의 백엔드 강점을 활용하되 모든 구현을 몰아주지 않습니다. C가 표현 추출·hook을 주도하고 A가 실행 환경과 Guard 연결을 지원합니다. C의 모델 선택과 D의 최종 평가를 분리합니다. 각자 자신의 코드·문서·실험 결과를 작성합니다.
-
-### C work packages and evidence
-
-| 작업 | 책임 산출물 |
-| --- | --- |
-| C-01: 표현 추출 | 모델 adapter, hook 명세, 토큰·행동 alignment 점검과 통합 PR |
-| C-02: Probe 기준선 | 학습 코드, 모델 artifact 식별값, split·seed·설정 |
-| C-03: 레이어·시점 비교 | Single / Top-3 / All 및 조기 예측 비교, 성능·지연 곡선 |
-| C-04: 보안·OOD 분석 | 위협 유형별 결과, E2→E3 ablation, 오탐·미탐 사례 보고서 |
-| C-05: 선택 CV 확장 | 별도 ViT 표현 probing·이미지 분포 변화 실험과 노트북 |
-
-### CV and AI security evidence
-
-C의 필수 범위는 AI 보안과 Transformer 표현 분석입니다. LLM 결과를 CV 실험 성과로 표시하지 않습니다.
-
-**직접적인 CV 증거를 위한 선택 과제:** 고정된 ViT의 블록별 특징과 Linear Probe를 비교하고, 이미지 변형·미지 범주에서 분포 변화 탐지와 정확도 저하를 평가합니다. 데이터 이용 조건과 이미지 단위 split을 확인하고 별도 실험으로 공개합니다. OOD를 곧바로 공격·위험 라벨로 취급하지 않습니다.
-
-이 과제는 **10월 18일까지 핵심 통합·평가가 안정된 경우에만** 진행합니다. 그렇지 않으면 제출 이후 후속 연구로 둡니다. LLM Probe의 직접 전이가 아닌 방법론의 재적용이며, VLM 이미지 기반 prompt injection은 더 뒤의 확장입니다.
-
 ## 6. Delivery Plan
 
 M0~M5는 이번 제품 실행 일정이고, Phase 1~6는 연구 발전 단계입니다.
