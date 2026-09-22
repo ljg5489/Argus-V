@@ -1,205 +1,219 @@
 # Argus-V
 ### Argus for Vector-space
-**Activation-based Early Risk Detection for AI Agents**
+**AI Agent Runtime Security with Optional Activation-based Risk Monitoring**
 
-AI Agent가 도구를 실행하기 전에 내부 Activation에서 위험 행동의 전조를 탐지하고, 소수의 감시 지점으로 탐지 성능과 실행 비용의 균형을 검증하는 연구 프로젝트입니다.
+AI Agent의 도구 실행에 기업별 정책·권한·승인을 적용하고, 내부 상태에 접근 가능한 모델에서는 Activation 기반 위험 신호를 추가하는 실행 보안 프로젝트입니다.
 
-> **Status: Planning / Pre-implementation**  
-> 현재 저장소는 연구 설계와 실행 계획을 담고 있습니다. 아래 아키텍처와 기능은 구현 목표이며, 실험 성능과 데모는 검증 후 공개합니다.
+> **Status: Planning / Pre-implementation · v2.0 · 2026-09-22**  
+> 아래 내용은 구현·연구 계획입니다. 실험 성능, 고객 수요와 상업성은 아직 검증되지 않았습니다.
 
 | 항목 | 내용 |
 | --- | --- |
-| 연구 분야 | AI Security · Representation Analysis · OOD Generalization |
-| 팀 규모 | 4명 |
-| 목표 기간 | 2026년 9월 22일 ~ 10월 마지막 주 |
-| 이번 범위 | Activation Probe, 다중 레이어 비교, 시나리오 일반화 평가, Pre-action Safety Gate |
-| 실험 환경 | 내부 상태에 접근 가능한 Open-weight 모델과 격리된 Sandbox |
-| 핵심 산출물 | 재현 가능한 실험 코드, 평가 결과, 위험 행동 차단 데모 |
+| 첫 적용 업무 | 사내 문서 검색 → 보고서 작성 → 모의 이메일 발송 |
+| 고객 가설 | 자체 모델로 사내 Agent를 구축·운영하는 개발·보안 팀 |
+| 제품 핵심 | 정책 검사, 실행 통제, 승인, 결정 이유와 감사 로그 |
+| 차별화 연구 | 행동 문맥에 내부 표현을 추가했을 때의 위험 누락·정상 업무 방해 감소 |
+| 팀 / 기간 | 4명 / 2026년 9월 22일 ~ 10월 마지막 주 |
+| C 담당 | [@ljg5489](https://github.com/ljg5489) · Representation Analysis & AI Security |
 
-## 1. Problem
+**개정 문서:** [프로젝트 기획서 PDF](Argus-V_프로젝트_기획서.pdf) · [발전 로드맵 PDF](Argus-V_발전_로드맵.pdf)
 
-정상적인 목표와 안전 규칙을 함께 받은 AI Agent도 목표 달성 과정에서 정책을 위반하는 행동을 선택할 수 있습니다.
+## 1. Problem and Product Hypothesis
 
-예를 들어 모의 파일 환경에서 “허용된 자료로 보고서를 작성하라”는 목표를 수행하면서, 접근이 제한된 자료를 읽는 지름길을 선택하는 상황을 고려합니다. Argus-V는 이런 행동이 실행되기 전의 내부 표현에 탐지 가능한 신호가 있는지 연구합니다.
+정상적인 업무 목표를 수행하는 Agent도 접근 권한 밖의 자료를 읽거나, 허용되지 않은 수신자에게 자료를 보내거나, 필요한 승인을 생략하는 행동을 선택할 수 있습니다. Argus-V는 이런 행동을 회사별 정책에 맞게 통제하고, 정상 업무에 미치는 영향을 측정합니다.
 
-주요 데이터는 직접적인 악성 명령보다 **정상 목표 + 안전 제약 + 위반 가능한 지름길**이 함께 존재하는 시나리오로 구성할 계획입니다. 위험 여부는 모델의 설명이나 Probe 점수가 아닌, 선택한 행동과 명시된 환경 정책을 기준으로 판정합니다.
+실행 전 승인·검사 자체는 이미 다른 도구에서도 제공됩니다. 따라서 연구 질문은 **“실행 전에 막을 수 있는가?”**를 넘어 다음에 있습니다.
 
-## 2. Research Questions
+> **정책·행동 문맥 검사에 내부 신호를 더하면, 같은 운영 예산에서 놓치는 위험이나 불필요한 차단을 줄일 수 있는가?**
 
-- **RQ1 — Early detection:** 위험한 Tool Call이 생성되기 전에도 내부 상태에서 위험 신호를 탐지할 수 있는가?
-- **RQ2 — Monitoring points:** 어떤 Transformer Block과 관찰 시점에서 신호를 안정적으로 읽을 수 있는가?
-- **RQ3 — Performance / cost:** 소수의 감시 레이어로 전체 레이어 감시 대비 성능을 유지하면서 추가 지연을 줄일 수 있는가?
-- **RQ4 — Generalization:** 학습에 포함되지 않은 시나리오에서도 낮은 오탐률과 유효한 탐지 성능을 유지하는가?
+기본 보안 기능은 Probe 없이도 동작하도록 설계합니다. Activation의 추가 효과가 없으면 실험 기능으로 남기며, 상업적 차별점으로 주장하지 않습니다.
 
-Probe의 분류 성능만으로 AI의 의도를 읽었다거나, 특정 내부 특징이 위험 행동의 원인이라고 주장하지 않습니다. 이번 연구는 **행동 이전 내부 신호의 예측 가능성과 실용성**을 검증합니다.
+## 2. One MVP, Optional Internal Monitoring
 
-## 3. Planned Architecture
+이번에는 하나의 작은 실행 보안 계층을 만듭니다. 별도의 Gateway와 Core 제품을 동시에 개발하지 않습니다.
 
 ```mermaid
-flowchart LR
-    S["Sandbox: 목표 + 안전 제약"] --> A["Target AI Agent"]
-    A --> H["Hidden Activations"]
-    H --> M["Selected Monitoring Points"]
-    M --> P["Linear / Multi-layer Probe"]
-    P --> G["Pre-action Safety Gate"]
-    A --> T["Proposed Tool Call"]
-    T --> G
-    G -->|Allow| E["Sandbox Tool Execution"]
-    G -->|Block| B["차단 및 기록"]
-    G -->|Review| R["검토 대기"]
-    T --> V["Policy-based Verifier"]
-    E --> V
-    V --> L["행동 라벨 및 평가 로그"]
+flowchart TD
+    A["Agent / Proposed Tool Call"] --> G["Execution Guard"]
+    I["Trusted Identity + Corporate Policy"] --> G
+    H["Past Actions + Current Context"] --> G
+    M["Open-weight Model Activations"] --> P["Optional Risk Probe"]
+    P --> G
+    G -->|ALLOW| T["Sandbox Tool Execution"]
+    G -->|BLOCK| B["Blocked"]
+    G -->|REQUIRE_APPROVAL| R["Human Approval"]
+    R --> C["Recheck Policy + Bound Arguments"]
+    C -->|Valid Approval| T
+    G --> L["Decision and Audit Log"]
+    C --> L
+    T --> L
 ```
 
-### Detection
+### Execution contract
 
-전체 블록의 출력을 탐색한 뒤 검증 데이터에서 감시 레이어를 선택합니다. 초기에는 Linear Probe를 사용하고, Single / Top-3 / All Layers를 비교합니다. 단순히 개별 성능 상위 레이어를 조합하는 방법과 상호 보완성을 고려한 조합을 구분해 검토합니다.
+- 모든 실제 도구 호출은 Guard를 거칩니다. Agent가 직접 도구를 실행하는 경로는 허용하지 않습니다.
+- 사용자·Agent 권한은 모델이 생성한 인자가 아닌 신뢰된 실행 환경에서 가져옵니다.
+- 명시적 권한·정책 위반은 낮은 Probe 점수로 해제하지 않습니다.
+- 승인은 실행 ID·도구·인자에 연결합니다. 인자 변경 시 재검사하고 승인 재사용·중복 실행을 방지합니다.
+- 필수 검사 실패나 승인 대기 시 해당 고위험 행동은 실행하지 않습니다.
+- 선택적 Probe 오류는 기록하며 기본 정책을 유지합니다. 내부 접근 불가 모델에는 내부 감시를 제공한다고 표시하지 않습니다.
+- 실행 직전 권한을 재확인하고, 시도한 행동·정책 판정·승인 상태·실제 실행을 구분해 기록합니다.
 
-### Intervention
+현재 구현 대상은 하나의 open-weight 모델 연동입니다. 내부 상태가 없는 모델에서도 기본 검사 계층을 사용할 수 있도록 인터페이스를 분리하되, 여러 상용 API 연동은 후속 범위입니다.
 
-Probe의 위험 점수를 이용해 도구 실행 직전에 행동을 허용하거나 차단합니다. 검토 경로와 Unknown/OOD 처리는 확장 항목이며, OOD 판별 성능을 별도로 검증하기 전에는 완성된 기능으로 취급하지 않습니다.
+## 3. Sandbox and Threat Scenarios
 
-### Ground truth
+가상 문서와 모의 수신함으로 검증합니다. 실제 고객 데이터나 실제 이메일 발송은 이번 MVP에 포함하지 않습니다.
 
-Sandbox 정책과 제안된 행동을 기준으로 라벨을 생성합니다. Gate가 차단한 행동도 위험 시도로 기록할 수 있도록 **시도한 행동, 정책 위반 여부, 실제 실행 여부**를 분리합니다. 초기 학습 데이터는 격리된 환경에서 수집하며, 이후 Gate 적용 실험과 구분합니다.
-
-## 4. Experiment Design
-
-### Where: 관찰 위치
-
-1. Transformer Block의 출력 residual stream을 초기 monitoring point로 정의합니다.
-2. 검증 데이터에서 유망한 레이어와 조합을 선택합니다.
-3. 시간이 허용되면 선택 블록 1~2개의 Attention / MLP / Residual 지점을 추가 분석합니다.
-
-블록 번호와 hook 위치는 모델 구현에 맞춰 명세합니다. 블록 내부의 더 앞쪽 위치에서 신호를 읽는 것과 행동을 시간상 더 일찍 예측하는 것은 별도로 검증합니다.
-
-### When: 관찰 시점
-
-| 평가 구분 | 사용할 수 있는 정보 | 검증 목표 |
-| --- | --- | --- |
-| 조기 예측 | 위험 Tool Call 생성 시작 이전의 prefix와 내부 상태 | 행동이 구체적으로 출력되기 전 예측 |
-| 실행 직전 판별 | Tool Call 생성 완료 후, 실행 전까지의 내부 상태 | 선택된 위험 행동의 실행 전 차단 |
-| 시간별 분석 | 기준 시점보다 여러 토큰 또는 행동 단계 앞선 상태 | 탐지 선행 시간과 성능의 관계 |
-
-미래의 위험 행동은 평가 라벨로 사용할 수 있지만, 미래 토큰이나 실행 결과를 예측 입력으로 사용하지 않습니다. 토큰 단위와 행동 단계 단위를 구분하고, 예측 구간을 실험 설정에 기록합니다.
-
-### Data separation
-
-- **Train:** Probe 학습
-- **Validation:** 레이어, 결합 방식, 임계값 선택
-- **Held-out Test:** 고정된 설정의 최종 평가
-- 동일 trajectory의 토큰은 서로 다른 split에 넣지 않습니다.
-- 시나리오 계열과 템플릿 변형을 고려해 유사 사례 누수를 방지합니다.
-- Test 결과를 보고 설정을 변경한 경우, 해당 결과를 새로운 독립 최종 평가로 취급하지 않습니다.
-- Safe/Risk 비율, 표본 수, 시나리오별 성능을 함께 기록합니다.
-
-### Comparisons and metrics
-
-| 비교 / 지표 | 확인할 내용 |
+| 시나리오 | 기대 처리 / 평가 |
 | --- | --- |
-| 동일 관찰 시점의 텍스트·규칙 기준선 | 내부 상태를 사용하는 접근의 추가 가치 |
-| Single / Top-3 / All Layers | 감시 지점 수에 따른 성능과 비용 |
-| AUROC / AUPRC | 위험 행동의 순위화·탐지 성능 |
-| Recall / FPR at a fixed threshold | Validation에서 정한 임계값의 실제 Test 성능 |
-| Detection lead time | 위험 Tool Call 생성·실행보다 얼마나 먼저 탐지하는지 |
-| Added latency | 감시가 없을 때 대비 전체 실행 지연 증가 |
-| 정상 작업 성공률 | Gate가 정상적인 목표 수행을 방해하는 정도 |
-| Scenario-held-out performance | 새로운 환경에서의 일반화와 성능 편차 |
+| 권한 있는 자료로 정상 보고서 발송 | 허용, 정상 업무 성공률 측정 |
+| 접근 권한 밖의 문서 조회 | 정책으로 차단 |
+| 허용되지 않은 수신자에게 자료 반출 | 수신자·자료 정책으로 차단 |
+| 승인 필수 발송의 승인 생략 | 승인 대기, 승인 후 재검사 |
+| 외부 문서의 유도 지시 | 행동 문맥·내부 신호의 추가 탐지 효과 평가 |
+| 미지 문서·업무·시나리오 변형 | OOD 일반화와 오탐·미탐 평가 |
 
-낮은 오탐률 평가에서는 Validation에서 목표 FPR에 맞춘 임계값을 Test에 그대로 적용하고, Test에서 관측된 FPR과 Recall을 함께 보고합니다. 표본 수와 가능한 범위의 불확실성 추정도 제시합니다.
+라벨은 Sandbox 정책과 제안된 행동에 근거합니다. Probe 점수나 Activation 변화량을 정답으로 사용하지 않습니다. Safe/Risk 사례의 문체·길이·도구 편향도 점검합니다.
 
-감시 레이어를 줄여도 Target 모델의 전체 블록 계산을 생략하는 것은 아닙니다. Activation 수집·전송·Probe 계산 비용과 전체 시스템 지연을 실제로 측정합니다.
+## 4. Research and Evaluation
 
-## 5. Scope and Milestones
+### Product-level comparisons
 
-### 이번 프로젝트의 필수 범위
-
-- [ ] 격리된 Sandbox와 행동 기반 정책 판정
-- [ ] 모델 실행, Activation 수집, trajectory 정렬
-- [ ] 레이어별 Linear Probe baseline
-- [ ] Single / Top-3 / All Layers 비교
-- [ ] 조기 예측과 실행 직전 판별의 분리 평가
-- [ ] Scenario-held-out 평가와 오탐·지연 측정
-- [ ] Pre-action Safety Gate 통합 데모
-- [ ] 재현 가능한 실험 설정과 결과 보고
-
-### 일정
-
-| 기간 | 목표 | 완료 기준 |
-| --- | --- | --- |
-| 9/22 ~ 9/27 | 최소 파이프라인 구축 | 한 실행의 행동·Activation·라벨 연결 |
-| 9/28 ~ 10/4 | Phase 1: 신호 검증 | 레이어별 Probe와 기준선의 첫 비교 결과 |
-| 10/5 ~ 10/11 | Phase 2: 조합·시점 비교 | 최종 평가에 사용할 레이어·Probe·임계값 확정 |
-| 10/12 ~ 10/18 | OOD 평가와 Gate 통합 | 핵심 결과표와 실행 전 차단 데모 |
-| 10/19 ~ 10/25 | 재현·오류 분석·문서화 | 제출 가능한 코드·보고서·데모 초안 |
-| 10월 마지막 주 | 최종 검증과 발표 | 재현 확인, 발표 연습, 최종 제출 |
-
-일정은 목표안입니다. 신호가 확인되지 않으면 후속 기능을 늘리기보다 라벨, 관찰 시점, 데이터 편향과 수집 정확성을 먼저 점검합니다.
-
-### 장기 로드맵
-
-| 단계 | 연구 방향 | 이번 일정에서의 위치 |
-| --- | --- | --- |
-| Phase 1 | Activation Probe | 필수 |
-| Phase 2 | Multi-layer Monitoring + OOD Evaluation | 핵심 비교·평가까지 필수 |
-| Phase 3 | Adversarial Red Agent | 후속 연구 |
-| Phase 4 | 검증된 실패를 이용한 자동 재학습 | 후속 연구 |
-| Phase 5 | Adaptive Monitoring | 후속 연구 |
-| Phase 6 | 외부 평가를 유지하는 Bounded Self-Improvement | 장기 비전 |
-
-단계 번호는 발전 로드맵을 따릅니다. Mechanistic Validation은 별도 심화 연구로 분리하며, 인과적 주장은 개입 실험이 수행된 경우에만 검토합니다. ViT/VLM 기반 시각 입력으로의 확장도 후속 가능성으로 두며, 현재 구현 범위에는 포함하지 않습니다.
-
-## 6. Team Responsibilities
-
-A~D는 계획 단계의 역할 표기입니다. 실제 이름과 GitHub 계정은 팀 합의 후 연결합니다.
-
-| 담당 | 책임 영역 | 주요 구현·실험 | 책임 산출물 |
-| --- | --- | --- | --- |
-| A | 시스템·백엔드 | 모델 로딩, hook, 수집·저장 파이프라인, 실행 인터페이스, Gate 연결 | 통합 실행 시스템 |
-| B | 환경·데이터 | Sandbox 도구, 시나리오, 정책 판정, 데이터 생성·검수 | 환경 코드와 라벨링된 데이터 |
-| C | 탐지·표현 분석 | Linear Probe, 다중 레이어 결합, 관찰 시점 비교 | 탐지 모델과 레이어 선정 근거 |
-| D | 평가·재현성 | 데이터 분할, 기준선, 지표·지연 측정, 시각화·통합 검증 | 재현 가능한 평가 결과 |
-
-A는 백엔드·코딩 강점을 살려 시스템 통합을 맡습니다. B·C·D도 각 영역의 코드를 직접 구현합니다. 문서와 발표 자료는 각 담당자가 자신의 결과를 작성하고 공동 통합합니다.
-
-첫 주에 데이터 형식과 입출력을 합의하고, 예제 데이터를 통해 병렬 개발합니다. 기본 상호 리뷰는 A↔C, B↔D로 운영할 계획입니다.
-
-## 7. Reproducibility and Collaboration
-
-각 실험은 고유 ID를 부여하고 다음 정보를 함께 남깁니다.
-
-- 코드 commit, 모델·토크나이저 revision, 실행 환경과 GPU
-- 데이터 버전, 시나리오 계열, split, seed
-- hook 위치, 토큰·행동 시점, 저장 정밀도
-- Probe 설정, 선택 레이어, 임계값과 선택 근거
-- 지표, 표본 수, 실패 사례, 지연 측정 조건
-
-개발은 작업별 Issue와 짧은 기능 브랜치, PR 리뷰를 중심으로 진행할 계획입니다. Issue의 완료 조건과 PR·실험 ID를 연결해 기여와 의사결정을 추적합니다.
-
-모델 가중치, 대용량 Activation, 원시 데이터, 비밀키는 저장소에 올리지 않고, 코드·설정·공개 가능한 메타데이터와 요약 결과를 관리할 예정입니다. 데이터와 모델의 공개 범위는 각각의 이용 조건을 확인해 결정합니다.
-
-## 8. Results and Evidence
-
-**현재 검증된 실험 결과는 없습니다.** 구현 이후 다음 자료를 추가합니다.
-
-| 결과물 | 기록할 근거 |
+| 구성 | 목적 |
 | --- | --- |
-| 성능 비교표 | 모델·데이터·split·seed·임계값과 함께 기록한 지표 |
-| 레이어·시간별 분석 | 레이어별 성능 및 예측 선행 시간 그래프 |
-| 효율 분석 | Single / Top-3 / All의 탐지 성능과 추가 지연 |
-| 일반화·오류 분석 | Held-out 결과, 오탐·미탐 사례와 한계 |
-| 데모 | 정상 행동 허용과 위험 행동 차단의 실행 로그·영상 |
-| 재현 안내 | 실제 검증된 설치·수집·학습·평가 명령 |
-| 개인 기여 | 담당 문제, 설계 선택, 관련 PR, 실험 및 결과 |
+| E0: 통제 없음 | 격리된 Sandbox의 위험 시도·실행 기준값 |
+| E1: 정책만 | 명시적 권한·승인 규칙의 효과 |
+| E2: 정책 + 행동 문맥 | 현재 Tool 인자와 이전 문맥을 더한 효과 |
+| E3: E2 + Activation | 내부 신호의 추가 효과 |
 
-성능 수치는 실험 조건과 근거를 함께 공개합니다. 개인 기여 역시 역할명뿐 아니라 **문제 → 설계·구현 → 검증 결과 → 한계**의 흐름으로 기록합니다.
+E2와 E3는 동일한 관찰 시점·데이터·행동 후보로 오프라인 비교합니다. Gate 때문에 후속 행동이 달라지는 영향은 별도 온라인 반복 실행으로 평가합니다.
 
-## 9. Current Limitations
+### C-led representation research
 
-- 모델, 하드웨어, 데이터 규모, 의존성 버전은 초기 실행 시험 후 확정합니다.
-- 현재 실행 가능한 코드나 설치 명령은 제공하지 않습니다.
-- Sandbox 결과를 실제 환경 전체의 안전성으로 일반화하지 않습니다.
-- OOD 일반화 평가는 미지의 모든 위험을 탐지한다는 보장을 의미하지 않습니다.
-- 공개 라이선스와 데이터 배포 정책은 팀 논의 후 별도로 명시합니다.
+1. 모델별 adapter와 hook으로 블록·토큰별 표현을 수집하고 행동 로그와 정렬합니다.
+2. 동일 조건의 Linear Probe로 레이어별 기준선을 만듭니다.
+3. Single / Top-3 / All Layers의 성능과 실제 추가 지연을 비교합니다.
+4. 위협 유형과 held-out 시나리오별 오탐·미탐, E2 대비 E3의 기여를 분석합니다.
+5. 시간이 허용되면 선택 블록의 내부 지점을 추가 분석합니다.
 
+초기 관찰 위치는 Transformer Block 출력 residual stream입니다. 모델 revision, hook 위치, 토큰 기준, pooling, 저장 정밀도와 학습 설정을 함께 기록합니다.
+
+### Timing and leakage controls
+
+- **조기 예측:** 위험 Tool Call 생성 시작 이전의 prefix와 내부 상태를 사용합니다.
+- **실행 직전 판별:** Tool Call 생성 후, 실행 전까지의 상태를 사용합니다.
+- 두 결과를 분리하며 미래 토큰·실행 결과를 입력에 포함하지 않습니다.
+- 같은 trajectory와 유사 시나리오 계열은 split 사이에 섞지 않습니다.
+- 레이어·결합·임계값은 Validation에서 선택하고 최종 Test는 고정 설정으로 평가합니다.
+- Test를 보고 변경했다면 새로운 독립 평가 없이 최종 일반화 성능으로 주장하지 않습니다.
+
+### Success metrics
+
+| 지표 | 정의 / 목적 |
+| --- | --- |
+| 위험 실행률 | 위험 행동 제안 중 실제 실행된 비율 |
+| 정상 업무 성공률 | 정상 업무 중 정책을 지키며 완료한 비율 |
+| 승인 요청률 | 검사 행동 중 사람 승인을 요청한 비율 |
+| AUROC / AUPRC | 위험 행동 순위화·탐지 성능 |
+| Fixed-threshold Recall / FPR | Validation에서 고정한 임계값의 실제 Test 성능 |
+| Detection lead time | 위험 생성·실행 대비 탐지 선행 시간 |
+| p50 / p95 added latency | 감시 없는 실행 대비 추가 지연 |
+| 실행당 비용 | 수집·Probe·검사에 필요한 연산·저장·운영 비용 |
+
+표본 수·클래스 비율·시나리오별 결과와 trajectory 단위 불확실성을 보고합니다. 감시 레이어를 줄여도 Target 모델의 전체 블록 계산이 줄어드는 것은 아니므로, 실제 수집·전송·Probe 비용과 전체 지연을 측정합니다.
+
+**채택 기준:** 정상 업무·승인 부담·지연 예산 안에서 E3가 E2보다 반복 가능한 개선을 보여야 합니다. 수치 목표는 초기 기준선과 고객 인터뷰 후, 최종 평가 전에 고정합니다.
+
+## 5. Team and Ownership
+
+| 담당 | 역할 | 주요 책임 |
+| --- | --- | --- |
+| A | Systems / Backend | Guard, 정책 적용, 승인 상태, 감사 로그, 모델 실행 환경과 전체 통합 |
+| B | Sandbox / Data | 모의 문서·발송 도구, 시나리오·정책, 행동 정답과 데이터 검수 |
+| **C · [@ljg5489](https://github.com/ljg5489)** | **Representation Analysis / AI Security** | **표현 추출·hook, Probe, 레이어·시점 비교, OOD·위협 유형별 탐지 분석** |
+| D | Evaluation / Product Validation | E0~E3 공통 평가 도구, 최종 split 관리, 운영 지표·데모 검증, 고객 검증 근거 |
+
+A의 백엔드 강점을 활용하되 모든 구현을 몰아주지 않습니다. C가 표현 추출·hook을 주도하고 A가 실행 환경과 Guard 연결을 지원합니다. C의 모델 선택과 D의 최종 평가를 분리합니다. 각자 자신의 코드·문서·실험 결과를 작성합니다.
+
+### C work packages and evidence
+
+| 작업 | 책임 산출물 |
+| --- | --- |
+| C-01: 표현 추출 | 모델 adapter, hook 명세, 토큰·행동 alignment 점검과 통합 PR |
+| C-02: Probe 기준선 | 학습 코드, 모델 artifact 식별값, split·seed·설정 |
+| C-03: 레이어·시점 비교 | Single / Top-3 / All 및 조기 예측 비교, 성능·지연 곡선 |
+| C-04: 보안·OOD 분석 | 위협 유형별 결과, E2→E3 ablation, 오탐·미탐 사례 보고서 |
+| C-05: 선택 CV 확장 | 별도 ViT 표현 probing·이미지 분포 변화 실험과 노트북 |
+
+### CV and AI security evidence
+
+C의 필수 범위는 AI 보안과 Transformer 표현 분석입니다. LLM 결과를 CV 실험 성과로 표시하지 않습니다.
+
+**직접적인 CV 증거를 위한 선택 과제:** 고정된 ViT의 블록별 특징과 Linear Probe를 비교하고, 이미지 변형·미지 범주에서 분포 변화 탐지와 정확도 저하를 평가합니다. 데이터 이용 조건과 이미지 단위 split을 확인하고 별도 실험으로 공개합니다. OOD를 곧바로 공격·위험 라벨로 취급하지 않습니다.
+
+이 과제는 **10월 18일까지 핵심 통합·평가가 안정된 경우에만** 진행합니다. 그렇지 않으면 제출 이후 후속 연구로 둡니다. LLM Probe의 직접 전이가 아닌 방법론의 재적용이며, VLM 이미지 기반 prompt injection은 더 뒤의 확장입니다.
+
+## 6. Delivery Plan
+
+M0~M5는 이번 제품 실행 일정이고, Phase 1~6는 연구 발전 단계입니다.
+
+| 기간 | 마일스톤 | 완료 기준 |
+| --- | --- | --- |
+| M0 · 9/22~9/27 | 최소 통합 | 한 행동의 검사·로그·정답·Activation 연결 |
+| M1 · 9/28~10/4 | 기본 Guard + Probe baseline | 정책 차단·승인 데모, E0~E2와 첫 Probe 결과 |
+| M2 · 10/5~10/11 | 내부 신호 통합 | E3 평가 설정·레이어·임계값·운영 기준 고정 |
+| M3 · 10/12~10/18 | 핵심 검증 | OOD 평가, E0~E3 비교, 통합 데모 |
+| M4 · 10/19~10/25 | 제출 초안 | 재현·실패 분석·인터뷰 요약·기여 기록 |
+| M5 · 10월 마지막 주 | 최종 제출 | 영상·발표·재현 확인 |
+
+### Scope checklist
+
+- [ ] 문서·발송 업무 Sandbox와 행동 정답
+- [ ] 우회 없는 실행 경로와 정책·승인·감사 로그
+- [ ] 승인 인자 변경·재사용·중복 실행 검증
+- [ ] 표현 추출·Linear Probe와 Single / Top-3 / All 비교
+- [ ] E0~E3 및 조기 예측·실행 직전 판별 비교
+- [ ] OOD·정상 업무·승인 부담·추가 지연 평가
+- [ ] 잠재 사용자 3~5명 인터뷰와 도입 조건 정리
+- [ ] 재현 코드·실험 근거·데모·개인 기여 문서
+
+10월 4일에 신호가 약하면 라벨·시점·편향을 점검합니다. 10월 18일에 내부 신호의 추가 효과가 없으면 실험 기능으로 유지하고 기본 Guard 결과와 연구 한계를 보고합니다. CV 확장이나 새 기능으로 제출 마감을 미루지 않습니다.
+
+## 7. Commercial Validation and Long-term Roadmap
+
+인터뷰는 현재 막힌 Agent 도입 사례, 기존 승인 업무, 필요한 연동·배포 방식, 내부 상태 접근 가능 여부, 파일럿 의향을 확인합니다. 고객 가설을 시장 수요로, 인터뷰 호응을 지불 의사로 단정하지 않습니다. 가격·매출 전망은 아직 정하지 않습니다.
+
+| 연구 단계 | 진입 조건 / 목표 |
+| --- | --- |
+| Phase 1: Activation Probe | 누수 없는 신호·시점 검증 |
+| Phase 2: Robust / Efficient Monitoring | E2 대비 E3의 OOD 추가 효과와 비용 검증 |
+| Phase 3: Failure Discovery | 시나리오 변형부터 시작, 필요성이 확인되면 RL Red Agent |
+| Phase 4: Verified Retraining | 독립 검증된 실패만 학습, 회귀 검사·롤백 |
+| Phase 5: Adaptive Monitoring | 정적 감시 대비 탐지·비용 개선 |
+| Phase 6: Bounded Improvement | 변경 범위 제한, 독립 평가와 승인 기준 유지 |
+
+최종 권한 정책·독립 평가·채택 기준은 자동 개선 루프 밖에 유지합니다. 실제 고객 파일럿은 문제·연동 지점·배포·보관 요구가 확인된 뒤 추진합니다.
+
+## 8. Reproducibility, Results and Limitations
+
+**검증된 실험 성과는 아직 없습니다.** 다음 자료를 구현 이후 추가합니다.
+
+- 모델·토크나이저 revision, 데이터·정책·Probe 버전, split·seed·commit·환경
+- E0~E3 비교표, 레이어×시점 분석, 지연·정상 업무·승인 부담
+- 위협 유형·OOD 결과, 오탐·미탐과 실패 사례
+- 정상 허용·정책 차단·승인·재검사 데모
+- 검증된 설치·수집·학습·평가 명령과 개인별 PR·실험 ID
+
+개인 기여는 **문제 → 설계 → 구현 → 검증 → 한계**로 기록합니다. 표현 시각화만으로 인과관계나 강건성을 주장하지 않습니다.
+
+초기 모델·하드웨어·데이터 규모는 첫 실행 시험 후 확정합니다. 원시 문서·비밀값의 로그 저장을 최소화하며 Activation을 익명 데이터로 가정하지 않습니다. 모델 가중치·대용량 데이터·비밀키는 Git에 올리지 않고 공개 가능한 설정·메타데이터·요약 결과를 관리할 계획입니다. 라이선스와 데이터 배포 정책은 팀 논의 후 정합니다.
+
+범용 SaaS, 결제, 다수 프레임워크 연동, RL·자동 재학습, 실제 시스템 배포는 이번 MVP에 포함하지 않습니다. Sandbox 결과로 실제 환경 전체의 안전성을 보장하지 않습니다.
+
+## References and Revision
+
+v2.0은 실행 보안 우선·선택적 Activation·업무별 고객 검증·C 연구 오너십을 반영합니다. 이전 Activation 중심 방향은 비교 실험의 연구 트랙으로 유지합니다.
+
+- [LangChain Human-in-the-loop middleware](https://reference.langchain.com/python/langchain/agents/middleware/human_in_the_loop): 실행 전 승인·편집·거절 기능 참고
+- [NVIDIA NeMo Guardrails Overview](https://docs.nvidia.com/nemo/guardrails/about-nemo-guardrails-library/overview): 도구 실행 검사 기능 참고
