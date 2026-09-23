@@ -4,8 +4,8 @@
 
 AI Agent의 도구 실행에 기업별 정책·권한·승인을 적용하고, 내부 상태에 접근 가능한 모델에서는 Activation 기반 위험 신호를 추가하는 실행 보안 프로젝트입니다.
 
-> **Status: Planning / Pre-implementation · v2.0 · 2026-09-22**  
-> 아래 내용은 구현·연구 계획입니다. 실험 성능, 고객 수요와 상업성은 아직 검증되지 않았습니다.
+> **Status: C-01 implementation / MVP planning · 2026-09-23**
+> 표현 추출 참조 구현과 소형 모델 테스트를 추가했습니다. 실제 20B 구동·탐지 성능·제품 MVP·상업성은 아직 검증되지 않았습니다.
 
 | 항목 | 내용 |
 | --- | --- |
@@ -17,6 +17,26 @@ AI Agent의 도구 실행에 기업별 정책·권한·승인을 적용하고, �
 | C 담당 | [@ljg5489](https://github.com/ljg5489) · Representation Analysis & AI Security |
 
 **개정 문서:** [프로젝트 기획서 PDF](Argus-V_프로젝트_기획서.pdf) · [발전 로드맵 PDF](Argus-V_발전_로드맵.pdf)
+
+## C-01: 표현 추출 구현
+
+대상 계열은 **gpt-oss**, 첫 하드웨어 프로필은 **gpt-oss-20b / RTX 4090 / RAM 68GB**입니다.
+현재 제공하는 것은 전체 prefix 재실행 기반의 모델 adapter, post-block hook,
+토큰·행동 정렬 검사와 NPZ/JSON 저장입니다. 기본 보안 Gate나 Probe 학습은 아직 포함하지 않습니다.
+
+- [설치·hook 명세·A/B 통합 계약·4090 검증 절차](docs/c01-extraction.md)
+- [추출 코드](src/argus_v/activations/) · [다운로드 없는 소형 gpt-oss 데모](scripts/demo_capture.py)
+- [20B 환경 점검·로컬 수집 runner](scripts/capture_gpt_oss.py) · [테스트](tests/)
+
+```bash
+# 환경별 PyTorch 설치와 가상환경 생성은 위 문서를 먼저 확인하세요.
+python -m pip install -e ".[hf,dev]"
+python -m pytest -q
+python scripts/demo_capture.py --output artifacts/c01-demo
+```
+
+소형 무작위 모델 검증과 실제 20B MXFP4·4090 검증은 구분합니다.
+2026-09-22 PDF는 계획 시점의 문서이며 C-01의 최신 구현 범위는 위 명세를 기준으로 합니다.
 
 ## 1. Problem and Product Hypothesis
 
@@ -187,7 +207,7 @@ M0~M5는 이번 제품 실행 일정이고, Phase 1~6는 연구 발전 단계입
 
 개인 기여는 **문제 → 설계 → 구현 → 검증 → 한계**로 기록합니다. 표현 시각화만으로 인과관계나 강건성을 주장하지 않습니다.
 
-초기 모델·하드웨어·데이터 규모는 첫 실행 시험 후 확정합니다. 원시 문서·비밀값의 로그 저장을 최소화하며 Activation을 익명 데이터로 가정하지 않습니다. 모델 가중치·대용량 데이터·비밀키는 Git에 올리지 않고 공개 가능한 설정·메타데이터·요약 결과를 관리할 계획입니다. 라이선스와 데이터 배포 정책은 팀 논의 후 정합니다.
+모델 계열은 gpt-oss로 정했고, 첫 실행 프로필은 gpt-oss-20b와 RTX 4090·RAM 68GB입니다. 실제 checkpoint revision·GPU 실행 환경·데이터 규모는 첫 실행 시험 후 고정합니다. 원시 문서·비밀값의 로그 저장을 최소화하며 Activation을 익명 데이터로 가정하지 않습니다. 모델 가중치·대용량 데이터·비밀키는 Git에 올리지 않고 공개 가능한 설정·메타데이터·요약 결과를 관리할 계획입니다. 라이선스와 데이터 배포 정책은 팀 논의 후 정합니다.
 
 범용 SaaS, 결제, 다수 프레임워크 연동, RL·자동 재학습, 실제 시스템 배포는 이번 MVP에 포함하지 않습니다. Sandbox 결과로 실제 환경 전체의 안전성을 보장하지 않습니다.
 
