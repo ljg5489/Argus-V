@@ -1,0 +1,19 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Environment
+.env
+.env.*
+
+# Hugging Face / model cache
+.cache/
+
+# Large model files
+gpt-oss/
+gpt-oss-20b/
+
+# VS Code
+.vscode/
