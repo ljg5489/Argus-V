@@ -29,7 +29,7 @@ def main():
             prompt = input("\n프롬프트 입력 (종료: Ctrl+C): ")
             if not prompt.strip():
                 continue
-                
+                 
             input_ids = tokenizer.encode(prompt, return_tensors="pt")
             if input_ids.dim() > 1:
                 input_ids = input_ids.squeeze(0)
