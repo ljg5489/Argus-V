@@ -11,6 +11,10 @@ dist/
 .env
 .env.*
 !.env.example
+.cache/
+.vscode/
+gpt-oss/
+gpt-oss-20b/
 checkpoints/
 artifacts/
 data/raw/
