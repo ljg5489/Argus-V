@@ -1,0 +1,18 @@
+{
+  "cpus": 2.0,
+  "memory": "4g",
+  "workspace_size": "2g",
+  "tmp_size": "256m",
+  "pids": 256,
+  "timeout_seconds": 600,
+  "log_limit_bytes": 16777216,
+  "archive_limit_bytes": 536870912,
+  "network": "none",
+  "allowed_hosts": [],
+  "runtime": "runc",
+  "gpu": false,
+  "gpu_ids": [
+    "0"
+  ],
+  "llm_packages": false
+}

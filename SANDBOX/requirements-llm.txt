@@ -1,0 +1,7 @@
+# Optional experiment dependencies. Resolved versions are recorded in environment.lock.
+# Pin these to the team's tested versions before comparing experiment results.
+torch
+transformers
+accelerate
+safetensors
+numpy

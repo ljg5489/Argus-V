@@ -1,0 +1,22 @@
+{
+  "verified_on": "2026-10-07",
+  "host": "macOS arm64",
+  "vm": "colima generic-sandbox, Linux arm64, vz",
+  "docker_engine": "29.5.2",
+  "docker_compose": "5.6.0",
+  "runtime": "runc",
+  "image": "local/generic-sandbox:python",
+  "image_id": "sha256:ba51f8dfef2742c5d0b7c5ac92022f9c52136737b590ee234f4d6ac39f04c973",
+  "tests": {
+    "command": "SANDBOX_INTEGRATION_TESTS=1 python3 -m unittest discover -s tests -q",
+    "passed": 24,
+    "unit": 13,
+    "real_docker_integration": 11,
+    "skipped": 0,
+    "failed": 0
+  },
+  "compose_validation": "CONFIG_VALID",
+  "manual_checks": ["base image build", "generic Python example", "interactive shell", "selected file export", "resource status"],
+  "not_verified": ["GPU execution", "gVisor runtime", "LLM dependency image", "model inference"],
+  "not_a_guarantee_of_complete_escape_prevention": true
+}
