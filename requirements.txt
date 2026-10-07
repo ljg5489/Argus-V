@@ -2,6 +2,6 @@ torch==2.8.0
 transformers==5.9.0
 huggingface-hub>=1.5,<2.0
 accelerate
-kernels>=0.12,<0.15
+kernels>=0.12,<0.13
 triton==3.4.0
 numpy
