@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.DS_Store
+.env
+.env.*
+!.env.example
+.venv/
+.state/
+artifacts/
+exports/
+snapshots/
+models/*
+!models/.gitkeep

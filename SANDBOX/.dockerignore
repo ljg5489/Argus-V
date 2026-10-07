@@ -1,0 +1,6 @@
+*
+!Dockerfile
+!entrypoint.sh
+!proxy.py
+!requirements.txt
+!requirements-llm.txt
