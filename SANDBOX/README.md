@@ -32,7 +32,7 @@ Python 스크립트, 셸 명령, LLM 실험 코드와 Agent 도구 프로그램�
 호스트에는 Python 3.11 이상, Docker와 Docker Compose v2가 필요하다. 실행할 코드는 호스트에서 실행하지 않고 컨테이너에 반입한다.
 
 ```sh
-cd SANDBOX/sandbox-runtime
+cd SANDBOX
 python3 sandbox.py doctor
 python3 sandbox.py build
 python3 sandbox.py up
