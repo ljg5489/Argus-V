@@ -7,7 +7,7 @@
 정상 과제를 수행하던 AI Agent가 **권한 밖의 행동을 선택하기 전에 내부 표현에서 위험 신호를 탐지할 수 있는지** 연구합니다. 행동 이력·출력된 추론 텍스트만 감시할 때보다 일찍 또는 정확하게 탐지하는지를 검증합니다.
 
 > **v3.0 · 2026-09-28 — 원래 연구 목적 복원**
-> C-01은 [Draft PR #1](https://github.com/ljg5489/Argus-V/pull/1)에 구현되어 있으며 소형 모델 테스트 67개가 통과했습니다. 실제 20B GPU 구동·탐지 효과·상업성은 아직 미검증입니다. 아래 실험·Guard·Probe는 완료 성과가 아닌 계획입니다.
+> C-01 추출기, M1 텍스트 탐지기와 activation-only Linear Probe는 main에서 실행할 수 있습니다. 실제 20B GPU 구동·탐지 효과·M1 대비 추가 기여·상업성은 아직 별도 검증 대상이며 아래 연구 실험·Guard 연동은 계획입니다.
 
 | 항목 | 방향 |
 | --- | --- |
@@ -58,6 +58,8 @@ Probe는 미래 행동과 연관된 신호를 검사합니다. 숨은 의도·�
 
 [M1 탐지기 실행 안내](docs/m1-detector.md): C-01과 같은 원본 토큰 prefix의 텍스트를 로컬 언어모델로 판정하는 기준선을 구현했습니다. 정렬·오류 처리·CPU 통합 테스트와 실제 20B 탐지 성능 검증은 구분합니다.
 
+[Linear Probe 학습·추론 안내](docs/linear-probe.md): 같은 관측 시점의 post-block activation으로 다음 한 행동의 정책 위반 위험 점수를 학습합니다. 학습 데이터로만 정규화하고 validation의 정상 trajectory 오탐 기준으로 임계값을 선택합니다. activation-only Probe이며 최종 M2의 M1 결합과 실제 탐지 효과는 별도 검증 대상입니다.
+
 ### 행동 생성 후, 실행 전 판별
 
 E1=정책, E2=정책+문맥/가용 추론, E3=E2+activation을 비교합니다. 이 단계는 현재 도구 이름·인자를 볼 수 있으므로 결과를 행동 생성 전 조기 예측 성능으로 표시하지 않습니다.
@@ -91,9 +93,9 @@ E1=정책, E2=정책+문맥/가용 추론, E3=E2+activation을 비교합니다. 
 
 모든 도구 실행은 Guard를 거칩니다. 권한은 신뢰된 실행 환경에서 가져오며 명시적 금지는 낮은 Probe 점수로 해제하지 않습니다. 승인 인자 변경·재사용·중복 실행을 검사하고 필수 검사 실패·승인 대기 시 고위험 실행을 보류합니다. Probe 오류도 기록합니다.
 
-[C-01 PR #1](https://github.com/ljg5489/Argus-V/pull/1)은 post-block hook, full-prefix replay, pre_action/pre_execution 정렬과 NPZ/JSON 저장을 제공합니다. [설치·통합 명세](https://github.com/ljg5489/Argus-V/blob/feat/c01-representation-extraction/docs/c01-extraction.md)를 재사용합니다. 주기적 snapshot·Probe·온라인 경보는 추가 구현입니다.
+[C-01 PR #1](https://github.com/ljg5489/Argus-V/pull/1)은 post-block hook, full-prefix replay, pre_action/pre_execution 정렬과 NPZ/JSON 저장을 제공합니다. [설치·통합 명세](https://github.com/ljg5489/Argus-V/blob/feat/c01-representation-extraction/docs/c01-extraction.md)를 재사용합니다. 주기적 snapshot·온라인 경보는 추가 구현이며 activation-only Linear Probe는 [학습·추론 코드](docs/linear-probe.md)로 제공합니다.
 
-67개 소형 GPT-2/gpt-oss 테스트는 추출 계약을 검증한 결과입니다. 실제 20B MXFP4·4090 실행과 탐지 성능은 별도 검증 대상입니다. 코드 실행은 PR 브랜치 안내를 따릅니다. CI는 인증 권한 제약으로 설정 예시만 제공되어 있습니다.
+C-01의 초기 67개 소형 GPT-2/gpt-oss 테스트는 추출 계약을 검증한 결과입니다. M1·Probe는 추가 CPU 테스트와 실행 데모로 검증하며 실제 20B MXFP4·4090 실행과 탐지 성능은 구분합니다. main의 각 실행 안내를 따릅니다. CI는 인증 권한 제약으로 설정 예시만 제공되어 있습니다.
 
 ## 6. 4인 분업
 
