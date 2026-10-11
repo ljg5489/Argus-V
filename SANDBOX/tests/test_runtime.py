@@ -89,9 +89,12 @@ class ArchiveTests(unittest.TestCase):
             (project / ".env").write_text("NOT_A_REAL_SECRET=sample")
             (project / ".git").mkdir()
             (project / ".git/config").write_text("sample")
+            (project / ".state").mkdir()
+            (project / ".state/agent.json").write_text('"controller-only"')
             archive = root / "project.tar"
             report = sandbox.make_archive(project, archive, 1024 * 1024)
             self.assertIn(".env", report["excluded"])
+            self.assertIn(".state", report["excluded"])
             with tarfile.open(archive) as tar:
                 self.assertEqual(tar.getnames(), ["hello.py"])
             self.assertEqual((project / "hello.py").read_text(), "print('hello')")

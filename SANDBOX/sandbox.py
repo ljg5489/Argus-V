@@ -24,7 +24,7 @@ from urllib.parse import urlsplit
 ROOT = Path(__file__).resolve().parent
 OWNER = "org.generic-sandbox.owner"
 CONFIG = "org.generic-sandbox.config"
-EXCLUDED = {".git", ".venv", "node_modules", "__pycache__", ".env", ".aws", ".ssh", ".codex", ".agents"}
+EXCLUDED = {".git", ".venv", "node_modules", "__pycache__", ".env", ".aws", ".ssh", ".codex", ".agents", ".state"}
 SIZES = re.compile(r"([1-9][0-9]*)([mg])\Z")
 
 
@@ -649,8 +649,13 @@ class Runtime:
 
 
 def main(argv=None):
+    arguments = list(sys.argv[1:] if argv is None else argv)
+    if arguments and arguments[0] == "agent":
+        from agent_env import main as agent_main
+        return agent_main(arguments[1:], root=ROOT)
     parser = argparse.ArgumentParser(description="Generic Python/Linux sandbox environment")
     commands = parser.add_subparsers(dest="action", required=True)
+    commands.add_parser("agent", help="Offline agent tools, scenarios, approvals and audit (agent --help)")
     for name in ("doctor", "render", "build", "status", "shell", "kill", "network-log", "validate"):
         commands.add_parser(name)
     start = commands.add_parser("up")

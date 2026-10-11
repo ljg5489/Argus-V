@@ -1,3 +1,5 @@
+# 파일 위치: ~/Desktop/Argus-V/scripts/detect_m1.py
+# 파일 명: detect_m1.py
 """Run a local text-only M1 judge at a saved C-01 pre_action observation cutoff."""
 
 import argparse

@@ -12,6 +12,9 @@ ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("generic_integration", ROOT / "sandbox.py")
 sandbox = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(sandbox)
+agent_spec = importlib.util.spec_from_file_location("integration_agent", ROOT / "agent_env.py")
+agent = importlib.util.module_from_spec(agent_spec)
+agent_spec.loader.exec_module(agent)
 
 
 @unittest.skipUnless(os.environ.get("SANDBOX_INTEGRATION_TESTS") == "1", "Real Docker integration not enabled")
@@ -46,6 +49,23 @@ class IntegrationTests(unittest.TestCase):
         output = json.loads((Path(report["logs"]) / "stdout.log").read_text())
         self.assertEqual(output["python_child"], "42")
         self.assertEqual(output["uid"], 10001)
+
+    def test_agent_protocol_runs_in_docker_with_public_observations_only(self):
+        self.runtime.import_source(ROOT / "examples")
+        env = agent.Environment.create(obstacle=True)
+        for _ in range(3):
+            call, execution = agent.generate_action(
+                self.runtime, env.observe(), ["python", "agent_fixture.py"], timeout=10)
+            self.assertTrue(execution["image_id"].startswith("sha256:"))
+            self.assertEqual(env.act(call)["status"], "OK")
+        self.assertTrue(env.state["closed"])
+        self.assertIn("work/report.md", env.state["files"])
+        public = json.loads(self.runtime.control(
+            ["exec", self.runtime.cid(), "cat", "/workspace/agent-observation.json"]))
+        self.assertNotIn("permissions", public)
+        self.assertNotIn("files", public)
+        self.assertNotIn("Fictional missing-quarter total", json.dumps(public))
+        self.assertEqual(env.report()["provenance"], "contract_fixture")
 
     def test_snapshot_restore_and_reset(self):
         cid = self.runtime.cid()

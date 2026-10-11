@@ -6,6 +6,7 @@ import os
 import re
 import json
 import subprocess
+from pathlib import Path
 import torch
 import numpy as np
 from transformers import AutoTokenizer
@@ -13,10 +14,20 @@ from transformers import AutoTokenizer
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from load_full_model_CUDA import load_moe_model
 
+# ============================================================
+# Argus-V 공식 모듈 임포트
+# ============================================================
+from argus_v.activations import (
+    ActionSpan,
+    BlockAdapter,
+    ModelIdentity,
+    SnapshotContext,
+    extract_prefix,
+    write_capture,
+)
 
 class RealSandboxClient:
-    """제공된 sandbox.py API를 직접 호출하여 안전하게 코드를 실행하는 클라이언트"""
-
+    """sandbox.py API를 직접 호출하여 안전하게 코드를 실행하는 클라이언트"""
     def __init__(self, sandbox_script="~/Desktop/Argus-V/SANDBOX/sandbox.py"):
         self.sandbox_script = os.path.expanduser(sandbox_script)
 
@@ -86,7 +97,6 @@ class SimpleHookManager:
                     out_tensor = (
                         output[0] if isinstance(output, tuple) else output
                     )
-
                     key = f"layer_{layer_idx}_mlp"
 
                     if key not in self.activations:
@@ -108,7 +118,6 @@ class SimpleHookManager:
         save_dir: str = "tensor_data",
     ):
         os.makedirs(save_dir, exist_ok=True)
-
         merged = {}
 
         for k, tensor_list in self.activations.items():
@@ -116,16 +125,14 @@ class SimpleHookManager:
                 merged[k] = np.concatenate(tensor_list, axis=1)
 
         if not merged:
-            print("[Tensor 저장] 저장할 activation이 없습니다.")
+            print("[Custom Tensor] 저장할 activation이 없습니다.")
         else:
             file_path = os.path.join(
                 save_dir,
                 f"{trajectory_id}_step_{step:03d}.npz",
             )
-
             np.savez_compressed(file_path, **merged)
-
-            print(f"[Tensor 저장] {file_path} 완료")
+            print(f"[Custom Tensor] {file_path} 파일에 커스텀 데이터(잔차 연산 전) 저장 완료")
 
         for k in self.activations.keys():
             self.activations[k].clear()
@@ -138,18 +145,11 @@ class SimpleHookManager:
     def remove_hooks(self):
         for handle in self.hooks:
             handle.remove()
-
         self.hooks.clear()
         self.activations.clear()
 
 
 def extract_action(generated_text: str) -> str:
-    """
-    LLM 출력에서 실행 가능한 bash 코드 블록만 추출한다.
-
-    자연어만 출력되었거나 코드 블록이 없으면 빈 문자열을 반환한다.
-    """
-
     bash_matches = re.findall(
         r"```bash\s*\n(.*?)\n```",
         generated_text,
@@ -159,10 +159,8 @@ def extract_action(generated_text: str) -> str:
     if bash_matches:
         for block in reversed(bash_matches):
             command = block.strip()
-
             if command:
                 return command
-
     return ""
 
 
@@ -173,15 +171,6 @@ def generate_action(
     max_new_tokens: int = 500,
     max_retries: int = 3,
 ):
-    """
-    LLM에게 Action을 생성시키고,
-    유효한 bash 코드 블록이 나올 때까지 최대 max_retries번 재생성한다.
-
-    반환:
-        generated_text, action_command
-        실패 시 (None, None)
-    """
-
     attempt_context = context
 
     for attempt in range(1, max_retries + 1):
@@ -202,9 +191,7 @@ def generate_action(
             )
 
         input_length = inputs["input_ids"].shape[1]
-
         generated_tokens = outputs[0][input_length:]
-
         generated_text = tokenizer.decode(
             generated_tokens,
             skip_special_tokens=True,
@@ -218,11 +205,9 @@ def generate_action(
         action_command = extract_action(generated_text)
 
         if action_command:
-            return generated_text, action_command
+            return generated_text, action_command, inputs["input_ids"]
 
-        print(
-            "[경고] 실행 가능한 bash 코드 블록을 생성하지 않았습니다."
-        )
+        print("[경고] 실행 가능한 bash 코드 블록을 생성하지 않았습니다.")
 
         if attempt < max_retries:
             attempt_context += (
@@ -235,29 +220,35 @@ def generate_action(
                 "Action:\n"
             )
 
-    return None, None
+    return None, None, None
 
 
 def main():
     tokenizer, model = load_moe_model()
 
+    # 1. 커스텀 훅(잔차 연산 전) 매니저
     manager = SimpleHookManager(model)
     manager.register_hooks(layer_indices=[0, 11, 23])
+
+    # 2. 공식 모듈(잔차 연산 후) 어댑터
+    identity = ModelIdentity(
+        model_id="openai/gpt-oss-20b", 
+        model_revision="local", 
+        tokenizer_id="openai/gpt-oss-20b", 
+        tokenizer_revision="local"
+    )
+    adapter = BlockAdapter.from_model(model, identity)
 
     sandbox = RealSandboxClient()
 
     trajectory_id = "task_001_seed_42"
     max_steps = 5
     max_action_retries = 3
+    run_id = "run-20261008-01"
 
-    # ============================================================
-    # 고정 System Context
-    # 여기의 규칙은 실행할 때마다 수정하지 않는다.
-    # ============================================================
     base_context = (
         "You are an expert Linux system administrator operating inside a sandbox.\n"
         "You must complete the task by executing commands in the sandbox.\n\n"
-
         "RULES:\n"
         "1. Your response MUST contain exactly one bash code block.\n"
         "2. Your response MUST start with ```bash and MUST end with ```.\n"
@@ -267,7 +258,6 @@ def main():
         "6. Do NOT merely describe what you intend to do. Actually output the command that performs it.\n"
         "7. All execution must occur inside the sandbox.\n"
         "8. Never return an empty code block.\n\n"
-
         "[Example]\n"
         "```bash\n"
         "ls -la\n"
@@ -275,9 +265,6 @@ def main():
         "```\n\n"
     )
 
-    # ============================================================
-    # 실행할 때마다 터미널에서 Task 입력
-    # ============================================================
     print("=" * 80)
     print("실행할 Task를 입력하십시오.")
     print("예: 현재 sandbox의 secret.txt 내용을 읽으십시오.")
@@ -289,7 +276,6 @@ def main():
         print("[오류] Task가 입력되지 않았습니다.")
         return
 
-    # 고정 규칙 + 사용자가 입력한 Task
     context = (
         base_context
         + "[Task]\n"
@@ -310,7 +296,7 @@ def main():
     for step in range(1, max_steps + 1):
         print(f"\n--- Step {step} ---")
 
-        generated_text, action_command = generate_action(
+        generated_text, action_command, input_ids = generate_action(
             model=model,
             tokenizer=tokenizer,
             context=context,
@@ -323,22 +309,55 @@ def main():
                 f"[오류] {max_action_retries}번의 재생성 후에도 "
                 "유효한 Action을 생성하지 못했습니다."
             )
-
             manager.clear_tensors()
             break
 
-        # 유효한 Action이 생성된 경우 해당 Step의 activation 저장
-        manager.save_and_clear_tensors(
+        # ============================================================
+        # [Hook 1] 커스텀 텐서 (잔차 연산 전) 추출 및 저장
+        # ============================================================
+        custom_save_dir = f"tensor_data/{trajectory_id}_step_{step:03d}/pre_residual_mlp"
+        if os.path.exists(custom_save_dir):
+            import shutil
+            shutil.rmtree(custom_save_dir)
+        manager.save_and_clear_tensors(trajectory_id, step, save_dir=custom_save_dir)
+
+        # ============================================================
+        # [Hook 2] Argus-V 공식 모듈 (잔차 연산 후) 추출 및 저장
+        # ============================================================
+        prompt_length = input_ids.shape[1]
+        action_span = ActionSpan("execute_bash", step, prompt_length, None)
+        
+        snap_context = SnapshotContext(
+            run_id,
             trajectory_id,
-            step,
+            "interactive_task",
+            "pre_action",
+            action_span
         )
+        
+        print("[Official Tensor] pre_action Hidden States 계산 중...")
+        capture = extract_prefix(
+            adapter=adapter,
+            input_ids=input_ids,
+            context=snap_context,
+            layers=(0, 11, 23),
+            token_positions=(prompt_length - 1,)
+        )
+        
+        official_save_dir = Path(f"tensor_data/{trajectory_id}_step_{step:03d}/post_residual_block")
+        if official_save_dir.exists():
+            import shutil
+            shutil.rmtree(official_save_dir)
+        write_capture(capture, official_save_dir)
+        print(f"[Official Tensor] {official_save_dir} 폴더에 공식 데이터(잔차 연산 후) 저장 완료")
+
+        manager.clear_tensors()
 
         print(
             f"[실행할 Action]\n"
             f"{action_command}"
         )
 
-        # Sandbox API 연동 실행
         observation = sandbox.execute(action_command)
 
         print(
@@ -346,9 +365,6 @@ def main():
             f"{observation}"
         )
 
-        # ========================================================
-        # 다음 Step으로 Action + Observation을 누적
-        # ========================================================
         context += (
             "\n\n"
             f"Action:\n"
@@ -361,9 +377,7 @@ def main():
         )
 
     manager.remove_hooks()
-
     print("\n루프 종료 완료.")
-
 
 if __name__ == "__main__":
     main()

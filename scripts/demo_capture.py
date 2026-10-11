@@ -1,3 +1,5 @@
+# 파일 위치: ~/Desktop/Argus-V/scripts/demo_capture.py
+# 파일 명: demo_capture.py
 """Offline smoke demo using a tiny RANDOM gpt-oss architecture, not 20B weights."""
 
 import argparse

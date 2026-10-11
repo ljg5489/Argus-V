@@ -1,3 +1,5 @@
+# 파일 위치: ~/Desktop/Argus-V/scripts/capture_gpt_oss.py
+# 파일 명: capture_gpt_oss.py
 """Capture a short, already tokenized gpt-oss-20b prefix from local model files."""
 
 import argparse

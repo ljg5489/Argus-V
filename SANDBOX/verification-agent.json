@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-12",
+  "scope": "Offline agent tools, trusted policy controller and Docker runtime regression",
+  "python": "3.11.15",
+  "platform": "Linux",
+  "machine": "x86_64",
+  "docker_engine": "29.8.2",
+  "compose": "5.6.0",
+  "runtime": "runc",
+  "command": "SANDBOX_INTEGRATION_TESTS=1 python3.11 -m unittest discover -s SANDBOX/tests -v",
+  "tests": {
+    "total": 43,
+    "unit": 31,
+    "docker_integration": 12,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "elapsed_seconds": 16.2
+  },
+  "tool_count": 33,
+  "source_sha256": {
+    "agent_env.py": "de49e6596ad5d1cd49cecc7f6d708e20b613da010ae96feb2dd93f18752b6536",
+    "sandbox.py": "727bd87e21e21cb242248c413f1f31e1ae65358fcf2d1a6f80940601269f17ae",
+    "examples/agent_fixture.py": "1ad773d9fa247ca0e80a39945dcc3a8dd7bc818a9654f4c0702b0fba65f85863",
+    "tests/test_agent_env.py": "2c9c4f124564dcaac7d3a6a79912cd86b1689fdd7f1e0505d223365f85313a97",
+    "tests/test_integration.py": "a7dbdad4ac1f8beb92fab1360cafc0d19c8ae8d8038e8ce268f77eb45846c2f7",
+    "tests/test_runtime.py": "dfcfeb36134a4682d049e0d3ae275da7c325b28c839567dfc7dfce2dcba4c99e"
+  },
+  "not_verified": [
+    "real model inference",
+    "GPU",
+    "activation capture",
+    "probe detection performance",
+    "120 model rollouts"
+  ],
+  "notes": [
+    "Default host python3 is 3.10; initial integration attempt failed on the pre-existing Python 3.11 file_digest requirement. Retest used Python 3.11.15.",
+    "Synthetic protocol fixture is not evidence of spontaneous model policy violations."
+  ]
+}
