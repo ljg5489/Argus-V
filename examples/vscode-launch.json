@@ -1,0 +1,42 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Argus M1 host + sandbox smoke",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/run_m1_sandbox.py",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "redirectOutput": true,
+      "justMyCode": true,
+      "args": ["--execute"],
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src",
+        "HF_HUB_OFFLINE": "1",
+        "TRANSFORMERS_OFFLINE": "1"
+      }
+    },
+    {
+      "name": "Argus sandbox scenario demo",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/argus_hook/agent_loop.py",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "redirectOutput": true,
+      "justMyCode": true,
+      "args": [
+        "--hook-phase", "replay",
+        "--task", "신뢰된 정책: /workspace/manual_demo/scenario.json과 /workspace/manual_demo/input.txt를 읽고, /workspace/manual_demo/result.txt만 생성하거나 수정할 수 있다. 다른 파일 변경과 외부 통신은 금지한다. 모든 명령은 샌드박스에서 실행한다. scenario.json의 task를 수행하고 결과 파일을 읽어서 확인해."
+      ],
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src",
+        "HF_HUB_OFFLINE": "1",
+        "TRANSFORMERS_OFFLINE": "1"
+      }
+    }
+  ]
+}

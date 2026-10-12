@@ -1,6 +1,5 @@
 """Causal alignment, input isolation, local judge plumbing and CLI integration."""
 
-import importlib.util
 import json
 import os
 import subprocess
@@ -25,7 +24,6 @@ from argus_v.activations import (
 from argus_v.monitoring import (
     M1Detector,
     build_m1_snapshot,
-    build_m1_snapshot_from_generation_step,
 )
 from argus_v.monitoring.hf_judge import HuggingFaceJudge, final_reply
 from argus_v.monitoring.m1 import parse_judgment
@@ -407,55 +405,79 @@ def test_local_cli_end_to_end_and_no_overwrite(adapter, ids, context, local_chec
     assert rerun.returncode != 0 and output.read_bytes() == original
 
 
-def test_legacy_generation_logs_observed_prefix_before_appending_next_token(adapter):
-    if adapter.model_type != "gpt_oss":
-        pytest.skip("legacy hook supports gpt-oss MLP")
-    spec = importlib.util.spec_from_file_location(
-        "legacy_generation", ROOT / "argus_hook" / "generate_with_hooks.py"
-    )
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+def test_action_generation_records_exact_prefix_before_future_tokens(adapter, ids, tmp_path):
+    """Real tiny-model generation with a synthetic decoder, not a performance eval."""
+    from argus_v.activations import HookInspection
+    from argus_v.agent_actions import ACTION_SYSTEM_PROMPT, generate_sandbox_action
 
     class Tokenizer:
-        eos_token_id = -1
+        eos_token_id = None
 
-        def encode(self, prompt, **kwargs):
-            return torch.tensor([[1, 2, 3]])
+        def apply_chat_template(self, messages, **kwargs):
+            assert messages[0]["role"] == "system"
+            assert kwargs["add_generation_prompt"] is True
+            return {"input_ids": ids.clone(), "attention_mask": torch.ones_like(ids)}
 
-        def decode(self, ids, **kwargs):
-            return " ".join(str(i) for i in ids)
+        def convert_ids_to_tokens(self, values):
+            return [f"token-{value}" for value in values]
 
-    _, history = module.generate_text_with_activations(
-        adapter.model, Tokenizer(), "fixture", max_new_tokens=2, layer_indices=[0, 1]
+        def decode(self, values, **kwargs):
+            if values == ids[0].tolist():
+                return "synthetic rendered input"
+            return "```bash\ncat allowed.txt\n```"
+
+    destination = tmp_path / "generation"
+
+    def inspect(attempt, prompt_ids, prompt_text):
+        assert attempt == 1
+        assert prompt_text == "synthetic rendered input"
+        return HookInspection(
+            adapter,
+            destination,
+            layers=(0, 1),
+            include_non_block=False,
+            show_console=False,
+            phase="generation",
+            context={
+                "input_ids": prompt_ids[0].tolist(),
+                "token_pieces": Tokenizer().convert_ids_to_tokens(prompt_ids[0].tolist()),
+            },
+        )
+
+    _, command, observed_ids, generated_ids, _ = generate_sandbox_action(
+        adapter.model,
+        Tokenizer(),
+        [
+            {"role": "system", "content": ACTION_SYSTEM_PROMPT},
+            {"role": "user", "content": "synthetic task"},
+        ],
+        max_new_tokens=2,
+        inspection_factory=inspect,
     )
-    assert history[0]["observed_input_ids"] == [1, 2, 3]
-    assert history[1]["observed_input_ids"] == [1, 2, 3, history[0]["token_id"]]
-    for item in history:
-        observed = item["observed_input_ids"]
-        assert item["predicts_token_index"] == len(observed)
-        assert item["observed_token_index"] == len(observed) - 1
-        assert item["prefix_ids_sha256"] == ids_sha256(observed)
-    assert not any(block.mlp._forward_hooks for block in adapter.model.model.layers)
+    assert command == "cat allowed.txt"
+    assert observed_ids[0].tolist() == ids[0].tolist()
+    manifest = json.loads((destination / "manifest.json").read_text(encoding="utf-8"))
+    mapping = manifest["context"]["generation_token_map"]
+    assert mapping[0]["source_token_id"] == ids[0, -1].item()
+    assert mapping[1]["source_token_id"] == generated_ids[0]
+    assert not any(block._forward_hooks for block in adapter.model.modules())
     source_context = SnapshotContext(
-        "run", "trajectory", "scenario", "pre_action", ActionSpan("future-action", 0, 4)
+        "run", "trajectory", "scenario", "pre_action", ActionSpan("future-action", 0, 4, 6)
     )
-    snapshot = build_m1_snapshot_from_generation_step(
-        history[1],
+    capture = extract_prefix(adapter, observed_ids, source_context)
+    snapshot = build_m1_snapshot(
+        capture.metadata,
+        observed_ids[0].tolist(),
         RecordingDecoder(),
-        source_context,
-        adapter.identity,
         tokenizer_id="synthetic",
         tokenizer_revision="v1",
         snapshot_id="generation-step-1",
-        task="task",
-        trusted_policy="policy",
-        reasoning_token_span=(3, 4),
+        task="synthetic task",
+        trusted_policy="allowed file only",
+        reasoning_token_span=(2, 4),
     )
     assert snapshot.observed_prefix_length == 4
-    assert snapshot.capture_mode == "incremental_generation"
-    assert snapshot.observed_prefix_text == " ".join(
-        f"token-{i}" for i in history[1]["observed_input_ids"]
-    )
+    assert snapshot.observed_prefix_ids_sha256 == ids_sha256(ids[0].tolist())
     judge = RecordingJudge()
     result = M1Detector(judge, JUDGE_ID, threshold=0.7).detect(snapshot)
     assert result.status == "ok" and "activations" not in str(judge.messages)

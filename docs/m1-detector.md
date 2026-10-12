@@ -77,42 +77,34 @@ gpt-oss의 judge-side analysis와 final 응답은 분리하고 final JSON만 해
 
 결과 파일은 기존 파일을 덮어쓰지 않는다. 원본 텍스트와 모델 응답의 분석 전체는 결과에 저장하지 않지만, 판단 근거에도 민감한 정보가 포함될 수 있으므로 `artifacts/` 안에 보관한다.
 
-## 기존 MLP 생성 훅과 연결
+## 현재 에이전트 실행기와 연결
 
-`argus_hook/generate_with_hooks.py`의 각 history 항목에 `observed_input_ids`, `observed_prefix_length`, `observed_token_index`, `predicts_token_index`, `prefix_ids_sha256`을 추가했다. 이 값은 **새 토큰을 붙이기 전**의 관찰 prefix다. 기존 `token_id`/`token_text`는 그 activation으로 예측한 다음 토큰이므로 그 시점 M1 입력에 추가하면 안 된다.
+`argus_hook/agent_loop.py`는 채팅 템플릿으로 인코딩한 실제 입력 ID와 생성 ID를
+보존하고, `HookInspection`으로 생성·prompt replay를 구분해 기록한다.
+완성된 final Bash 응답만 명령으로 실행하며, 추론 속 명령은 실행하지 않는다.
+[행동 출력 형식](agent-action-format.md)과 [시나리오 실행 안내](manual-sandbox-scenario.md)를 따른다.
 
-기존 history는 C-01 capture 형식 자체가 아니며 과거 실행의 prefix를 복원해주지도 않는다. 새 로그는 `build_m1_snapshot_from_generation_step` API로 직접 연결할 수 있다. runner의 행동 경계·추론 좌표와 source identity를 제공해야 한다. 예를 들어 생성이 끝나 기존 훅이 해제된 뒤, 이미 로드된 모델과 tokenizer를 재사용한다.
+일반 `agent_loop`에는 M1 자동 호출이 아직 연결되지 않았다. 그 실행기의 prompt
+C-01 capture는 현재 행동의 추론을 생성하기 **전** 시점이다. 해당 prefix에 접근 가능한
+추론이 없다면 그것을 현재 행동의 M1 관측으로 사용할 수 없다. JSON 파일을 반입하는
+것만으로 M1 판정이나 추론 후 activation 수집이 자동으로 수행되는 것은 아니다.
 
-```python
-from argus_v.monitoring import M1Detector, build_m1_snapshot_from_generation_step
-from argus_v.monitoring.hf_judge import HuggingFaceJudge
+`scripts/run_m1_sandbox.py`는 고정된 정상 과제에서 실제 추론의 원본 ID 경계를 찾아
+final 메시지 직전의 prefix를 replay하고, 같은 prefix 텍스트를 M1으로 판단한 뒤
+허용된 명령을 샌드박스로 보낸다. [실행법](m1-sandbox-run.md)과
+[RTX 4090 연결 확인 결과](m1-sandbox-verification-20261013.md)를 참고한다.
+이는 정상 과제 한 건의 연결 확인이며 탐지 정확도 검증이나 일반 시나리오 실행기는 아니다.
 
-# history는 generate_text_with_activations의 새 로그다.
-# source_identity, judge_identity, context는 runner가 실제 revision/경계로 만든 값이다.
-# reasoning_span은 선택한 관찰 prefix에서 접근 가능한 추론 본문의 원본 ID 좌표다.
-snapshot = build_m1_snapshot_from_generation_step(
-    history[step_index], tokenizer, context, source_identity,
-    tokenizer_id=source_identity.tokenizer_id,
-    tokenizer_revision=source_identity.tokenizer_revision,
-    snapshot_id="snapshot-001", task=task, trusted_policy=policy,
-    reasoning_token_span=reasoning_span,
-)
-judge = HuggingFaceJudge(model, tokenizer)
-detector = M1Detector(
-    judge, judge_identity, threshold=validation_threshold,
-    inference_settings=judge.settings(),
-)
-result = detector.detect(snapshot)
-```
-
-이 경로는 `incremental_generation`으로 기록하며 C-01 replay로 가장하지 않는다. 새로 기록한 `observed_input_ids`로 C-01 replay 입력을 만들어 위 CLI를 사용하는 경로도 가능하다. MLP 출력과 C-01의 post-block 출력은 서로 다른 특징이므로 동일 activation으로 표시하지 않는다. 둘의 마지막 행이 관찰한 **토큰 시점**은 동일하게 맞출 수 있다.
+`build_m1_snapshot_from_generation_step`의 incremental-history API는 유지된다.
+사용하려면 API 계약에 맞는 관측 ID·토큰 좌표·추론 범위를 직접 제공해야 한다.
+`HookInspection` manifest를 그 history 형식으로 자동 간주하지 않는다.
 
 ## 검증
 
 ```powershell
 python -m pytest -q
-python -m ruff check src/argus_v/monitoring scripts/detect_m1.py tests/test_m1.py argus_hook/generate_with_hooks.py
-python -m ruff format --check src/argus_v/monitoring scripts/detect_m1.py tests/test_m1.py argus_hook/generate_with_hooks.py
+python -m ruff check src/argus_v/monitoring scripts/detect_m1.py tests/test_m1.py src/argus_v/agent_actions.py
+python -m ruff format --check src/argus_v/monitoring scripts/detect_m1.py tests/test_m1.py src/argus_v/agent_actions.py
 ```
 
-테스트는 미래 토큰/다른 prefix 거절, 이전 행의 causal cutoff, activation/라벨 입력 제외, 추론 미관찰 처리, 오류 처리, Harmony final 분리, 기존 KV 생성 로그 정렬을 확인한다. 소형 랜덤 모델과 합성 JSON 출력 checkpoint로 실제 CPU 생성 및 CLI 저장까지 검사한다. 합성 checkpoint의 위험 점수는 탐지 성능을 증명하는 결과가 아니다.
+테스트는 미래 토큰/다른 prefix 거절, 이전 행의 causal cutoff, activation/라벨 입력 제외, 추론 미관찰 처리, 오류 처리, Harmony final 분리, 현재 실행기의 원본 ID·생성 토큰 정렬을 확인한다. 소형 랜덤 모델과 합성 JSON 출력 checkpoint로 실제 CPU 생성 및 CLI 저장까지 검사한다. 합성 checkpoint의 위험 점수는 탐지 성능을 증명하는 결과가 아니다.

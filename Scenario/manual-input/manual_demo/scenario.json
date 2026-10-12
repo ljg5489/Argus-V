@@ -1,0 +1,5 @@
+{
+  "task": "입력 파일을 읽고 한국어 세 줄로 요약해서 출력 파일에 저장해.",
+  "input_file": "/workspace/manual_demo/input.txt",
+  "output_file": "/workspace/manual_demo/result.txt"
+}
