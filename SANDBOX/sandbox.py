@@ -28,6 +28,14 @@ EXCLUDED = {".git", ".venv", "node_modules", "__pycache__", ".env", ".aws", ".ss
 SIZES = re.compile(r"([1-9][0-9]*)([mg])\Z")
 
 
+def sha256_stream(stream):
+    """Hash archives in bounded chunks, including on Python 3.10."""
+    digest = hashlib.sha256()
+    for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+        digest.update(chunk)
+    return digest.hexdigest()
+
+
 def size_bytes(value):
     match = SIZES.fullmatch(value) if type(value) is str else None
     if not match:
@@ -261,6 +269,114 @@ class Runtime:
             raise RuntimeError(result.stderr.decode(errors="replace")[:2000] or "Docker command failed")
         return result.stdout
 
+    def list_files(self):
+        cid = self.cid(required=False)
+        if not cid:
+            return {"status": "STOPPED", "root": "/workspace", "entries": []}
+        script = """
+import json, os, stat
+root = '/workspace'
+entries = []
+pending = [root]
+truncated = False
+while pending and not truncated:
+    directory = pending.pop()
+    with os.scandir(directory) as children:
+        for child in children:
+            if len(entries) >= 1000:
+                truncated = True
+                break
+            try:
+                info = child.stat(follow_symlinks=False)
+            except FileNotFoundError:
+                continue
+            kind = ('directory' if stat.S_ISDIR(info.st_mode) else
+                    'symlink' if stat.S_ISLNK(info.st_mode) else
+                    'file' if stat.S_ISREG(info.st_mode) else 'other')
+            entries.append({'path': child.path, 'kind': kind,
+                            'size': info.st_size if kind == 'file' else None})
+            if kind == 'directory':
+                pending.append(child.path)
+print(json.dumps({'status': 'RUNNING', 'root': root,
+                  'entries': sorted(entries, key=lambda entry: entry['path']),
+                  'truncated': truncated}))
+"""
+        return json.loads(self.control(["exec", cid, "python3", "-c", script], timeout=15))
+
+    def read_file(self, path, *, image_output=None):
+        parts = path.split("/")
+        if (not path.startswith("/workspace/") or "\x00" in path
+                or any(part in ("", ".", "..") for part in parts[2:])):
+            raise ValueError("Choose a file inside /workspace.")
+        cid = self.cid()
+        script = """
+import codecs, json, os, shutil, stat, sys
+root = '/workspace'
+parts = sys.argv[1].split('/')[2:]
+fd = os.open(root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+try:
+    for part in parts[:-1]:
+        child_fd = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=fd)
+        os.close(fd)
+        fd = child_fd
+    file_fd = os.open(parts[-1], os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=fd)
+    with os.fdopen(file_fd, 'rb') as stream:
+        info = os.fstat(stream.fileno())
+        if not stat.S_ISREG(info.st_mode):
+            raise ValueError('Only regular files can be previewed.')
+        header = stream.read(32)
+        mime = None
+        if header.startswith(bytes.fromhex('89504e470d0a1a0a')):
+            mime = 'image/png'
+        elif header.startswith(bytes.fromhex('ffd8ff')):
+            mime = 'image/jpeg'
+        elif header[:6] in (b'GIF87a', b'GIF89a'):
+            mime = 'image/gif'
+        elif header[:4] == b'RIFF' and header[8:12] == b'WEBP':
+            mime = 'image/webp'
+        elif header.startswith(b'BM'):
+            mime = 'image/bmp'
+        elif header.startswith(bytes.fromhex('00000100')):
+            mime = 'image/x-icon'
+        elif header[4:8] == b'ftyp' and header[8:12] in (b'avif', b'avis'):
+            mime = 'image/avif'
+        if len(sys.argv) > 2 and sys.argv[2] == 'image':
+            if not mime:
+                raise ValueError('This file is not a supported image.')
+            sys.stdout.buffer.write((mime + chr(10)).encode('ascii'))
+            sys.stdout.buffer.write(header)
+            shutil.copyfileobj(stream, sys.stdout.buffer, length=1024 * 1024)
+            sys.stdout.buffer.flush()
+            sys.exit(0)
+        data = b'' if mime else header + stream.read(65537 - len(header))
+finally:
+    os.close(fd)
+if mime:
+    print(json.dumps({'path': sys.argv[1], 'size': info.st_size,
+                      'content': '', 'binary': True, 'mime': mime,
+                      'truncated': False}))
+    sys.exit(0)
+truncated = len(data) > 65536
+data = data[:65536]
+try:
+    content = codecs.getincrementaldecoder('utf-8')().decode(data, final=not truncated)
+    binary = any(ord(c) < 32 and c not in '\\t\\n\\r' for c in content)
+except UnicodeDecodeError:
+    content, binary = '', True
+print(json.dumps({'path': sys.argv[1], 'size': info.st_size,
+                  'content': '' if binary else content, 'binary': binary,
+                  'truncated': truncated, 'limit': 65536}, ensure_ascii=False))
+"""
+        args = ["exec", cid, "python3", "-c", script, path]
+        if image_output is not None:
+            result = subprocess.run(self.command(args + ["image"]), stdout=image_output,
+                                    stderr=subprocess.PIPE, env=self.environment, timeout=120)
+            if result.returncode:
+                raise RuntimeError(result.stderr.decode(errors="replace")[:2000]
+                                   or "Image read failed.")
+            return None
+        return json.loads(self.control(args, timeout=15))
+
     def render(self):
         return compose_spec(self.settings, self.owner, self.root)
 
@@ -428,7 +544,7 @@ class Runtime:
                 raise RuntimeError("snapshot failed; workspace was not changed")
             members = archive_members(target, self.settings["archive_limit_bytes"])
             with target.open("rb") as stream:
-                digest = hashlib.file_digest(stream, "sha256").hexdigest()
+                digest = sha256_stream(stream)
             atomic_json(target.with_suffix(".json"), {"sha256": digest, "bytes": size,
                                                      "workspace_path": relative or ".", **members})
             return target
@@ -447,7 +563,7 @@ class Runtime:
         if path.with_suffix(".json").is_file():
             expected = json.loads(path.with_suffix(".json").read_text())["sha256"]
             with path.open("rb") as stream:
-                if hashlib.file_digest(stream, "sha256").hexdigest() != expected:
+                if sha256_stream(stream) != expected:
                     raise ValueError("snapshot hash mismatch")
         with path.open("rb") as stream:
             result = subprocess.run(self.command(["exec", "--interactive", cid, "tar", "-C", "/workspace",
@@ -656,7 +772,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Generic Python/Linux sandbox environment")
     commands = parser.add_subparsers(dest="action", required=True)
     commands.add_parser("agent", help="Offline agent tools, scenarios, approvals and audit (agent --help)")
-    for name in ("doctor", "render", "build", "status", "shell", "kill", "network-log", "validate"):
+    for name in ("doctor", "render", "build", "status", "files", "shell", "kill", "network-log", "validate"):
         commands.add_parser(name)
     start = commands.add_parser("up")
     start.add_argument("--fresh", action="store_true")
@@ -665,6 +781,9 @@ def main(argv=None):
     run.add_argument("command", nargs=argparse.REMAINDER)
     source = commands.add_parser("import")
     source.add_argument("source")
+    read_file = commands.add_parser("read-file")
+    read_file.add_argument("--image", action="store_true", help="Stream image MIME line and original bytes")
+    read_file.add_argument("path")
     snapshot = commands.add_parser("snapshot")
     snapshot.add_argument("--name")
     export = commands.add_parser("export")
@@ -711,6 +830,16 @@ def main(argv=None):
     if args.action == "kill":
         # Emergency stop remains available while a run holds the operation lock.
         print(json.dumps(runtime.kill(), indent=2, ensure_ascii=False))
+        return 0
+    if args.action == "files":
+        # Read-only inspection remains available while a run holds the operation lock.
+        print(json.dumps(runtime.list_files(), indent=2, ensure_ascii=False))
+        return 0
+    if args.action == "read-file":
+        if args.image:
+            runtime.read_file(args.path, image_output=sys.stdout.buffer)
+        else:
+            print(json.dumps(runtime.read_file(args.path), ensure_ascii=False))
         return 0
     with runtime.lock():
         if args.action == "config":

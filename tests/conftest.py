@@ -29,6 +29,7 @@ def adapter(request):
             rope_scaling=None,
         )
         config._attn_implementation = "eager"
+        config._experts_implementation = "eager"
         model = GptOssForCausalLM(config)
     return BlockAdapter.from_model(
         model.eval(), ModelIdentity(f"tiny-{request.param}", "seed-7", "synthetic", "v1")

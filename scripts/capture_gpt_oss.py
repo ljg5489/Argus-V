@@ -3,6 +3,8 @@
 """Capture a short, already tokenized gpt-oss-20b prefix from local model files."""
 
 import argparse
+from contextlib import nullcontext
+from dataclasses import asdict
 import json
 import sys
 from pathlib import Path
@@ -12,6 +14,7 @@ import torch
 from argus_v.activations import (
     ActionSpan,
     BlockAdapter,
+    HookInspection,
     ModelIdentity,
     SnapshotContext,
     extract_prefix,
@@ -26,6 +29,8 @@ def main() -> None:
     parser.add_argument("--model-dir", type=Path)
     parser.add_argument("--input-json", type=Path)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--inspect-hooks", action="store_true")
+    parser.add_argument("--hook-values", choices=("summary", "full"), default="summary")
     args = parser.parse_args()
     report = gpt_oss_preflight()
     print(json.dumps(report, indent=2))
@@ -73,13 +78,23 @@ def main() -> None:
         raise RuntimeError("Unexpected BF16 dequantization; do not run the 4090 profile.")
     adapter = BlockAdapter.from_model(model, identity)
     torch.cuda.reset_peak_memory_stats(0)
-    capture = extract_prefix(
-        adapter,
-        torch.tensor([ids], device="cuda:0"),
-        context,
-        layers=tuple(payload.get("layers", range(len(adapter.block_paths)))),
-        token_positions=tuple(payload.get("token_positions", [len(ids) - 1])),
+    layers = tuple(payload.get("layers", range(len(adapter.block_paths))))
+    inspection = (
+        HookInspection(
+            adapter, args.output.with_name(args.output.name + "-hooks"),
+            layers=layers, values=args.hook_values,
+            phase=context.phase + "_full_prefix_replay",
+            context={**asdict(context), "input_ids": ids},
+        ) if args.inspect_hooks else nullcontext()
     )
+    with inspection:
+        capture = extract_prefix(
+            adapter,
+            torch.tensor([ids], device="cuda:0"),
+            context,
+            layers=layers,
+            token_positions=tuple(payload.get("token_positions", [len(ids) - 1])),
+        )
     capture.metadata["runtime"] = report
     capture.metadata["peak_allocated_bytes"] = torch.cuda.max_memory_allocated(0)
     print(write_capture(capture, args.output))

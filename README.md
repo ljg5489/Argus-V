@@ -138,3 +138,13 @@ Phase 1 신호 검증 → Phase 2 강건성·효율 → Phase 3 실패 탐색 �
 - [AgentDojo](https://github.com/ethz-spylab/agentdojo) · [InjecAgent](https://github.com/uiuc-kang-lab/InjecAgent): 보조 평가 후보.
 - v3.0 (2026-09-28): 원래 목적 복원, 자발적 위반 중심, 추론/내부 표현 비교, 첫 위반 전 평가·희소성 대응.
 - v2.0 (2026-09-22): 정책 Guard 중심 상업적 방향. v3.0이 연구 우선순위를 대체하며 실행 통제 원칙은 유지.
+
+### Transformer 전체 Hook 출력 확인
+
+[전체 Hook 관찰 안내](docs/hook-inspection.md)에 블록 입력·Attention·정규화·MLP·MoE
+router/experts·잔차 합산 후 출력의 관찰 위치와 실행 방법을 정리했습니다.
+`argus_hook/agent_loop.py`는 0·11·23번 레이어 하위의 실행된 모듈 입력·출력만 기록하고,
+전체 NPY와 레이어별 `summary.md`를 저장합니다. 은닉층 값은 터미널에 출력하지 않습니다.
+실행하면 수집 범위와 텍스트 저장 형식을 묻고, 전체 관찰을 고르면 생성 과정과 prompt replay를
+함께 수집합니다. 생성 token별 Hook은 예측 forward 번호·token ID/piece·입력 token과 연결되며,
+대시보드의 생성 token 열에서 토큰별 0·11·23번 레이어 Hook 레코드를 확인할 수 있습니다.

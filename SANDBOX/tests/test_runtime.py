@@ -1,7 +1,10 @@
 import copy
+import base64
+import contextlib
 import importlib.util
 import io
 import json
+import sys
 from pathlib import Path
 import tarfile
 import tempfile
@@ -77,6 +80,134 @@ class ConfigurationTests(unittest.TestCase):
             value.update(change)
             with self.subTest(change=change), self.assertRaises(ValueError):
                 sandbox.validate_settings(value)
+
+
+class FileListingTests(unittest.TestCase):
+    def preview(self, root, path):
+        runtime = sandbox.Runtime(ROOT)
+
+        def control(args, **kwargs):
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output), patch("sys.argv", ["preview", args[5]]):
+                try:
+                    exec(args[4].replace("root = '/workspace'", f"root = {str(root)!r}"), {})
+                except SystemExit as error:
+                    self.assertEqual(error.code, 0)
+            return output.getvalue().encode()
+
+        with patch.object(runtime, "cid", return_value="test-container"), \
+                patch.object(runtime, "control", side_effect=control):
+            return runtime.read_file(path)
+
+    def test_preview_image_metadata_has_no_size_limit(self):
+        png = base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1sAAAAASUVORK5CYII=')
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for data, mime in [(png, 'image/png'), (b'\xff\xd8\xff' + b'x' * 70000, 'image/jpeg'),
+                               (b'GIF89a', 'image/gif'), (b'RIFF0000WEBP', 'image/webp'),
+                               (b'BM0000', 'image/bmp'), (b'\x00\x00\x01\x00', 'image/x-icon'),
+                               (b'0000ftypavif', 'image/avif')]:
+                with self.subTest(mime=mime):
+                    (root / 'image').write_bytes(data)
+                    result = self.preview(root, '/workspace/image')
+                    self.assertEqual(result['mime'], mime)
+                    self.assertEqual(result['size'], len(data))
+                    self.assertNotIn('image_base64', result)
+                    self.assertFalse(result['truncated'])
+            (root / 'large.png').write_bytes(png + b'x' * (10 * 1024 * 1024))
+            result = self.preview(root, '/workspace/large.png')
+            self.assertFalse(result['truncated'])
+            self.assertEqual(result['size'], len(png) + 10 * 1024 * 1024)
+
+    def test_image_stream_preserves_large_file_and_rejects_non_images(self):
+        runtime = sandbox.Runtime(ROOT)
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            data = b'\x89PNG\r\n\x1a\n' + b'x' * (11 * 1024 * 1024)
+            (root / 'image.png').write_bytes(data)
+            (root / 'text.txt').write_text('hello')
+            (root / 'link.png').symlink_to(root / 'image.png')
+
+            def command(args):
+                script = args[4].replace("root = '/workspace'", f"root = {folder!r}")
+                return [sys.executable, '-c', script, *args[5:]]
+
+            with patch.object(runtime, 'cid', return_value='test-container'), \
+                    patch.object(runtime, 'command', side_effect=command):
+                with tempfile.TemporaryFile() as output:
+                    runtime.read_file('/workspace/image.png', image_output=output)
+                    output.seek(0)
+                    self.assertEqual(output.readline(), b'image/png\n')
+                    self.assertEqual(output.read(), data)
+                for path in ('text.txt', 'link.png', 'missing.png'):
+                    with self.subTest(path=path), tempfile.TemporaryFile() as output:
+                        with self.assertRaises(RuntimeError):
+                            runtime.read_file('/workspace/' + path, image_output=output)
+
+    def test_preview_text_binary_empty_and_truncated_utf8(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for data, content, binary, truncated in [
+                ("한글 <script> &\n".encode(), "한글 <script> &\n", False, False),
+                (b"", "", False, False),
+                (b"abc\x00", "", True, False),
+                (b"\xff", "", True, False),
+                (b"a" * 65535 + "한".encode(), "a" * 65535, False, True),
+            ]:
+                with self.subTest(data_length=len(data)):
+                    (root / "file.txt").write_bytes(data)
+                    result = self.preview(root, "/workspace/file.txt")
+                    self.assertEqual(result["content"], content)
+                    self.assertEqual(result["binary"], binary)
+                    self.assertEqual(result["truncated"], truncated)
+                    self.assertEqual(result["size"], len(data))
+
+    def test_preview_rejects_escape_paths_links_and_directories(self):
+        runtime = sandbox.Runtime(ROOT)
+        for path in ("/etc/passwd", "/workspace/../etc/passwd", "/workspace/", "/workspace/a\x00"):
+            with self.subTest(path=path), self.assertRaises(ValueError):
+                runtime.read_file(path)
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / "folder").mkdir()
+            (root / "file.txt").write_text("hello")
+            (root / "link").symlink_to(root / "file.txt")
+            (root / "dirlink").symlink_to(root, target_is_directory=True)
+            for path in ("folder", "link", "dirlink/file.txt", "missing"):
+                with self.subTest(path=path), self.assertRaises((OSError, ValueError)):
+                    self.preview(root, "/workspace/" + path)
+
+    def test_stopped_sandbox_has_no_entries(self):
+        runtime = sandbox.Runtime(ROOT)
+        with patch.object(runtime, "cid", return_value=None):
+            self.assertEqual(runtime.list_files(), {
+                "status": "STOPPED", "root": "/workspace", "entries": []})
+
+    def test_listing_includes_nested_and_hidden_files_without_following_links(self):
+        runtime = sandbox.Runtime(ROOT)
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / "nested").mkdir()
+            (root / "nested" / "한글.txt").write_bytes(b"abc")
+            (root / ".hidden").write_bytes(b"x")
+            (root / "link").symlink_to(root / "nested", target_is_directory=True)
+
+            def control(args, **kwargs):
+                self.assertEqual(args[:4], ["exec", "test-container", "python3", "-c"])
+                output = io.StringIO()
+                with contextlib.redirect_stdout(output):
+                    exec(args[4].replace("root = '/workspace'", f"root = {folder!r}"), {})
+                return output.getvalue().encode()
+
+            with patch.object(runtime, "cid", return_value="test-container"), \
+                    patch.object(runtime, "control", side_effect=control):
+                result = runtime.list_files()
+            entries = {Path(item["path"]).relative_to(root).as_posix(): item
+                       for item in result["entries"]}
+            self.assertEqual(set(entries), {"nested", "nested/한글.txt", ".hidden", "link"})
+            self.assertEqual(entries["nested/한글.txt"]["size"], 3)
+            self.assertEqual(entries["link"]["kind"], "symlink")
+            self.assertFalse(result["truncated"])
 
 
 class ArchiveTests(unittest.TestCase):

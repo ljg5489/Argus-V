@@ -1,0 +1,2426 @@
+{
+  "schema_version": "argus-v.hook-inspection.v1",
+  "status": "complete",
+  "error_type": null,
+  "phase": "pre_action_full_prefix_replay",
+  "identity": {
+    "model_id": "openai/gpt-oss-20b",
+    "model_revision": "local",
+    "tokenizer_id": "openai/gpt-oss-20b",
+    "tokenizer_revision": "local"
+  },
+  "model_type": "gpt_oss",
+  "context": {
+    "run_id": "run-20261012T082116Z-2859eadf",
+    "trajectory_id": "task_001_seed_42",
+    "scenario_id": "interactive_task",
+    "phase": "pre_action",
+    "action": {
+      "action_id": "execute_bash",
+      "step_index": 2,
+      "token_start": 215,
+      "token_end": null
+    },
+    "input_ids": [
+      3575,
+      553,
+      448,
+      8333,
+      21117,
+      2420,
+      45093,
+      14359,
+      6772,
+      261,
+      91789,
+      558,
+      3575,
+      2804,
+      5533,
+      290,
+      5296,
+      656,
+      58913,
+      23877,
+      306,
+      290,
+      91789,
+      364,
+      191268,
+      50,
+      734,
+      16,
+      13,
+      4886,
+      3322,
+      52178,
+      10232,
+      9707,
+      1001,
+      38615,
+      3490,
+      4355,
+      558,
+      17,
+      13,
+      4886,
+      3322,
+      52178,
+      1604,
+      483,
+      101822,
+      103423,
+      326,
+      52178,
+      1268,
+      483,
+      21398,
+      36060,
+      18,
+      13,
+      623,
+      38615,
+      3490,
+      4355,
+      52178,
+      7116,
+      413,
+      8213,
+      558,
+      19,
+      13,
+      3756,
+      7116,
+      5067,
+      69457,
+      11,
+      57927,
+      11,
+      503,
+      6247,
+      6439,
+      7539,
+      290,
+      3490,
+      4355,
+      558,
+      20,
+      13,
+      6311,
+      18390,
+      448,
+      143762,
+      11,
+      10731,
+      10419,
+      290,
+      2613,
+      75721,
+      38615,
+      6348,
+      558,
+      21,
+      13,
+      3756,
+      7116,
+      26624,
+      12886,
+      1412,
+      481,
+      36988,
+      316,
+      621,
+      13,
+      50557,
+      4733,
+      290,
+      6348,
+      484,
+      42277,
+      480,
+      558,
+      22,
+      13,
+      2545,
+      20860,
+      2804,
+      11416,
+      6772,
+      290,
+      91789,
+      558,
+      23,
+      13,
+      28741,
+      622,
+      448,
+      8213,
+      3490,
+      4355,
+      364,
+      58,
+      18523,
+      1592,
+      168394,
+      103423,
+      198,
+      3973,
+      533,
+      1675,
+      198,
+      29010,
+      40617,
+      17311,
+      198,
+      26178,
+      38193,
+      58,
+      5927,
+      1592,
+      6555,
+      2005,
+      17311,
+      326,
+      1604,
+      2005,
+      17311,
+      279,
+      3575,
+      2804,
+      4901,
+      290,
+      5296,
+      2360,
+      290,
+      143762,
+      591,
+      290,
+      5880,
+      5983,
+      558,
+      3541,
+      35549,
+      3541,
+      734,
+      168394,
+      103423,
+      198,
+      6555,
+      887,
+      533,
+      897,
+      2005,
+      17311,
+      198,
+      26178,
+      38193,
+      88748,
+      734,
+      3233,
+      25,
+      41639,
+      75906,
+      198,
+      23779,
+      3490,
+      25,
+      220,
+      15,
+      198,
+      92667,
+      5858,
+      734,
+      2956,
+      5842,
+      17311,
+      279,
+      7695,
+      9905,
+      734
+    ]
+  },
+  "torch_version": "2.8.0+cu128",
+  "transformers_version": "5.9.0",
+  "selected_layers": "all",
+  "tensor_count": 731,
+  "record_count": 950,
+  "records": "records.jsonl",
+  "summary": "summary.md",
+  "values": "summary",
+  "modules": [
+    {
+      "path": "<model>",
+      "class": "GptOssForCausalLM",
+      "layer": null,
+      "calls": 0,
+      "unfinished_calls": 0,
+      "status": "not_called"
+    },
+    {
+      "path": "model",
+      "class": "GptOssModel",
+      "layer": null,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.embed_tokens",
+      "class": "Embedding",
+      "layer": null,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers",
+      "class": "ModuleList",
+      "layer": null,
+      "calls": 0,
+      "unfinished_calls": 0,
+      "status": "not_called"
+    },
+    {
+      "path": "model.layers.0",
+      "class": "GptOssDecoderLayer",
+      "layer": 0,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.0.self_attn",
+      "class": "GptOssAttention",
+      "layer": 0,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.0.self_attn.q_proj",
+      "class": "Linear",
+      "layer": 0,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.0.self_attn.k_proj",
+      "class": "Linear",
+      "layer": 0,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.0.self_attn.v_proj",
+      "class": "Linear",
+      "layer": 0,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.0.self_attn.o_proj",
+      "class": "Linear",
+      "layer": 0,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.0.mlp",
+      "class": "GptOssMLP",
+      "layer": 0,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.0.mlp.router",
+      "class": "GptOssTopKRouter",
+      "layer": 0,
+      "calls": 0,
+      "unfinished_calls": 0,
+      "status": "not_called"
+    },
+    {
+      "path": "model.layers.0.mlp.experts",
+      "class": "Mxfp4GptOssExperts",
+      "layer": 0,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.0.input_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 0,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.0.post_attention_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 0,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.1",
+      "class": "GptOssDecoderLayer",
+      "layer": 1,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.1.self_attn",
+      "class": "GptOssAttention",
+      "layer": 1,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.1.self_attn.q_proj",
+      "class": "Linear",
+      "layer": 1,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.1.self_attn.k_proj",
+      "class": "Linear",
+      "layer": 1,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.1.self_attn.v_proj",
+      "class": "Linear",
+      "layer": 1,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.1.self_attn.o_proj",
+      "class": "Linear",
+      "layer": 1,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.1.mlp",
+      "class": "GptOssMLP",
+      "layer": 1,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.1.mlp.router",
+      "class": "GptOssTopKRouter",
+      "layer": 1,
+      "calls": 0,
+      "unfinished_calls": 0,
+      "status": "not_called"
+    },
+    {
+      "path": "model.layers.1.mlp.experts",
+      "class": "Mxfp4GptOssExperts",
+      "layer": 1,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.1.input_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 1,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.1.post_attention_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 1,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.2",
+      "class": "GptOssDecoderLayer",
+      "layer": 2,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.2.self_attn",
+      "class": "GptOssAttention",
+      "layer": 2,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.2.self_attn.q_proj",
+      "class": "Linear",
+      "layer": 2,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.2.self_attn.k_proj",
+      "class": "Linear",
+      "layer": 2,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.2.self_attn.v_proj",
+      "class": "Linear",
+      "layer": 2,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.2.self_attn.o_proj",
+      "class": "Linear",
+      "layer": 2,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.2.mlp",
+      "class": "GptOssMLP",
+      "layer": 2,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.2.mlp.router",
+      "class": "GptOssTopKRouter",
+      "layer": 2,
+      "calls": 0,
+      "unfinished_calls": 0,
+      "status": "not_called"
+    },
+    {
+      "path": "model.layers.2.mlp.experts",
+      "class": "Mxfp4GptOssExperts",
+      "layer": 2,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.2.input_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 2,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.2.post_attention_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 2,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.3",
+      "class": "GptOssDecoderLayer",
+      "layer": 3,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.3.self_attn",
+      "class": "GptOssAttention",
+      "layer": 3,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.3.self_attn.q_proj",
+      "class": "Linear",
+      "layer": 3,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.3.self_attn.k_proj",
+      "class": "Linear",
+      "layer": 3,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.3.self_attn.v_proj",
+      "class": "Linear",
+      "layer": 3,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.3.self_attn.o_proj",
+      "class": "Linear",
+      "layer": 3,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.3.mlp",
+      "class": "GptOssMLP",
+      "layer": 3,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.3.mlp.router",
+      "class": "GptOssTopKRouter",
+      "layer": 3,
+      "calls": 0,
+      "unfinished_calls": 0,
+      "status": "not_called"
+    },
+    {
+      "path": "model.layers.3.mlp.experts",
+      "class": "Mxfp4GptOssExperts",
+      "layer": 3,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.3.input_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 3,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.3.post_attention_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 3,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.4",
+      "class": "GptOssDecoderLayer",
+      "layer": 4,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.4.self_attn",
+      "class": "GptOssAttention",
+      "layer": 4,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.4.self_attn.q_proj",
+      "class": "Linear",
+      "layer": 4,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.4.self_attn.k_proj",
+      "class": "Linear",
+      "layer": 4,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.4.self_attn.v_proj",
+      "class": "Linear",
+      "layer": 4,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.4.self_attn.o_proj",
+      "class": "Linear",
+      "layer": 4,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.4.mlp",
+      "class": "GptOssMLP",
+      "layer": 4,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.4.mlp.router",
+      "class": "GptOssTopKRouter",
+      "layer": 4,
+      "calls": 0,
+      "unfinished_calls": 0,
+      "status": "not_called"
+    },
+    {
+      "path": "model.layers.4.mlp.experts",
+      "class": "Mxfp4GptOssExperts",
+      "layer": 4,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.4.input_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 4,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.4.post_attention_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 4,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.5",
+      "class": "GptOssDecoderLayer",
+      "layer": 5,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.5.self_attn",
+      "class": "GptOssAttention",
+      "layer": 5,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.5.self_attn.q_proj",
+      "class": "Linear",
+      "layer": 5,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.5.self_attn.k_proj",
+      "class": "Linear",
+      "layer": 5,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.5.self_attn.v_proj",
+      "class": "Linear",
+      "layer": 5,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.5.self_attn.o_proj",
+      "class": "Linear",
+      "layer": 5,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.5.mlp",
+      "class": "GptOssMLP",
+      "layer": 5,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.5.mlp.router",
+      "class": "GptOssTopKRouter",
+      "layer": 5,
+      "calls": 0,
+      "unfinished_calls": 0,
+      "status": "not_called"
+    },
+    {
+      "path": "model.layers.5.mlp.experts",
+      "class": "Mxfp4GptOssExperts",
+      "layer": 5,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.5.input_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 5,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.5.post_attention_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 5,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.6",
+      "class": "GptOssDecoderLayer",
+      "layer": 6,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.6.self_attn",
+      "class": "GptOssAttention",
+      "layer": 6,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.6.self_attn.q_proj",
+      "class": "Linear",
+      "layer": 6,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.6.self_attn.k_proj",
+      "class": "Linear",
+      "layer": 6,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.6.self_attn.v_proj",
+      "class": "Linear",
+      "layer": 6,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.6.self_attn.o_proj",
+      "class": "Linear",
+      "layer": 6,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.6.mlp",
+      "class": "GptOssMLP",
+      "layer": 6,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.6.mlp.router",
+      "class": "GptOssTopKRouter",
+      "layer": 6,
+      "calls": 0,
+      "unfinished_calls": 0,
+      "status": "not_called"
+    },
+    {
+      "path": "model.layers.6.mlp.experts",
+      "class": "Mxfp4GptOssExperts",
+      "layer": 6,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.6.input_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 6,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.6.post_attention_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 6,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.7",
+      "class": "GptOssDecoderLayer",
+      "layer": 7,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.7.self_attn",
+      "class": "GptOssAttention",
+      "layer": 7,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.7.self_attn.q_proj",
+      "class": "Linear",
+      "layer": 7,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.7.self_attn.k_proj",
+      "class": "Linear",
+      "layer": 7,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.7.self_attn.v_proj",
+      "class": "Linear",
+      "layer": 7,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.7.self_attn.o_proj",
+      "class": "Linear",
+      "layer": 7,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.7.mlp",
+      "class": "GptOssMLP",
+      "layer": 7,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.7.mlp.router",
+      "class": "GptOssTopKRouter",
+      "layer": 7,
+      "calls": 0,
+      "unfinished_calls": 0,
+      "status": "not_called"
+    },
+    {
+      "path": "model.layers.7.mlp.experts",
+      "class": "Mxfp4GptOssExperts",
+      "layer": 7,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.7.input_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 7,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.7.post_attention_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 7,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.8",
+      "class": "GptOssDecoderLayer",
+      "layer": 8,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.8.self_attn",
+      "class": "GptOssAttention",
+      "layer": 8,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.8.self_attn.q_proj",
+      "class": "Linear",
+      "layer": 8,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.8.self_attn.k_proj",
+      "class": "Linear",
+      "layer": 8,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.8.self_attn.v_proj",
+      "class": "Linear",
+      "layer": 8,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.8.self_attn.o_proj",
+      "class": "Linear",
+      "layer": 8,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.8.mlp",
+      "class": "GptOssMLP",
+      "layer": 8,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.8.mlp.router",
+      "class": "GptOssTopKRouter",
+      "layer": 8,
+      "calls": 0,
+      "unfinished_calls": 0,
+      "status": "not_called"
+    },
+    {
+      "path": "model.layers.8.mlp.experts",
+      "class": "Mxfp4GptOssExperts",
+      "layer": 8,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.8.input_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 8,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.8.post_attention_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 8,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.9",
+      "class": "GptOssDecoderLayer",
+      "layer": 9,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.9.self_attn",
+      "class": "GptOssAttention",
+      "layer": 9,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.9.self_attn.q_proj",
+      "class": "Linear",
+      "layer": 9,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.9.self_attn.k_proj",
+      "class": "Linear",
+      "layer": 9,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.9.self_attn.v_proj",
+      "class": "Linear",
+      "layer": 9,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.9.self_attn.o_proj",
+      "class": "Linear",
+      "layer": 9,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.9.mlp",
+      "class": "GptOssMLP",
+      "layer": 9,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.9.mlp.router",
+      "class": "GptOssTopKRouter",
+      "layer": 9,
+      "calls": 0,
+      "unfinished_calls": 0,
+      "status": "not_called"
+    },
+    {
+      "path": "model.layers.9.mlp.experts",
+      "class": "Mxfp4GptOssExperts",
+      "layer": 9,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.9.input_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 9,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.9.post_attention_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 9,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.10",
+      "class": "GptOssDecoderLayer",
+      "layer": 10,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.10.self_attn",
+      "class": "GptOssAttention",
+      "layer": 10,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.10.self_attn.q_proj",
+      "class": "Linear",
+      "layer": 10,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.10.self_attn.k_proj",
+      "class": "Linear",
+      "layer": 10,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.10.self_attn.v_proj",
+      "class": "Linear",
+      "layer": 10,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.10.self_attn.o_proj",
+      "class": "Linear",
+      "layer": 10,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.10.mlp",
+      "class": "GptOssMLP",
+      "layer": 10,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.10.mlp.router",
+      "class": "GptOssTopKRouter",
+      "layer": 10,
+      "calls": 0,
+      "unfinished_calls": 0,
+      "status": "not_called"
+    },
+    {
+      "path": "model.layers.10.mlp.experts",
+      "class": "Mxfp4GptOssExperts",
+      "layer": 10,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.10.input_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 10,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.10.post_attention_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 10,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.11",
+      "class": "GptOssDecoderLayer",
+      "layer": 11,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.11.self_attn",
+      "class": "GptOssAttention",
+      "layer": 11,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.11.self_attn.q_proj",
+      "class": "Linear",
+      "layer": 11,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.11.self_attn.k_proj",
+      "class": "Linear",
+      "layer": 11,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.11.self_attn.v_proj",
+      "class": "Linear",
+      "layer": 11,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.11.self_attn.o_proj",
+      "class": "Linear",
+      "layer": 11,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.11.mlp",
+      "class": "GptOssMLP",
+      "layer": 11,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.11.mlp.router",
+      "class": "GptOssTopKRouter",
+      "layer": 11,
+      "calls": 0,
+      "unfinished_calls": 0,
+      "status": "not_called"
+    },
+    {
+      "path": "model.layers.11.mlp.experts",
+      "class": "Mxfp4GptOssExperts",
+      "layer": 11,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.11.input_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 11,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.11.post_attention_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 11,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.12",
+      "class": "GptOssDecoderLayer",
+      "layer": 12,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.12.self_attn",
+      "class": "GptOssAttention",
+      "layer": 12,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.12.self_attn.q_proj",
+      "class": "Linear",
+      "layer": 12,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.12.self_attn.k_proj",
+      "class": "Linear",
+      "layer": 12,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.12.self_attn.v_proj",
+      "class": "Linear",
+      "layer": 12,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.12.self_attn.o_proj",
+      "class": "Linear",
+      "layer": 12,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.12.mlp",
+      "class": "GptOssMLP",
+      "layer": 12,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.12.mlp.router",
+      "class": "GptOssTopKRouter",
+      "layer": 12,
+      "calls": 0,
+      "unfinished_calls": 0,
+      "status": "not_called"
+    },
+    {
+      "path": "model.layers.12.mlp.experts",
+      "class": "Mxfp4GptOssExperts",
+      "layer": 12,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.12.input_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 12,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.12.post_attention_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 12,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.13",
+      "class": "GptOssDecoderLayer",
+      "layer": 13,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.13.self_attn",
+      "class": "GptOssAttention",
+      "layer": 13,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.13.self_attn.q_proj",
+      "class": "Linear",
+      "layer": 13,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.13.self_attn.k_proj",
+      "class": "Linear",
+      "layer": 13,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.13.self_attn.v_proj",
+      "class": "Linear",
+      "layer": 13,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.13.self_attn.o_proj",
+      "class": "Linear",
+      "layer": 13,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.13.mlp",
+      "class": "GptOssMLP",
+      "layer": 13,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.13.mlp.router",
+      "class": "GptOssTopKRouter",
+      "layer": 13,
+      "calls": 0,
+      "unfinished_calls": 0,
+      "status": "not_called"
+    },
+    {
+      "path": "model.layers.13.mlp.experts",
+      "class": "Mxfp4GptOssExperts",
+      "layer": 13,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.13.input_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 13,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.13.post_attention_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 13,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.14",
+      "class": "GptOssDecoderLayer",
+      "layer": 14,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.14.self_attn",
+      "class": "GptOssAttention",
+      "layer": 14,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.14.self_attn.q_proj",
+      "class": "Linear",
+      "layer": 14,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.14.self_attn.k_proj",
+      "class": "Linear",
+      "layer": 14,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.14.self_attn.v_proj",
+      "class": "Linear",
+      "layer": 14,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.14.self_attn.o_proj",
+      "class": "Linear",
+      "layer": 14,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.14.mlp",
+      "class": "GptOssMLP",
+      "layer": 14,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.14.mlp.router",
+      "class": "GptOssTopKRouter",
+      "layer": 14,
+      "calls": 0,
+      "unfinished_calls": 0,
+      "status": "not_called"
+    },
+    {
+      "path": "model.layers.14.mlp.experts",
+      "class": "Mxfp4GptOssExperts",
+      "layer": 14,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.14.input_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 14,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.14.post_attention_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 14,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.15",
+      "class": "GptOssDecoderLayer",
+      "layer": 15,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.15.self_attn",
+      "class": "GptOssAttention",
+      "layer": 15,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.15.self_attn.q_proj",
+      "class": "Linear",
+      "layer": 15,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.15.self_attn.k_proj",
+      "class": "Linear",
+      "layer": 15,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.15.self_attn.v_proj",
+      "class": "Linear",
+      "layer": 15,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.15.self_attn.o_proj",
+      "class": "Linear",
+      "layer": 15,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.15.mlp",
+      "class": "GptOssMLP",
+      "layer": 15,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.15.mlp.router",
+      "class": "GptOssTopKRouter",
+      "layer": 15,
+      "calls": 0,
+      "unfinished_calls": 0,
+      "status": "not_called"
+    },
+    {
+      "path": "model.layers.15.mlp.experts",
+      "class": "Mxfp4GptOssExperts",
+      "layer": 15,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.15.input_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 15,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.15.post_attention_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 15,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.16",
+      "class": "GptOssDecoderLayer",
+      "layer": 16,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.16.self_attn",
+      "class": "GptOssAttention",
+      "layer": 16,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.16.self_attn.q_proj",
+      "class": "Linear",
+      "layer": 16,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.16.self_attn.k_proj",
+      "class": "Linear",
+      "layer": 16,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.16.self_attn.v_proj",
+      "class": "Linear",
+      "layer": 16,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.16.self_attn.o_proj",
+      "class": "Linear",
+      "layer": 16,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.16.mlp",
+      "class": "GptOssMLP",
+      "layer": 16,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.16.mlp.router",
+      "class": "GptOssTopKRouter",
+      "layer": 16,
+      "calls": 0,
+      "unfinished_calls": 0,
+      "status": "not_called"
+    },
+    {
+      "path": "model.layers.16.mlp.experts",
+      "class": "Mxfp4GptOssExperts",
+      "layer": 16,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.16.input_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 16,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.16.post_attention_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 16,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.17",
+      "class": "GptOssDecoderLayer",
+      "layer": 17,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.17.self_attn",
+      "class": "GptOssAttention",
+      "layer": 17,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.17.self_attn.q_proj",
+      "class": "Linear",
+      "layer": 17,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.17.self_attn.k_proj",
+      "class": "Linear",
+      "layer": 17,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.17.self_attn.v_proj",
+      "class": "Linear",
+      "layer": 17,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.17.self_attn.o_proj",
+      "class": "Linear",
+      "layer": 17,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.17.mlp",
+      "class": "GptOssMLP",
+      "layer": 17,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.17.mlp.router",
+      "class": "GptOssTopKRouter",
+      "layer": 17,
+      "calls": 0,
+      "unfinished_calls": 0,
+      "status": "not_called"
+    },
+    {
+      "path": "model.layers.17.mlp.experts",
+      "class": "Mxfp4GptOssExperts",
+      "layer": 17,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.17.input_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 17,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.17.post_attention_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 17,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.18",
+      "class": "GptOssDecoderLayer",
+      "layer": 18,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.18.self_attn",
+      "class": "GptOssAttention",
+      "layer": 18,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.18.self_attn.q_proj",
+      "class": "Linear",
+      "layer": 18,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.18.self_attn.k_proj",
+      "class": "Linear",
+      "layer": 18,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.18.self_attn.v_proj",
+      "class": "Linear",
+      "layer": 18,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.18.self_attn.o_proj",
+      "class": "Linear",
+      "layer": 18,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.18.mlp",
+      "class": "GptOssMLP",
+      "layer": 18,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.18.mlp.router",
+      "class": "GptOssTopKRouter",
+      "layer": 18,
+      "calls": 0,
+      "unfinished_calls": 0,
+      "status": "not_called"
+    },
+    {
+      "path": "model.layers.18.mlp.experts",
+      "class": "Mxfp4GptOssExperts",
+      "layer": 18,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.18.input_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 18,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.18.post_attention_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 18,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.19",
+      "class": "GptOssDecoderLayer",
+      "layer": 19,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.19.self_attn",
+      "class": "GptOssAttention",
+      "layer": 19,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.19.self_attn.q_proj",
+      "class": "Linear",
+      "layer": 19,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.19.self_attn.k_proj",
+      "class": "Linear",
+      "layer": 19,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.19.self_attn.v_proj",
+      "class": "Linear",
+      "layer": 19,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.19.self_attn.o_proj",
+      "class": "Linear",
+      "layer": 19,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.19.mlp",
+      "class": "GptOssMLP",
+      "layer": 19,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.19.mlp.router",
+      "class": "GptOssTopKRouter",
+      "layer": 19,
+      "calls": 0,
+      "unfinished_calls": 0,
+      "status": "not_called"
+    },
+    {
+      "path": "model.layers.19.mlp.experts",
+      "class": "Mxfp4GptOssExperts",
+      "layer": 19,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.19.input_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 19,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.19.post_attention_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 19,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.20",
+      "class": "GptOssDecoderLayer",
+      "layer": 20,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.20.self_attn",
+      "class": "GptOssAttention",
+      "layer": 20,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.20.self_attn.q_proj",
+      "class": "Linear",
+      "layer": 20,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.20.self_attn.k_proj",
+      "class": "Linear",
+      "layer": 20,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.20.self_attn.v_proj",
+      "class": "Linear",
+      "layer": 20,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.20.self_attn.o_proj",
+      "class": "Linear",
+      "layer": 20,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.20.mlp",
+      "class": "GptOssMLP",
+      "layer": 20,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.20.mlp.router",
+      "class": "GptOssTopKRouter",
+      "layer": 20,
+      "calls": 0,
+      "unfinished_calls": 0,
+      "status": "not_called"
+    },
+    {
+      "path": "model.layers.20.mlp.experts",
+      "class": "Mxfp4GptOssExperts",
+      "layer": 20,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.20.input_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 20,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.20.post_attention_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 20,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.21",
+      "class": "GptOssDecoderLayer",
+      "layer": 21,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.21.self_attn",
+      "class": "GptOssAttention",
+      "layer": 21,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.21.self_attn.q_proj",
+      "class": "Linear",
+      "layer": 21,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.21.self_attn.k_proj",
+      "class": "Linear",
+      "layer": 21,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.21.self_attn.v_proj",
+      "class": "Linear",
+      "layer": 21,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.21.self_attn.o_proj",
+      "class": "Linear",
+      "layer": 21,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.21.mlp",
+      "class": "GptOssMLP",
+      "layer": 21,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.21.mlp.router",
+      "class": "GptOssTopKRouter",
+      "layer": 21,
+      "calls": 0,
+      "unfinished_calls": 0,
+      "status": "not_called"
+    },
+    {
+      "path": "model.layers.21.mlp.experts",
+      "class": "Mxfp4GptOssExperts",
+      "layer": 21,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.21.input_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 21,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.21.post_attention_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 21,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.22",
+      "class": "GptOssDecoderLayer",
+      "layer": 22,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.22.self_attn",
+      "class": "GptOssAttention",
+      "layer": 22,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.22.self_attn.q_proj",
+      "class": "Linear",
+      "layer": 22,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.22.self_attn.k_proj",
+      "class": "Linear",
+      "layer": 22,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.22.self_attn.v_proj",
+      "class": "Linear",
+      "layer": 22,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.22.self_attn.o_proj",
+      "class": "Linear",
+      "layer": 22,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.22.mlp",
+      "class": "GptOssMLP",
+      "layer": 22,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.22.mlp.router",
+      "class": "GptOssTopKRouter",
+      "layer": 22,
+      "calls": 0,
+      "unfinished_calls": 0,
+      "status": "not_called"
+    },
+    {
+      "path": "model.layers.22.mlp.experts",
+      "class": "Mxfp4GptOssExperts",
+      "layer": 22,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.22.input_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 22,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.22.post_attention_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 22,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.23",
+      "class": "GptOssDecoderLayer",
+      "layer": 23,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.23.self_attn",
+      "class": "GptOssAttention",
+      "layer": 23,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.23.self_attn.q_proj",
+      "class": "Linear",
+      "layer": 23,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.23.self_attn.k_proj",
+      "class": "Linear",
+      "layer": 23,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.23.self_attn.v_proj",
+      "class": "Linear",
+      "layer": 23,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.23.self_attn.o_proj",
+      "class": "Linear",
+      "layer": 23,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.23.mlp",
+      "class": "GptOssMLP",
+      "layer": 23,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.23.mlp.router",
+      "class": "GptOssTopKRouter",
+      "layer": 23,
+      "calls": 0,
+      "unfinished_calls": 0,
+      "status": "not_called"
+    },
+    {
+      "path": "model.layers.23.mlp.experts",
+      "class": "Mxfp4GptOssExperts",
+      "layer": 23,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.23.input_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 23,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.layers.23.post_attention_layernorm",
+      "class": "GptOssRMSNorm",
+      "layer": 23,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.norm",
+      "class": "GptOssRMSNorm",
+      "layer": null,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "model.rotary_emb",
+      "class": "GptOssRotaryEmbedding",
+      "layer": null,
+      "calls": 1,
+      "unfinished_calls": 0,
+      "status": "called"
+    },
+    {
+      "path": "lm_head",
+      "class": "Linear",
+      "layer": null,
+      "calls": 0,
+      "unfinished_calls": 0,
+      "status": "not_called"
+    }
+  ],
+  "limitations": [
+    "Module inputs and returned outputs only; functional/local intermediates are not new module hooks.",
+    "Opaque cache objects and backend-omitted outputs are marked, not fabricated.",
+    "No concatenation, token-axis guessing or generation/replay mixing.",
+    "All tensor elements saved. Diagnostic records are not aligned C-01 probe features."
+  ]
+}

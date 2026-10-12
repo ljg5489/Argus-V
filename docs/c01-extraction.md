@@ -247,3 +247,11 @@ HF hidden state와의 일치, causal prefix 일관성, 행동 경계·미래 토
 
 OpenAI의 초기 가이드와 설치한 Transformers 버전의 GPU 지원 조건은 다를 수 있다.
 여기서는 설치된 4.57.6의 코드를 기준으로 preflight를 만들며, 4090 실측 성공을 대신하지 않는다.
+
+## 추가: 전체 모듈 Hook 진단
+
+`HookInspection`으로 선택 레이어의 모든 실행된 하위 모듈 입력·출력과 튜플·딕셔너리의
+전체 tensor leaf를 저장할 수 있다. [전체 Hook 관찰 안내](hook-inspection.md)에 잔차 전·후
+위치, router/experts 관찰 범위, Agent 옵션과 파일 형식을 정리했다.
+기존 C-01 특징 스키마와 정렬 계약은 유지한다. 상세 진단은 별도 schema이며, module
+내부의 functional 연산이나 fused expert별 내부값까지 모두 관찰한다는 뜻은 아니다.

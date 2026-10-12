@@ -12,6 +12,7 @@ __all__ = [
     "BlockAdapter",
     "HookInspection",
     "ModelIdentity",
+    "HookInspection",
     "SnapshotContext",
     "TokenAlignment",
     "extract_prefix",

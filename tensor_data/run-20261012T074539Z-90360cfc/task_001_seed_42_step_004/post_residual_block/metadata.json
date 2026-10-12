@@ -1,0 +1,380 @@
+{
+  "schema_version": "argus-v.activation.v1",
+  "identity": {
+    "model_id": "openai/gpt-oss-20b",
+    "model_revision": "local",
+    "tokenizer_id": "openai/gpt-oss-20b",
+    "tokenizer_revision": "local"
+  },
+  "model_type": "gpt_oss",
+  "config_sha256": "90ee20fce92c862b07094ea73ab45613376db00739c4f8547c8f2e92badc468a",
+  "model_config": {
+    "_name_or_path": "/home/user/Desktop/Argus-V/gpt-oss-20b",
+    "architectures": [
+      "GptOssForCausalLM"
+    ],
+    "attention_bias": true,
+    "attention_dropout": 0.0,
+    "bos_token_id": null,
+    "chunk_size_feed_forward": 0,
+    "dtype": "bfloat16",
+    "eos_token_id": 200002,
+    "experts_per_token": 4,
+    "head_dim": 64,
+    "hidden_act": "silu",
+    "hidden_size": 2880,
+    "id2label": {
+      "0": "LABEL_0",
+      "1": "LABEL_1"
+    },
+    "initial_context_length": 4096,
+    "initializer_range": 0.02,
+    "intermediate_size": 2880,
+    "is_encoder_decoder": false,
+    "label2id": {
+      "LABEL_0": 0,
+      "LABEL_1": 1
+    },
+    "layer_types": [
+      "sliding_attention",
+      "full_attention",
+      "sliding_attention",
+      "full_attention",
+      "sliding_attention",
+      "full_attention",
+      "sliding_attention",
+      "full_attention",
+      "sliding_attention",
+      "full_attention",
+      "sliding_attention",
+      "full_attention",
+      "sliding_attention",
+      "full_attention",
+      "sliding_attention",
+      "full_attention",
+      "sliding_attention",
+      "full_attention",
+      "sliding_attention",
+      "full_attention",
+      "sliding_attention",
+      "full_attention",
+      "sliding_attention",
+      "full_attention"
+    ],
+    "max_position_embeddings": 131072,
+    "model_type": "gpt_oss",
+    "num_attention_heads": 64,
+    "num_experts_per_tok": 4,
+    "num_hidden_layers": 24,
+    "num_key_value_heads": 8,
+    "num_local_experts": 32,
+    "output_attentions": false,
+    "output_hidden_states": false,
+    "output_router_logits": false,
+    "pad_token_id": 199999,
+    "problem_type": null,
+    "quantization_config": {
+      "modules_to_not_convert": [
+        "model.layers.*.self_attn",
+        "model.layers.*.mlp.router",
+        "model.embed_tokens",
+        "lm_head"
+      ],
+      "quant_method": "mxfp4"
+    },
+    "return_dict": true,
+    "rms_norm_eps": 1e-05,
+    "rope_parameters": {
+      "beta_fast": 32.0,
+      "beta_slow": 1.0,
+      "factor": 32.0,
+      "original_max_position_embeddings": 4096,
+      "rope_theta": 150000,
+      "rope_type": "yarn",
+      "truncate": false
+    },
+    "router_aux_loss_coef": 0.9,
+    "sliding_window": 128,
+    "swiglu_limit": 7.0,
+    "tie_word_embeddings": false,
+    "transformers_version": "5.9.0",
+    "use_cache": true,
+    "vocab_size": 201088
+  },
+  "torch_version": "2.8.0+cu128",
+  "transformers_version": "5.9.0",
+  "context": {
+    "run_id": "run-20261012T074539Z-90360cfc",
+    "trajectory_id": "task_001_seed_42",
+    "scenario_id": "interactive_task",
+    "phase": "pre_action",
+    "action": {
+      "action_id": "execute_bash",
+      "step_index": 4,
+      "token_start": 443,
+      "token_end": null
+    }
+  },
+  "capture_mode": "full_prefix_replay",
+  "hook_point": "post_block_pre_final_norm",
+  "layer_index_base": 0,
+  "token_index_base": 0,
+  "pooling": "none",
+  "storage_dtype": "float32",
+  "observed_prefix_length": 443,
+  "prefix_ids_sha256": "4636c6843350cec88f846e890b6b133cef9cce60fbbd90448572f1d27eb2b947",
+  "alignment": [
+    {
+      "token_index": 442,
+      "token_id": 734,
+      "predicts_token_index": 443,
+      "tokens_until_action_start": 0
+    }
+  ],
+  "blocks": [
+    {
+      "key": "block_0000",
+      "layer_index": 0,
+      "module_path": "model.layers.0",
+      "source_dtype": "torch.bfloat16",
+      "shape": [
+        1,
+        2880
+      ]
+    },
+    {
+      "key": "block_0001",
+      "layer_index": 1,
+      "module_path": "model.layers.1",
+      "source_dtype": "torch.bfloat16",
+      "shape": [
+        1,
+        2880
+      ]
+    },
+    {
+      "key": "block_0002",
+      "layer_index": 2,
+      "module_path": "model.layers.2",
+      "source_dtype": "torch.bfloat16",
+      "shape": [
+        1,
+        2880
+      ]
+    },
+    {
+      "key": "block_0003",
+      "layer_index": 3,
+      "module_path": "model.layers.3",
+      "source_dtype": "torch.bfloat16",
+      "shape": [
+        1,
+        2880
+      ]
+    },
+    {
+      "key": "block_0004",
+      "layer_index": 4,
+      "module_path": "model.layers.4",
+      "source_dtype": "torch.bfloat16",
+      "shape": [
+        1,
+        2880
+      ]
+    },
+    {
+      "key": "block_0005",
+      "layer_index": 5,
+      "module_path": "model.layers.5",
+      "source_dtype": "torch.bfloat16",
+      "shape": [
+        1,
+        2880
+      ]
+    },
+    {
+      "key": "block_0006",
+      "layer_index": 6,
+      "module_path": "model.layers.6",
+      "source_dtype": "torch.bfloat16",
+      "shape": [
+        1,
+        2880
+      ]
+    },
+    {
+      "key": "block_0007",
+      "layer_index": 7,
+      "module_path": "model.layers.7",
+      "source_dtype": "torch.bfloat16",
+      "shape": [
+        1,
+        2880
+      ]
+    },
+    {
+      "key": "block_0008",
+      "layer_index": 8,
+      "module_path": "model.layers.8",
+      "source_dtype": "torch.bfloat16",
+      "shape": [
+        1,
+        2880
+      ]
+    },
+    {
+      "key": "block_0009",
+      "layer_index": 9,
+      "module_path": "model.layers.9",
+      "source_dtype": "torch.bfloat16",
+      "shape": [
+        1,
+        2880
+      ]
+    },
+    {
+      "key": "block_0010",
+      "layer_index": 10,
+      "module_path": "model.layers.10",
+      "source_dtype": "torch.bfloat16",
+      "shape": [
+        1,
+        2880
+      ]
+    },
+    {
+      "key": "block_0011",
+      "layer_index": 11,
+      "module_path": "model.layers.11",
+      "source_dtype": "torch.bfloat16",
+      "shape": [
+        1,
+        2880
+      ]
+    },
+    {
+      "key": "block_0012",
+      "layer_index": 12,
+      "module_path": "model.layers.12",
+      "source_dtype": "torch.bfloat16",
+      "shape": [
+        1,
+        2880
+      ]
+    },
+    {
+      "key": "block_0013",
+      "layer_index": 13,
+      "module_path": "model.layers.13",
+      "source_dtype": "torch.bfloat16",
+      "shape": [
+        1,
+        2880
+      ]
+    },
+    {
+      "key": "block_0014",
+      "layer_index": 14,
+      "module_path": "model.layers.14",
+      "source_dtype": "torch.bfloat16",
+      "shape": [
+        1,
+        2880
+      ]
+    },
+    {
+      "key": "block_0015",
+      "layer_index": 15,
+      "module_path": "model.layers.15",
+      "source_dtype": "torch.bfloat16",
+      "shape": [
+        1,
+        2880
+      ]
+    },
+    {
+      "key": "block_0016",
+      "layer_index": 16,
+      "module_path": "model.layers.16",
+      "source_dtype": "torch.bfloat16",
+      "shape": [
+        1,
+        2880
+      ]
+    },
+    {
+      "key": "block_0017",
+      "layer_index": 17,
+      "module_path": "model.layers.17",
+      "source_dtype": "torch.bfloat16",
+      "shape": [
+        1,
+        2880
+      ]
+    },
+    {
+      "key": "block_0018",
+      "layer_index": 18,
+      "module_path": "model.layers.18",
+      "source_dtype": "torch.bfloat16",
+      "shape": [
+        1,
+        2880
+      ]
+    },
+    {
+      "key": "block_0019",
+      "layer_index": 19,
+      "module_path": "model.layers.19",
+      "source_dtype": "torch.bfloat16",
+      "shape": [
+        1,
+        2880
+      ]
+    },
+    {
+      "key": "block_0020",
+      "layer_index": 20,
+      "module_path": "model.layers.20",
+      "source_dtype": "torch.bfloat16",
+      "shape": [
+        1,
+        2880
+      ]
+    },
+    {
+      "key": "block_0021",
+      "layer_index": 21,
+      "module_path": "model.layers.21",
+      "source_dtype": "torch.bfloat16",
+      "shape": [
+        1,
+        2880
+      ]
+    },
+    {
+      "key": "block_0022",
+      "layer_index": 22,
+      "module_path": "model.layers.22",
+      "source_dtype": "torch.bfloat16",
+      "shape": [
+        1,
+        2880
+      ]
+    },
+    {
+      "key": "block_0023",
+      "layer_index": 23,
+      "module_path": "model.layers.23",
+      "source_dtype": "torch.bfloat16",
+      "shape": [
+        1,
+        2880
+      ]
+    }
+  ],
+  "artifact": {
+    "filename": "features.npz",
+    "sha256": "5732050fb439c8ec9341e6a2fedce9c217b6afa14f5f978cece0261d2190dba6"
+  }
+}

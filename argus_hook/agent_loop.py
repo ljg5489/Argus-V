@@ -12,6 +12,16 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 
+# ============================================================
+# Argus-V 공식 모듈 임포트
+# ============================================================
+from argus_v.agent_actions import (
+    ACTION_SYSTEM_PROMPT,
+    generate_sandbox_action,
+    observation_message,
+    parse_action,
+)
+
 from argus_v.activations import (
     ActionSpan,
     BlockAdapter,
@@ -21,11 +31,6 @@ from argus_v.activations import (
     extract_prefix,
     write_capture,
 )
-
-# ============================================================
-# Argus-V 공식 모듈 임포트
-# ============================================================
-from argus_v.agent_actions import ACTION_SYSTEM_PROMPT, generate_sandbox_action, parse_action
 
 
 class RealSandboxClient:
@@ -77,7 +82,10 @@ class RealSandboxClient:
 
             if not data.get("stdout_tail") and not data.get("stderr_tail"):
                 if data.get("exit_code", 0) == 0 and status == "FINISHED":
-                    observation += "명령이 성공적으로 실행되었으나 출력(Output)이 없습니다."
+                    observation += (
+                        "명령이 성공했습니다. 표준출력이 비어 있습니다. "
+                        "파일 저장 명령은 정상적으로도 출력이 없으며, 파일이 비었다는 뜻은 아닙니다."
+                    )
                 else:
                     observation += "명령이 성공하지 않았거나 실행되지 않았습니다."
 
@@ -92,7 +100,7 @@ def extract_action(generated_text: str) -> str:
     return action[1] if action and action[0] == "bash" else ""
 
 
-def generate_action(model, tokenizer, context, max_new_tokens=1024, max_retries=3,
+def generate_action(model, tokenizer, context, max_new_tokens=1024, max_retries=10,
                     inspection_factory=None):
     result = generate_sandbox_action(
         model, tokenizer, context, max_new_tokens=max_new_tokens,
@@ -134,13 +142,15 @@ def main():
     parser = argparse.ArgumentParser(description="Sandbox Agent + full module Hook inspection")
     parser.add_argument("--tensor-output", type=Path, default=Path("tensor_data"))
     parser.add_argument("--task", help="Task text; omit for interactive entry")
-    parser.add_argument("--max-steps", type=int, default=5)
+    parser.add_argument("--max-steps", type=int, default=10)
     parser.add_argument("--max-new-tokens", type=int, default=1024)
+    parser.add_argument("--max-action-retries", type=int, default=10,
+                        help="Maximum generation attempts per step, including the first (default: 10)")
     parser.add_argument("--hook-phase", choices=("generation", "replay", "both"))
     parser.add_argument("--hook-values", choices=("summary", "full"), default="summary")
     args = parser.parse_args()
-    if args.max_steps < 1 or args.max_new_tokens < 1:
-        parser.error("max-steps and max-new-tokens must be positive")
+    if args.max_steps < 1 or args.max_new_tokens < 1 or args.max_action_retries < 1:
+        parser.error("max-steps, max-new-tokens and max-action-retries must be positive")
     if args.hook_phase is None:
         args.hook_phase, args.hook_values = choose_hook_options()
     layers = (0, 11, 23)
@@ -165,7 +175,7 @@ def main():
 
     trajectory_id = "task_001_seed_42"
     max_steps = args.max_steps
-    max_action_retries = 3
+    max_action_retries = args.max_action_retries
     run_id = datetime.now(timezone.utc).strftime("run-%Y%m%dT%H%M%SZ-") + uuid.uuid4().hex[:8]
 
     base_context = ACTION_SYSTEM_PROMPT
@@ -288,8 +298,7 @@ def main():
 
         context.extend([
             {"role": "assistant", "content": f"```bash\n{action_command}\n```"},
-            {"role": "user", "content": "Sandbox observation (actual controller output):\n"
-             + observation + "\nChoose the next allowed step, or stop if complete."},
+            {"role": "user", "content": observation_message(user_task, observation)},
         ])
 
     print("\n루프 종료 완료.")

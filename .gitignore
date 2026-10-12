@@ -24,3 +24,6 @@ data/activations/
 *.safetensors
 *.pt
 *.pth
+Research/*.sqlite3
+Research/*.sqlite3-wal
+Research/*.sqlite3-shm

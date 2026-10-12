@@ -3,6 +3,8 @@
 """Offline smoke demo using a tiny RANDOM gpt-oss architecture, not 20B weights."""
 
 import argparse
+from contextlib import nullcontext
+from dataclasses import asdict
 from pathlib import Path
 
 import torch
@@ -11,6 +13,7 @@ from transformers import GptOssConfig, GptOssForCausalLM
 from argus_v.activations import (
     ActionSpan,
     BlockAdapter,
+    HookInspection,
     ModelIdentity,
     SnapshotContext,
     extract_prefix,
@@ -21,6 +24,8 @@ from argus_v.activations import (
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=Path("artifacts/c01-demo"))
+    parser.add_argument("--inspect-hooks", action="store_true")
+    parser.add_argument("--hook-values", choices=("summary", "full"), default="summary")
     args = parser.parse_args()
     torch.manual_seed(7)
     torch.set_num_threads(1)
@@ -39,6 +44,7 @@ def main() -> None:
         rope_scaling=None,
     )
     config._attn_implementation = "eager"
+    config._experts_implementation = "eager"  # CPU-safe on Transformers 5.x as well.
     model = GptOssForCausalLM(config).eval()
     adapter = BlockAdapter.from_model(
         model,
@@ -49,7 +55,15 @@ def main() -> None:
     action = ActionSpan("send-report-001", 0, 4, 7)
     for phase, stop in (("pre_action", 4), ("pre_execution", 7)):
         context = SnapshotContext("demo-run", "trajectory-001", "mock-mail-v1", phase, action)
-        capture = extract_prefix(adapter, trajectory[:, :stop], context)
+        inspection = (
+            HookInspection(
+                adapter, args.output / (phase + "-hooks"), values=args.hook_values,
+                phase=phase + "_full_prefix_replay",
+                context={**asdict(context), "input_ids": trajectory[0, :stop].tolist()},
+            ) if args.inspect_hooks else nullcontext()
+        )
+        with inspection:
+            capture = extract_prefix(adapter, trajectory[:, :stop], context)
         location = write_capture(capture, args.output / phase)
         shapes = {key: list(value.shape) for key, value in capture.features.items()}
         print(f"{phase}: {location}, shapes={shapes}")
