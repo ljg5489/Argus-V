@@ -27,3 +27,6 @@ data/activations/
 Research/*.sqlite3
 Research/*.sqlite3-wal
 Research/*.sqlite3-shm
+
+# GPT-OSS Hook 실험 데이터
+tensor_data/

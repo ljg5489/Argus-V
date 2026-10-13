@@ -24,6 +24,7 @@ import tempfile
 import threading
 from collections import OrderedDict
 from datetime import datetime, timezone
+from hashlib import sha256
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
@@ -256,6 +257,24 @@ canvas{display:block;width:100%}
 #tv-records tr.selected td{background:var(--accent-soft)}
 #tv-records tr.selected td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
 #tv-values td{font-family:var(--mono);font-size:11.5px}
+/* teammate capture view */
+#cap-list tr[data-id]{cursor:pointer}
+#cap-list tr[data-id]:hover td{background:var(--surface-2)}
+#cap-list tr.selected td{background:var(--accent-soft)}
+#cap-list tr.selected td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+.cap-tokens{position:relative;max-height:300px;overflow:auto;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.cap-tok{padding:1px 1px;margin-right:1px;border-radius:4px;font-family:var(--mono);font-size:12px}
+.cap-tok.prompt{color:var(--muted)}
+.cap-tok.context{color:var(--text-2)}
+.cap-tok.reasoning{color:var(--text)}
+.cap-tok.observed{background:var(--highlight);color:var(--highlight-ink);font-weight:700}
+.cap-tok.action{color:var(--text);outline:1px dashed var(--accent);outline-offset:-1px}
+.cap-match{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface-2);margin-top:10px}
+.cap-match:first-child{margin-top:0}
+.cap-match table td,.cap-match table th{background:transparent}
+#tv-vocab-strip{height:44px;cursor:pointer}
+#tv-vocab-rows tr.tv-vocab-gen td{box-shadow:inset 0 1px 0 var(--highlight),inset 0 -1px 0 var(--highlight)}
+#tv-vocab-rows td{font-size:12px}
 /* tooltip */
 #tip{position:fixed;z-index:50;pointer-events:none;background:var(--surface);color:var(--text);border:1px solid var(--line-strong);border-radius:8px;padding:6px 9px;font-size:12px;box-shadow:0 6px 20px rgba(0,0,0,.3);max-width:320px;display:none;white-space:pre-line}
 #tip b{font-family:var(--mono)}
@@ -289,6 +308,7 @@ canvas{display:block;width:100%}
  <nav class="tabs" role="tablist">
   <button class="tab" type="button" role="tab" data-view="view-analysis" aria-selected="true">Hidden State 분석</button>
   <button class="tab" type="button" role="tab" data-view="view-tokens" aria-selected="false">토큰별 은닉 상태</button>
+  <button class="tab" type="button" role="tab" data-view="view-captures" aria-selected="false">팀원 Capture</button>
   <button class="tab" type="button" role="tab" data-view="view-compare" aria-selected="false">A/B 비교 <span id="ab-count" class="status"></span></button>
   <button class="tab" type="button" role="tab" data-view="view-hooks" aria-selected="false">Hook 위치</button>
   <button class="tab" type="button" role="tab" data-view="view-sandbox" aria-selected="false">Sandbox 파일</button>
@@ -401,9 +421,43 @@ canvas{display:block;width:100%}
      <div class="toolbar" style="margin-top:12px"><span id="tv-sorts" class="seg"><button type="button" data-sort="">index 순</button><button type="button" data-sort="value_desc">값 ↓</button><button type="button" data-sort="value_asc">값 ↑</button><button type="button" data-sort="abs_desc">|값| ↓</button></span><button id="tv-val-prev" type="button" disabled>← 256</button><button id="tv-val-next" type="button" disabled>256 →</button></div>
      <div id="tv-value-meta" class="status" style="margin-top:6px"></div>
      <div class="tablewrap valuebox"><table><thead><tr><th class="num">Flat index (토큰 slice)</th><th class="num">Value</th></tr></thead><tbody id="tv-values"></tbody></table></div>
+     <div class="toolbar" style="margin-top:18px"><h3>출력 어휘 투영 · 위 레코드의 토큰 벡터 → 201,088개 토큰</h3><label class="status"><input id="tv-vocab-norm" type="checkbox" checked> 최종 RMSNorm 적용 (logit lens)</label><span class="spacer"></span><input id="tv-vocab-q" type="search" placeholder="단어 · token ID 검색" style="width:200px"><button id="tv-vocab-find-gen" type="button">생성 토큰 찾기</button></div>
+     <div id="tv-vocab-summary" class="metrics" style="margin-top:8px"></div>
+     <div class="chartbox"><canvas id="tv-vocab-strip"></canvas></div>
+     <div class="legend"><span>token ID 0</span><span id="tv-vocab-lo" class="mono">—</span><div id="tv-vocab-bar" class="colorbar"></div><span id="tv-vocab-hi" class="mono">—</span><span class="status">구간별 최대 logit · 노랑 = 생성 토큰, 회색 = 예측 입력 토큰 · 클릭하면 그 ID 구간을 표로 이동</span><span class="spacer"></span><span id="tv-vocab-max-id" class="status"></span></div>
+     <div class="toolbar" style="margin-top:10px"><span id="tv-vocab-sorts" class="seg"><button type="button" data-sort="">logit ↓ (순위)</button><button type="button" data-sort="logit_asc">logit ↑</button><button type="button" data-sort="id">token ID 순</button></span><button id="tv-vocab-prev" type="button" disabled>← 100</button><span id="tv-vocab-page" class="status mono"></span><button id="tv-vocab-next" type="button" disabled>100 →</button><span id="tv-vocab-meta" class="status"></span></div>
+     <div class="tablewrap valuebox" style="max-height:440px"><table><thead><tr><th class="num">순위</th><th class="num">Token ID</th><th>단어</th><th>Tokenizer piece</th><th class="num">Logit</th><th class="num">확률 (softmax)</th></tr></thead><tbody id="tv-vocab-rows"></tbody></table></div>
     </div>
    </section>
   </div>
+ </div>
+</div>
+<div id="view-captures" class="view" hidden>
+ <section class="panel">
+  <div class="panel-head"><h2>팀원 C-01 Capture</h2><span class="status">write_capture 산출물(scripts/run_m1_sandbox.py 등) · 행동 직전 관찰 토큰 1개의 블록 출력</span><span id="cap-root" class="status hint"></span><button id="cap-refresh" type="button" class="primary">새로고침</button></div>
+  <div class="tablewrap" style="max-height:260px;min-height:0"><table><thead><tr><th>수집 시각</th><th>Run</th><th>시나리오</th><th>관찰 토큰</th><th class="num">Prefix</th><th>M1 판정</th><th>무결성</th><th>Task</th></tr></thead><tbody id="cap-list"><tr><td colspan="8"><div class="empty">탭을 열면 capture 목록을 불러옵니다.</div></td></tr></tbody></table></div>
+ </section>
+ <div id="cap-detail" style="display:grid;gap:16px;margin-top:16px">
+  <section class="panel">
+   <div class="panel-head detail-head"><h2 id="cap-title">Capture를 선택하세요</h2><div id="cap-sub" class="status"></div></div>
+   <div class="panel-body">
+    <div id="cap-metrics" class="metrics"></div>
+    <div class="toolbar"><h3>토큰 문맥</h3><span class="legend" style="margin:0"><span class="cap-tok prompt">prompt</span><span class="cap-tok reasoning">추론</span><span class="cap-tok observed">관찰 위치</span><span class="cap-tok action">행동 (관찰 이후)</span></span><span id="cap-token-meta" class="status"></span></div>
+    <div id="cap-tokens" class="tv-token-list cap-tokens"></div>
+   </div>
+  </section>
+  <section class="panel">
+   <div class="panel-head"><h2>관찰 토큰의 블록 출력 · Layer 0 / 11 / 23</h2><span id="cap-hook" class="status hint"></span></div>
+   <div class="panel-body"><div id="cap-cards" class="tv-cards"></div></div>
+  </section>
+  <section class="panel">
+   <div class="panel-head"><h2>작성자 HookInspection 기록과 대조</h2><span class="status hint">같은 token prefix를 관찰한 세션을 자동으로 찾아 같은 위치의 블록 출력을 비교합니다</span></div>
+   <div id="cap-matches" class="panel-body"></div>
+  </section>
+  <section class="panel">
+   <div class="panel-head"><h2>원소값</h2><span id="cap-val-layers" class="seg"></span><span id="cap-sorts" class="seg"><button type="button" data-sort="">index 순</button><button type="button" data-sort="value_desc">값 ↓</button><button type="button" data-sort="value_asc">값 ↑</button><button type="button" data-sort="abs_desc">|값| ↓</button></span><button id="cap-val-prev" type="button" disabled>← 256</button><button id="cap-val-next" type="button" disabled>256 →</button></div>
+   <div class="panel-body"><div id="cap-value-meta" class="status"></div><div class="tablewrap valuebox"><table><thead><tr><th class="num">Hidden dim</th><th class="num">Value</th></tr></thead><tbody id="cap-values"></tbody></table></div></div>
+  </section>
  </div>
 </div>
 <div id="view-compare" class="view" hidden>
@@ -497,8 +551,8 @@ function histTip(ev,g,p,hist,range){const i=Math.floor((p.x-g.left)/g.bw);if(i<0
 
 /* ---------- tabs / theme / redraw ---------- */
 let lastPlot=null,lastHeat=null,lastHeatPos=-1,lastEmbed=null,lastCompare=null,histA=null,histB=null,promptPieces=[];
-function redrawAll(){tvRedraw();if(lastPlot)renderPlot(lastPlot);if(lastHeat)renderHeatmap(lastHeat,lastHeatPos);if(lastEmbed)renderEmbedding(lastEmbed);if(histA)drawHist('chart-a',histA,'A 분포');if(histB)drawHist('chart-b',histB,'B 분포');if(lastCompare)renderDelta(lastCompare)}
-function showView(id){document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.view===id)));document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!==id);hideTip();requestAnimationFrame(redrawAll);if(id==='view-tokens')tvEnsureLoaded();if(id==='view-hooks'&&!hookLoaded)loadHookSessions()}
+function redrawAll(){tvRedraw();capRedraw();if(lastPlot)renderPlot(lastPlot);if(lastHeat)renderHeatmap(lastHeat,lastHeatPos);if(lastEmbed)renderEmbedding(lastEmbed);if(histA)drawHist('chart-a',histA,'A 분포');if(histB)drawHist('chart-b',histB,'B 분포');if(lastCompare)renderDelta(lastCompare)}
+function showView(id){document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.view===id)));document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!==id);hideTip();requestAnimationFrame(redrawAll);if(id==='view-tokens')tvEnsureLoaded();if(id==='view-captures')capEnsureLoaded();if(id==='view-hooks'&&!hookLoaded)loadHookSessions()}
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>showView(t.dataset.view));$('open-compare').onclick=()=>showView('view-compare');
 $('theme-toggle').onclick=()=>{const next=document.documentElement.dataset.theme==='light'?'dark':'light';document.documentElement.dataset.theme=next;try{localStorage.setItem('argus-theme',next)}catch(e){}redrawAll()};
 document.querySelectorAll('details.section').forEach(d=>d.addEventListener('toggle',()=>{if(d.open)redrawAll()}));
@@ -663,7 +717,7 @@ $('hook-module-search').oninput=renderHookMap;
 $('hook-overview').onclick=event=>{const button=event.target.closest('[data-hook-layer]');if(button){hookLayer=button.dataset.hookLayer;renderHookMap()}};
 $('hook-tree').onclick=event=>{const button=event.target.closest('[data-hook-path]');if(button){hookSelected=button.dataset.hookPath;document.querySelectorAll('[data-hook-path]').forEach(node=>node.setAttribute('aria-pressed',String(node.dataset.hookPath===hookSelected)));renderHookDetail()}};
 /* ---------- token view: one generated token → hidden states at layers 0 / 11 / 23 ---------- */
-let tvLoaded=false,tvOffset=0,tvSessionReq=0,tvReq=0,tvDetailReq=0,tvValueReq=0,tvSession=null,tvTraj=null,tvToken=null,tvDetail=null,tvRecLayer=null,tvRecLoc=null,tvHeatLayer=null,tvValueKey=null,tvValueOffset=0,tvValueSort='',tvCards={};
+let tvLoaded=false,tvOffset=0,tvSessionReq=0,tvReq=0,tvDetailReq=0,tvValueReq=0,tvSession=null,tvTraj=null,tvToken=null,tvDetail=null,tvRecLayer=null,tvRecLoc=null,tvHeatLayer=null,tvValueKey=null,tvValueOffset=0,tvValueSort='',tvCards={},tvPendingToken=null;
 const tvPageSize=50,tvLayerVar=['--series-1','--series-2','--series-3'];
 const tvMetricLabel={l2:'L2 norm',cos_prev:'이전 토큰과 cosine',std:'표준편차',max_abs:'max |x|',mean:'평균'};
 const tvSortLabel={'':'index 순',value_desc:'값 내림차순',value_asc:'값 오름차순',abs_desc:'|값| 내림차순'};
@@ -685,7 +739,7 @@ async function tvLoadSessions(){const cur=++tvSessionReq;$('tv-status').textCont
 async function tvLoadSession(){const id=$('tv-session').value;if(!id)return;const cur=++tvReq;$('tv-status').textContent='세션 불러오는 중…';
  try{const d=await tvJson('/api/tokens/session?session='+encodeURIComponent(id));if(cur!==tvReq)return;
   const same=tvSession&&String(tvSession.session.id)===id;tvSession=d;
-  if(!same){tvToken=0;tvRecLayer=d.layers[0];tvHeatLayer=d.layers[0];tvRecLoc=null;tvValueKey=null}
+  if(!same||tvPendingToken!=null){tvToken=tvPendingToken??0;tvPendingToken=null;tvRecLayer=d.layers[0];tvHeatLayer=d.layers[0];tvRecLoc=null;tvValueKey=null}
   const locSel=$('tv-loc'),prevLoc=locSel.value||d.default_location,feat=d.locations.filter(l=>l.featured),rest=d.locations.filter(l=>!l.featured);
   locSel.innerHTML=`<optgroup label="주요 잔차 · 분기 위치">${feat.map(l=>`<option value="${esc(l.key)}">${esc(l.label)}</option>`).join('')}</optgroup><optgroup label="모든 tensor 위치">${rest.map(l=>`<option value="${esc(l.key)}">${esc(l.label)}</option>`).join('')}</optgroup>`;
   locSel.value=d.locations.some(l=>l.key===prevLoc)?prevLoc:d.default_location;
@@ -739,22 +793,53 @@ async function tvRenderCards(cur){const loc=$('tv-loc').value,label=tvLocLabel()
   try{const v=await tvJson('/api/tokens/vector?'+new URLSearchParams({session:sid,key:r.key,limit:'1'}));if(cur!==tvDetailReq)return;tvCards[L.layer]={v,li};tvRenderSpark(L.layer);
    $(`tv-top-${L.layer}`).innerHTML='<span class="status">|값| 상위</span>'+v.top.map(t=>`<code title="index ${t.index}">#${t.index} ${esc(fmt(t.value))}</code>`).join('')}catch(e){const el=$(`tv-top-${L.layer}`);if(el)el.textContent=e.message}}))}
 /* per-dimension envelope (min–max per bucket) of one layer's token vector */
-function tvRenderSpark(layer){const card=tvCards[layer],c=$(`tv-spark-${layer}`);if(!card||!c)return;const x=fitCanvas(c),s=c._s,W=c.width,H=c.height,env=card.v.envelope,n=env.min.length;if(!n)return;
+function drawEnvelope(c,env,numel,color,label){if(!c||!env)return;const x=fitCanvas(c),s=c._s,W=c.width,H=c.height,n=env.min.length;if(!n)return;
  const lo=Math.min(0,...env.min),hi=Math.max(0,...env.max),span=hi-lo||1,y=v=>H-2*s-(v-lo)/span*(H-4*s),bw=W/n;
  x.strokeStyle=cssVar('--line-strong');x.lineWidth=s;x.beginPath();x.moveTo(0,Math.round(y(0))+.5);x.lineTo(W,Math.round(y(0))+.5);x.stroke();
- x.fillStyle=tvLayerColor(card.li);for(let i=0;i<n;i++){const a=y(env.max[i]),b=y(env.min[i]);x.fillRect(i*bw,a,Math.max(1,bw-(bw>3*s?s:0)),Math.max(s,b-a))}
- c.onmousemove=ev=>{const p=canvasPoint(c,ev),i=Math.min(n-1,Math.max(0,Math.floor(p.x/bw))),b=env.bucket,end=Math.min(card.v.numel-1,(i+1)*b-1);showTip(ev,`<b>Layer ${layer} · index ${i*b}${end>i*b?'–'+end:''}</b>\nmin ${fmt(env.min[i])}\nmax ${fmt(env.max[i])}`)};c.onmouseleave=hideTip}
+ x.fillStyle=color;for(let i=0;i<n;i++){const a=y(env.max[i]),b=y(env.min[i]);x.fillRect(i*bw,a,Math.max(1,bw-(bw>3*s?s:0)),Math.max(s,b-a))}
+ c.onmousemove=ev=>{const p=canvasPoint(c,ev),i=Math.min(n-1,Math.max(0,Math.floor(p.x/bw))),b=env.bucket,end=Math.min(numel-1,(i+1)*b-1);showTip(ev,`<b>${label} · index ${i*b}${end>i*b?'–'+end:''}</b>\nmin ${fmt(env.min[i])}\nmax ${fmt(env.max[i])}`)};c.onmouseleave=hideTip}
+function tvRenderSpark(layer){const card=tvCards[layer];if(card)drawEnvelope($(`tv-spark-${layer}`),card.v.envelope,card.v.numel,tvLayerColor(card.li),`Layer ${layer}`)}
 function tvRenderRecords(){if(!tvDetail)return;document.querySelectorAll('#tv-rec-layers button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.layer===tvRecLayer)));
  const L=tvDetail.layers.find(L=>L.layer===tvRecLayer),rows=L?.records||[];
  $('tv-records').innerHTML=rows.map(r=>{const loc=`${r.rel}|${r.location}`,st=r.stats;return st?`<tr data-key="${esc(r.key)}" data-loc="${esc(loc)}" title="${esc(r.meaning||'')}"><td class="mono">${esc(r.module)}</td><td class="mono">${esc(r.location)}</td><td class="mono">${esc(JSON.stringify(r.shape))}</td><td class="num">${st.numel.toLocaleString()}</td><td class="num">${tvFmt(st.l2)}</td><td class="num">${tvFmt(st.mean)}</td><td class="num">${tvFmt(st.max_abs)}</td></tr>`:`<tr class="muted"><td class="mono">${esc(r.module)}</td><td class="mono">${esc(r.location)}</td><td colspan="5" style="white-space:normal">${esc(typeof r.value==='string'?r.value:JSON.stringify(r.value??r.dtype??'non-tensor'))}</td></tr>`}).join('')||'<tr><td colspan="7"><div class="empty">기록이 없습니다.</div></td></tr>';
  $('tv-rec-meta').textContent=`forward ${tvToken} · Layer ${tvRecLayer} · Hook 레코드 ${rows.length}개 (tensor ${rows.filter(r=>r.stats).length}개) · 행을 클릭하면 아래에 이 토큰의 원소값 표시`;
- const pick=rows.find(r=>r.stats&&`${r.rel}|${r.location}`===tvRecLoc)||tvRecordAt(L,$('tv-loc').value);if(pick){tvRecLoc=`${pick.rel}|${pick.location}`;tvValueOffset=0;tvLoadValues(pick.key)}else{tvValueKey=null;$('tv-values').innerHTML='';$('tv-value-meta').textContent=''}}
-async function tvLoadValues(key){if(!key||!tvSession)return;tvValueKey=key;document.querySelectorAll('#tv-records tr[data-key]').forEach(tr=>tr.classList.toggle('selected',tr.dataset.key===key));document.querySelectorAll('#tv-sorts button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.sort===tvValueSort)));const cur=++tvValueReq;
+ const pick=rows.find(r=>r.stats&&`${r.rel}|${r.location}`===tvRecLoc)||tvRecordAt(L,$('tv-loc').value);if(pick){tvRecLoc=`${pick.rel}|${pick.location}`;tvValueOffset=0;tvLoadValues(pick.key)}else{tvValueKey=null;$('tv-values').innerHTML='';$('tv-value-meta').textContent='';tvVocabReset()}}
+async function tvLoadValues(key){if(!key||!tvSession)return;tvValueKey=key;if(key!==tvVocabKey){tvVocabOffset=0;tvLoadVocab()}document.querySelectorAll('#tv-records tr[data-key]').forEach(tr=>tr.classList.toggle('selected',tr.dataset.key===key));document.querySelectorAll('#tv-sorts button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.sort===tvValueSort)));const cur=++tvValueReq;
  try{const d=await tvJson('/api/tokens/vector?'+new URLSearchParams({session:tvSession.session.id,key,offset:String(tvValueOffset),limit:'256',sort:tvValueSort}));if(cur!==tvValueReq)return;const mean=d.stats.mean,std=d.stats.std;
   $('tv-values').innerHTML=d.values.map(v=>{const hot=typeof v.value==='number'&&std>0&&Math.abs(v.value-mean)>3*std;return `<tr><td class="num">${v.index}</td><td class="num ${hot?'outlier':''}">${esc(v.value)}</td></tr>`}).join('');
   $('tv-value-meta').textContent=`Layer ${d.layer} · ${d.module} · ${d.location} · 원본 ${JSON.stringify(d.shape)} → 토큰 slice ${JSON.stringify(d.token_shape)} · ${d.offset}–${d.offset+d.values.length} / ${d.numel.toLocaleString()} · ${tvSortLabel[tvValueSort]} · 빨강 ● = 이 토큰 slice 평균에서 3σ 초과`;
   $('tv-val-prev').disabled=d.offset===0;$('tv-val-next').disabled=d.offset+d.values.length>=d.numel}catch(e){if(cur===tvValueReq)$('tv-value-meta').textContent='원소값 조회 실패: '+e.message}}
-function tvRedraw(){if($('view-tokens').hidden)return;tvRenderTrend();tvRenderHeat();for(const L of Object.keys(tvCards))tvRenderSpark(L)}
+/* ---------- output vocabulary projection (logit lens) of the selected token vector ---------- */
+let tvVocabKey=null,tvVocabReq=0,tvVocabOffset=0,tvVocabSort='',tvVocab=null;const tvVocabLimit=100;
+function tvVocabReset(){tvVocabKey=null;tvVocab=null;++tvVocabReq;$('tv-vocab-rows').innerHTML='';$('tv-vocab-summary').innerHTML='';$('tv-vocab-meta').textContent='';$('tv-vocab-page').textContent='';fitCanvas($('tv-vocab-strip'))}
+async function tvLoadVocab(){const key=tvValueKey;if(!key||!tvSession)return;tvVocabKey=key;document.querySelectorAll('#tv-vocab-sorts button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.sort===tvVocabSort)));const cur=++tvVocabReq;
+ $('tv-vocab-meta').textContent='201,088개 토큰에 투영 중… (첫 계산은 lm_head 가중치를 읽느라 몇 초 걸릴 수 있습니다)';
+ try{const d=await tvJson('/api/tokens/vocab?'+new URLSearchParams({session:tvSession.session.id,key,offset:String(tvVocabOffset),limit:String(tvVocabLimit),sort:tvVocabSort,q:$('tv-vocab-q').value.trim(),norm:$('tv-vocab-norm').checked?'1':'0'}));if(cur!==tvVocabReq)return;tvVocab=d;tvRenderVocab()}
+ catch(e){if(cur!==tvVocabReq)return;tvVocab=null;$('tv-vocab-rows').innerHTML=`<tr><td colspan="6"><div class="empty">${esc(e.message)}</div></td></tr>`;$('tv-vocab-summary').innerHTML='';$('tv-vocab-meta').textContent='';$('tv-vocab-page').textContent='';$('tv-vocab-prev').disabled=$('tv-vocab-next').disabled=true;fitCanvas($('tv-vocab-strip'))}}
+function tvVocabWord(r){return r.text==null?'<span class="muted">(미할당 ID)</span>':esc(tvShow(r.text))}
+function tvRenderVocab(){const d=tvVocab,st=d.stats,m=Math.max(Math.abs(st.max),Math.abs(st.min))||1,neg=hexRgb(cssVar('--div-neg')),pos=hexRgb(cssVar('--div-pos')),gen=d.marks.generated,src=d.marks.source;
+ const prob=p=>p<1e-4?p.toExponential(2):(p*100).toFixed(2)+'%';
+ $('tv-vocab-rows').innerHTML=d.rows.map(r=>{const t=r.logit/m,c=t>=0?pos:neg,pw=Math.max(0,Math.min(100,r.prob*100));
+  return `<tr class="${gen&&r.id===gen.id?'tv-vocab-gen':''}"><td class="num">${r.rank.toLocaleString()}</td><td class="num">${r.id}</td><td class="mono${r.partial?' muted':''}">${tvVocabWord(r)}${gen&&r.id===gen.id?' <span class="badge safe">생성</span>':''}${src&&r.id===src.id?' <span class="badge unknown">입력</span>':''}</td><td class="mono muted">${esc(r.piece??'')}</td><td class="num mono" style="background:rgba(${c.join(',')},${(Math.min(1,Math.abs(t))*.55).toFixed(3)})">${esc(fmt(r.logit))}</td><td class="num mono" style="background:linear-gradient(90deg,var(--accent-soft) ${pw}%,transparent ${pw}%)">${prob(r.prob)}</td></tr>`}).join('')||'<tr><td colspan="6"><div class="empty">검색 결과가 없습니다.</div></td></tr>';
+ const mark=r=>r?`"${tvShow(r.text??'(미할당)')}" · id ${r.id} · 순위 ${r.rank.toLocaleString()} · p ${prob(r.prob)}`:'—';
+ $('tv-vocab-summary').innerHTML=[['투영 대상',`Layer ${d.layer} · ${d.module} · ${d.location}`],['계산',d.is_model_output?'마지막 레이어 출력 → 실제 모델 출력 logit과 같은 계산':d.apply_norm?'logit lens: 최종 RMSNorm → lm_head':'RMSNorm 없이 lm_head만 적용'],['실제 생성 토큰',mark(gen)],['예측 입력 토큰',mark(src)],['1위 토큰',mark(d.top[0])],['엔트로피',`${fmt(d.stats.entropy)} nats`],['logit 범위',`${fmt(st.min)} ~ ${fmt(st.max)} · mean ${fmt(st.mean)}`]].map(([a,b])=>`<div class="metric"><b>${esc(a)}</b>${esc(b)}</div>`).join('');
+ $('tv-vocab-page').textContent=d.total?`${(d.offset+1).toLocaleString()}–${(d.offset+d.rows.length).toLocaleString()} / ${d.total.toLocaleString()}`:'0';
+ $('tv-vocab-meta').textContent=`${{'':'logit 내림차순',logit_asc:'logit 오름차순',id:'token ID 순'}[d.sort]||''}${d.query?` · 검색 "${d.query}"`:''} · 어휘 ${d.vocab_size.toLocaleString()} × 은닉 ${d.hidden_size.toLocaleString()} · logit 칸 색 = 부호와 크기`;
+ $('tv-vocab-max-id').textContent=`token ID ${(d.vocab_size-1).toLocaleString()}`;
+ $('tv-vocab-prev').disabled=d.offset===0;$('tv-vocab-next').disabled=d.offset+d.rows.length>=d.total;tvRenderVocabStrip()}
+function tvRenderVocabStrip(){const c=$('tv-vocab-strip'),x=fitCanvas(c),d=tvVocab;if(!d)return;const s=c._s,W=c.width,H=c.height,env=d.envelope,n=env.max.length,lo=Math.min(...env.max),hi=Math.max(...env.max),span=hi-lo||1,sLo=hexRgb(cssVar('--seq-lo')),sHi=hexRgb(cssVar('--seq-hi')),bw=W/n;
+ for(let i=0;i<n;i++){x.fillStyle=`rgb(${mix(sLo,sHi,(env.max[i]-lo)/span).join(',')})`;x.fillRect(Math.floor(i*bw),0,Math.ceil(bw)+1,H)}
+ for(const [mark,color] of [[d.marks.source,cssVar('--text-2')],[d.marks.generated,cssVar('--highlight')]]){if(!mark)continue;const px=Math.floor(mark.id/env.bucket)*bw,w=Math.max(4*s,bw);x.lineWidth=3*s;x.strokeStyle='#000';x.strokeRect(px,1.5*s,w,H-3*s);x.lineWidth=1.5*s;x.strokeStyle=color;x.strokeRect(px,1.5*s,w,H-3*s)}
+ const rgb=v=>`rgb(${v.join(',')})`;$('tv-vocab-lo').textContent=fmt(lo);$('tv-vocab-hi').textContent=fmt(hi);$('tv-vocab-bar').style.background=`linear-gradient(90deg,${rgb(sLo)},${rgb(sHi)})`;
+ const at=ev=>Math.min(n-1,Math.max(0,Math.floor(canvasPoint(c,ev).x/bw)));
+ c.onmousemove=ev=>{const i=at(ev),a=i*env.bucket,b=Math.min(d.vocab_size-1,a+env.bucket-1);showTip(ev,`<b>token ID ${a.toLocaleString()}–${b.toLocaleString()}</b>\n최대 logit ${fmt(env.max[i])}\n최소 logit ${fmt(env.min[i])}\n클릭: 이 구간을 표에서 보기`)};c.onmouseleave=hideTip;
+ c.onclick=ev=>{const i=at(ev);tvVocabSort='id';$('tv-vocab-q').value='';tvVocabOffset=Math.floor(i*env.bucket/tvVocabLimit)*tvVocabLimit;tvLoadVocab()}}
+$('tv-vocab-norm').onchange=()=>{tvVocabOffset=0;tvLoadVocab()};
+let tvVocabSearchTimer=null;$('tv-vocab-q').oninput=()=>{clearTimeout(tvVocabSearchTimer);tvVocabSearchTimer=setTimeout(()=>{tvVocabOffset=0;tvLoadVocab()},300)};
+$('tv-vocab-sorts').onclick=ev=>{const b=ev.target.closest('button[data-sort]');if(!b)return;tvVocabSort=b.dataset.sort;tvVocabOffset=0;tvLoadVocab()};
+$('tv-vocab-prev').onclick=()=>{tvVocabOffset=Math.max(0,tvVocabOffset-tvVocabLimit);tvLoadVocab()};$('tv-vocab-next').onclick=()=>{tvVocabOffset+=tvVocabLimit;tvLoadVocab()};
+$('tv-vocab-find-gen').onclick=()=>{const gen=tvVocab?.marks.generated;if(!gen)return;$('tv-vocab-q').value=String(gen.id);tvVocabOffset=0;tvLoadVocab()};
+function tvRedraw(){if($('view-tokens').hidden)return;tvRenderTrend();tvRenderHeat();if(tvVocab)tvRenderVocabStrip();for(const L of Object.keys(tvCards))tvRenderSpark(L)}
 $('tv-trend').onmousemove=ev=>{const c=$('tv-trend'),i=tvIndexAt(c,ev);tvRenderTrend(i);if(i<0||!tvSession){hideTip();return}const t=tvSession.tokens[i],m=$('tv-metric').value;showTip(ev,`<b>#${i} "${esc(tvShow(tvTokText(t)))}"</b>\n${tvMetricLabel[m]}\n`+tvTraj.layers.map(L=>`Layer ${L.layer}: ${L.metrics[i]?tvFmt(L.metrics[i][m]):'—'}`).join('\n'))};
 $('tv-trend').onmouseleave=()=>{hideTip();tvRenderTrend()};$('tv-trend').onclick=ev=>{const i=tvIndexAt($('tv-trend'),ev);if(i>=0)tvSelectToken(i)};
 $('tv-heat').onmousemove=ev=>{const c=$('tv-heat'),g=c._geom,i=tvIndexAt(c,ev);if(!g||i<0){hideTip();return}const p=canvasPoint(c,ev),row=Math.min(g.h.rows-1,Math.max(0,Math.floor(p.fy*g.h.rows))),t=tvSession.tokens[i];showTip(ev,`<b>#${i} "${esc(tvShow(tvTokText(t)))}"</b>\nLayer ${g.layer} · dim ${row*g.h.dim_step}\nvalue ${g.h.present[i]?esc(fmt(g.h.values[row*g.h.cols+i])):'기록 없음'}`)};
@@ -773,6 +858,50 @@ $('tv-sorts').onclick=ev=>{const b=ev.target.closest('button[data-sort]');if(!b)
 $('tv-val-prev').onclick=()=>{tvValueOffset=Math.max(0,tvValueOffset-256);tvLoadValues(tvValueKey)};$('tv-val-next').onclick=()=>{tvValueOffset+=256;tvLoadValues(tvValueKey)};
 document.addEventListener('keydown',ev=>{if($('view-tokens').hidden||!tvSession||ev.target.closest?.('input,select,textarea'))return;if(ev.key==='ArrowRight'||ev.key==='ArrowLeft'){ev.preventDefault();tvSelectToken(tvToken+(ev.key==='ArrowRight'?1:-1))}});
 if(location.pathname==='/tokens')showView('view-tokens');
+/* ---------- teammate C-01 captures (write_capture: one observed token per block) ---------- */
+let capLoaded=false,capListReq=0,capDetailReq=0,capValueReq=0,capList=[],capSelected=null,capDetail=null,capValLayer=null,capValueSort='abs_desc',capValueOffset=0;
+function capEnsureLoaded(){if(!capLoaded){capLoaded=true;capLoadList()}}
+function capBadge(c){const m=c.m1;if(!m)return '<span class="badge unknown">판정 없음</span>';const name=c.monitor||'M1';const cls=m.alarm===true?'danger':m.alarm===false?'safe':'unknown',label=m.alarm===true?`위험-${name}`:m.alarm===false?`${name} 비경고`:`${name} ${m.status||'미판정'}`;return `<span class="badge ${cls}" title="${esc(`status ${m.status} · score ${m.risk_score??'—'} · ${m.reason||m.error||''}`)}">${esc(label)}</span>`}
+function capVerified(v){return v===true?'<span class="badge safe" title="metadata.prefix_ids_sha256과 token ID 해시가 일치">prefix 일치</span>':v===false?'<span class="badge danger" title="token ID 해시가 metadata와 다릅니다">prefix 불일치</span>':'<span class="badge unknown" title="token ID 파일이 없습니다">ID 없음</span>'}
+function capTokText(t){return t?(t.text??(t.piece??`#${t.id}`)):'—'}
+async function capLoadList(){const cur=++capListReq;$('cap-list').innerHTML='<tr><td colspan="8"><div class="empty">불러오는 중…</div></td></tr>';
+ try{const d=await tvJson('/api/captures/list');if(cur!==capListReq)return;capList=d.captures;$('cap-root').textContent=d.root?`루트: ${d.root}`:'';
+  $('cap-list').innerHTML=capList.map(c=>`<tr data-id="${esc(c.id)}" class="${c.id===capSelected?'selected':''}"><td class="mono">${esc(c.started_at||'—')}</td><td class="mono" title="${esc(c.id)}">${esc(c.run_id||c.id)}</td><td>${esc(c.scenario_id||'—')} · ${esc(c.phase||'')}</td><td class="mono">#${esc(c.alignment?.token_index??'—')} ${esc(tvShow(capTokText(c.observed_token)))}</td><td class="num">${esc(c.observed_prefix_length??'—')}</td><td>${capBadge(c)}</td><td>${capVerified(c.prefix_verified)}</td><td class="task" title="${esc(c.task||'')}">${esc(c.task||'미기록')}</td></tr>`).join('')||'<tr><td colspan="8"><div class="empty">capture/metadata.json이 있는 실행 폴더가 없습니다.</div></td></tr>';
+  if(capList.length&&!capList.some(c=>c.id===capSelected))capSelect(capList[0].id);else if(capSelected)capSelect(capSelected)
+ }catch(e){if(cur===capListReq)$('cap-list').innerHTML=`<tr><td colspan="8"><div class="empty">${esc('목록 조회 실패: '+e.message)}</div></td></tr>`}}
+async function capSelect(id){capSelected=id;document.querySelectorAll('#cap-list tr[data-id]').forEach(tr=>tr.classList.toggle('selected',tr.dataset.id===id));const cur=++capDetailReq;$('cap-title').textContent='불러오는 중…';
+ try{const d=await tvJson('/api/captures/detail?'+new URLSearchParams({id}));if(cur!==capDetailReq)return;capDetail=d;if(!d.layers.some(L=>L.layer===capValLayer))capValLayer=d.layers[0]?.layer;capValueOffset=0;capRender()}
+ catch(e){if(cur===capDetailReq){$('cap-title').textContent='Capture 조회 실패';$('cap-sub').textContent=e.message}}}
+function capRender(){const d=capDetail,sp=d.spans,obs=sp.observed,prompt=sp.prompt_length??d.matches[0]?.prompt_length??null,act=d.action||{},md=d.metadata||{};
+ $('cap-title').textContent=`${d.run_id||d.id} · 관찰 토큰 #${obs} "${tvShow(capTokText(d.observed_token))}"`;
+ $('cap-sub').textContent=`${d.id} · ${md.capture_mode||'—'} · hook ${md.hook_point||'—'} · ${md.identity?.model_id||''} · torch ${md.torch_version||'—'} / transformers ${md.transformers_version||'—'} · 파일: ${d.sidecars.join(', ')}`;
+ const m1=d.m1;$('cap-metrics').innerHTML=[['Task',d.task||'미기록'],['Trusted policy',d.policy||'미기록'],['시나리오 / phase',`${d.scenario_id||'—'} / ${d.phase||'—'}`],['관찰 위치',`token #${obs} → 다음 토큰 #${d.alignment?.predicts_token_index??'—'} 예측 · 행동까지 ${d.alignment?.tokens_until_action_start??'—'} 토큰`],['행동 구간',`${act.action_id||'—'} · token ${act.token_start??'—'}–${act.token_end??'—'}`],['추론 구간',sp.reasoning?`token ${sp.reasoning[0]}–${sp.reasoning[1]}`:'—'],['Prefix 무결성',d.prefix_verified===true?'sha256 일치':d.prefix_verified===false?'sha256 불일치':'token ID 없음'],['M1 판정',m1?`${m1.alarm===true?'위험':m1.alarm===false?'비경고':'미판정'} · score ${m1.risk_score??'—'} · ${m1.status}`:'없음'],['M1 사유',m1?.reason||m1?.error||'—'],['최종 행동',d.action_text||'—']].map(([a,b])=>`<div class="metric"><b>${esc(a)}</b>${esc(b)}</div>`).join('');
+ const role=i=>i===obs?'observed':i>=(act.token_start??Infinity)?'action':prompt!=null&&i<prompt?'prompt':sp.reasoning&&i>=sp.reasoning[0]&&i<=sp.reasoning[1]?'reasoning':'context';
+ $('cap-tokens').innerHTML=d.tokens.map(t=>`<span class="cap-tok ${role(t.index)}" title="#${t.index} · id ${t.id} · piece ${esc(JSON.stringify(t.piece))}">${esc(String(capTokText(t)).replace(/\n/g,'⏎\n'))}</span>`).join('')||'<div class="empty">token ID 기록이 없습니다.</div>';
+ $('cap-token-meta').textContent=`${d.tokens.length}개 토큰 · prefix ${sp.prefix_length} (#0–#${sp.prefix_length-1})${prompt!=null?` · prompt ${prompt}`:''}${d.tokenizer_available?'':' · tokenizer 없음: ID만 표시'}`;
+ {const box=$('cap-tokens'),el=box.querySelector('.cap-tok.observed');if(el)box.scrollTop=Math.max(0,el.offsetTop-box.clientHeight/2)}
+ $('cap-hook').textContent=`${md.hook_point||''} · ${md.pooling||''} · ${md.storage_dtype||''}`;
+ $('cap-cards').innerHTML=d.layers.map((L,li)=>`<div class="tv-card"><h3><span class="tv-key" style="background:var(${tvLayerVar[li]||'--series-1'})"></span>Layer ${L.layer}<small class="muted" style="font-weight:400">${esc(L.module_path||'')} · ${esc(L.source_dtype||'')}</small></h3><div class="tv-stats">${[['L2',L.stats.l2],['mean',L.stats.mean],['std',L.stats.std],['min',L.stats.min],['max',L.stats.max],['max |x|',L.stats.max_abs]].map(([k,v])=>`<div title="${esc(v??'')}"><b>${k}</b><span>${tvFmt(v)}</span></div>`).join('')}</div><div class="chartbox"><canvas class="tv-spark" id="cap-spark-${L.layer}"></canvas></div><div class="axis-note"><span>dim 0</span><span>${esc(JSON.stringify(L.shape))} · 원소 ${L.numel.toLocaleString()}개</span></div><div class="tv-top"><span class="status">|값| 상위</span>${L.top.map(t=>`<code title="dim ${t.index}">#${t.index} ${esc(fmt(t.value))}</code>`).join('')}</div></div>`).join('');
+ capRedraw();capRenderMatches();
+ $('cap-val-layers').innerHTML=d.layers.map((L,li)=>`<button type="button" data-layer="${L.layer}" aria-pressed="${L.layer===capValLayer}"><span class="tv-key" style="background:var(${tvLayerVar[li]||'--series-1'})"></span>Layer ${L.layer}</button>`).join('');capLoadValues()}
+function capRenderMatches(){const d=capDetail,el=$('cap-matches');
+ if(!d.matches.length){el.innerHTML=`<div class="empty">작성자 HookInspection 기록 중 이 capture와 같은 token prefix(${d.spans.prefix_length}개)를 관찰한 세션이 없습니다. 별도로 실행된 run이면 정상입니다.</div>`;return}
+ el.innerHTML=d.matches.map((m,i)=>`<div class="cap-match"><div class="toolbar"><b class="mono" style="overflow-wrap:anywhere">${esc(m.artifact_dir)}</b><span class="spacer"></span>${m.mode==='generation'?`<button type="button" data-open="${i}">토큰별 은닉 상태에서 열기 →</button>`:''}</div>
+  <div class="status" style="margin:4px 0 8px">${m.mode==='generation'?`생성 forward ${m.forward_call_index} (KV cache) · 입력 위치 #${m.position} → 생성 토큰 #${m.generated_token_index} "${esc(tvShow(m.generated_text??''))}" 예측`:`prompt replay forward 0 · 위치 #${m.position}`} · prompt ${m.prompt_length} tokens · capture는 전체 prefix 재생 · 같은 모델이면 차이는 연산 경로(KV cache 여부)와 bf16 누적 오차에서 옵니다</div>
+  <table><thead><tr><th>Layer</th><th class="num">cosine</th><th class="num">상대 L2 오차</th><th class="num">max |차이|</th><th class="num">Hook L2</th><th class="num">Capture L2</th></tr></thead><tbody>${m.layers.map(L=>`<tr><td>Layer ${L.layer}</td><td class="num mono">${L.cosine==null?'—':L.cosine.toFixed(6)}</td><td class="num mono">${L.rel_l2==null?'—':(L.rel_l2*100).toFixed(2)+'%'}</td><td class="num mono">${tvFmt(L.max_abs_diff)}</td><td class="num mono">${tvFmt(L.hook_l2)}</td><td class="num mono">${tvFmt(L.capture_l2)}</td></tr>`).join('')}</tbody></table></div>`).join('')}
+function capRedraw(){if(!capDetail||$('view-captures').hidden)return;capDetail.layers.forEach((L,li)=>drawEnvelope($(`cap-spark-${L.layer}`),L.envelope,L.numel,tvLayerColor(li),`Layer ${L.layer}`))}
+async function capLoadValues(){if(!capDetail||capValLayer==null)return;document.querySelectorAll('#cap-sorts button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.sort===capValueSort)));const cur=++capValueReq;
+ try{const v=await tvJson('/api/captures/vector?'+new URLSearchParams({id:capDetail.id,layer:String(capValLayer),offset:String(capValueOffset),limit:'256',sort:capValueSort}));if(cur!==capValueReq)return;const mean=v.stats.mean,std=v.stats.std;
+  $('cap-values').innerHTML=v.values.map(x=>{const hot=typeof x.value==='number'&&std>0&&Math.abs(x.value-mean)>3*std;return `<tr><td class="num">${x.index}</td><td class="num ${hot?'outlier':''}">${esc(x.value)}</td></tr>`}).join('');
+  $('cap-value-meta').textContent=`Layer ${v.layer} · ${v.offset}–${v.offset+v.values.length} / ${v.numel.toLocaleString()} · ${tvSortLabel[capValueSort]} · 빨강 ● = 이 벡터 평균에서 3σ 초과`;$('cap-val-prev').disabled=v.offset===0;$('cap-val-next').disabled=v.offset+v.values.length>=v.numel}
+ catch(e){if(cur===capValueReq)$('cap-value-meta').textContent='원소값 조회 실패: '+e.message}}
+async function capOpenInTokens(m){tvLoaded=true;tvPendingToken=m.forward_call_index;tvOffset=0;$('tv-search').value=m.artifact_dir;showView('view-tokens');await tvLoadSessions()}
+$('cap-refresh').onclick=capLoadList;$('cap-list').onclick=ev=>{const tr=ev.target.closest('tr[data-id]');if(tr)capSelect(tr.dataset.id)};
+$('cap-val-layers').onclick=ev=>{const b=ev.target.closest('button[data-layer]');if(!b)return;capValLayer=+b.dataset.layer;capValueOffset=0;document.querySelectorAll('#cap-val-layers button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));capLoadValues()};
+$('cap-sorts').onclick=ev=>{const b=ev.target.closest('button[data-sort]');if(!b)return;capValueSort=b.dataset.sort;capValueOffset=0;capLoadValues()};
+$('cap-val-prev').onclick=()=>{capValueOffset=Math.max(0,capValueOffset-256);capLoadValues()};$('cap-val-next').onclick=()=>{capValueOffset+=256;capLoadValues()};
+$('cap-matches').onclick=ev=>{const b=ev.target.closest('button[data-open]');if(b)capOpenInTokens(capDetail.matches[+b.dataset.open])};
+if(location.pathname==='/captures')showView('view-captures');
 if(location.pathname==='/hooks')showView('view-hooks');
 
 </script></body></html>"""
@@ -1220,6 +1349,13 @@ class ArtifactIndex:
         meta = {key: row[key] for key in row.keys() if key != "context_json"}
         return session_dir, meta, json.loads(row["context_json"] or "{}")
 
+    def sessions_with_context(self) -> list[dict]:
+        with self.connect() as db:
+            rows = db.execute("""SELECT id, artifact_dir, run_id, step_name, status, phase, context_json
+                FROM sessions ORDER BY started_at DESC, id DESC""").fetchall()
+        return [{**{key: row[key] for key in row.keys() if key != "context_json"},
+                 "context": json.loads(row["context_json"] or "{}")} for row in rows]
+
     def token_forward_records(self, session_id: int, forward_index: int) -> list[tuple[str, dict]]:
         with self.connect() as db:
             rows = db.execute("""SELECT record_key, record_json FROM records WHERE session_id=?
@@ -1243,6 +1379,246 @@ class ArtifactIndex:
                 AND module IN ({marks}) AND location=? ORDER BY record_id""",
                 (session_id, *modules, location)).fetchall()
         return [(row["record_key"], json.loads(row["record_json"])) for row in rows]
+
+
+_TOKENIZER_CACHE: dict[str, dict[int, str]] = {}
+_TOKENIZER_LOCK = threading.Lock()
+
+
+def load_tokenizer_pieces(path: Path | None) -> dict[int, str]:
+    """id -> tokenizer piece from a Hugging Face tokenizer.json (vocab + added tokens); {} if unavailable."""
+    if path is None:
+        return {}
+    cache_key = str(path)
+    with _TOKENIZER_LOCK:
+        if cache_key not in _TOKENIZER_CACHE:
+            pieces: dict[int, str] = {}
+            try:
+                tokenizer = json.loads(Path(path).read_text(encoding="utf-8"))
+                vocab = tokenizer.get("model", {}).get("vocab") or {}
+                pieces = {int(index): piece for piece, index in vocab.items()}
+                pieces.update({int(item["id"]): item["content"] for item in tokenizer.get("added_tokens", [])})
+            except (OSError, AttributeError, TypeError, ValueError, KeyError):
+                pieces = {}
+            _TOKENIZER_CACHE[cache_key] = pieces
+        return _TOKENIZER_CACHE[cache_key]
+
+
+class LogitLens:
+    """Project a residual-stream vector onto the output vocabulary: lm_head(final_norm(h)).
+
+    BF16 weights are memory-mapped straight from the local safetensors checkpoint and never
+    modified. Applied to the last layer's block output this is the model's own next-token
+    logit computation (up to bf16 operation order).
+    """
+
+    def __init__(self, model_dir: Path | None, tokenizer_path: Path | None = None):
+        self.model_dir = model_dir
+        self.tokenizer_path = tokenizer_path
+        self._weights = None
+        self._error: str | None = None
+        self._vocab_text = None
+        self._lock = threading.Lock()
+        self._cache: OrderedDict = OrderedDict()
+
+    @staticmethod
+    def _bf16(values) -> np.ndarray:
+        return (np.asarray(values).astype(np.uint32) << 16).view(np.float32)
+
+    def _tensor(self, index: dict, name: str) -> np.ndarray:
+        path = (self.model_dir / index[name]).resolve()
+        if not path.is_relative_to(self.model_dir.resolve()):
+            raise ValueError("Invalid weight path.")
+        with path.open("rb") as handle:
+            header_size = int.from_bytes(handle.read(8), "little")
+            meta = json.loads(handle.read(header_size))[name]
+        if meta.get("dtype") != "BF16":
+            raise ValueError(f"{name} dtype {meta.get('dtype')} is not supported (BF16 expected).")
+        start, _end = meta["data_offsets"]
+        return np.memmap(path, dtype=np.uint16, mode="r", offset=8 + header_size + start, shape=tuple(meta["shape"]))
+
+    def _load(self):
+        with self._lock:
+            if self._weights is None and self._error is None:
+                try:
+                    if self.model_dir is None:
+                        raise ValueError("모델 폴더가 지정되지 않았습니다.")
+                    config = json.loads((self.model_dir / "config.json").read_text(encoding="utf-8"))
+                    index = json.loads((self.model_dir / "model.safetensors.index.json").read_text(encoding="utf-8"))["weight_map"]
+                    head = self._tensor(index, "lm_head.weight")
+                    norm = self._bf16(self._tensor(index, "model.norm.weight"))
+                    self._weights = {"head": head, "norm": norm, "eps": float(config.get("rms_norm_eps", 1e-5)),
+                                     "layers": int(config.get("num_hidden_layers", 0)),
+                                     "vocab": int(head.shape[0]), "hidden": int(head.shape[1])}
+                except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
+                    self._error = f"lm_head 가중치를 읽을 수 없습니다 ({self.model_dir}): {error}"
+        if self._weights is None:
+            raise ValueError(self._error or "lm_head 가중치를 읽을 수 없습니다.")
+        return self._weights
+
+    def info(self) -> dict:
+        weights = self._load()
+        return {key: weights[key] for key in ("vocab", "hidden", "layers", "eps")}
+
+    def vocab_text(self) -> tuple[list, list, list]:
+        """(text, piece, lowercase text) per token ID; IDs without a tokenizer entry are None."""
+        with self._lock:
+            if self._vocab_text is None:
+                size = self._weights["vocab"] if self._weights else 0
+                pieces = load_tokenizer_pieces(self.tokenizer_path)
+                texts, raw, lowered = [None] * size, [None] * size, [""] * size
+                for token_id, piece in pieces.items():
+                    if 0 <= token_id < size:
+                        decoded = decode_token_piece(piece)
+                        texts[token_id] = decoded
+                        raw[token_id] = piece
+                        lowered[token_id] = (decoded["text"] or "").casefold()
+                self._vocab_text = (texts, raw, lowered)
+            return self._vocab_text
+
+    def project(self, cache_key, vector: np.ndarray, apply_norm: bool = True) -> dict:
+        weights = self._load()
+        if vector.size != weights["hidden"]:
+            raise ValueError(f"원소 {vector.size:,}개는 은닉 차원 {weights['hidden']:,}과 달라 출력 어휘로 투영할 수 없습니다. "
+                             "블록 입·출력 같은 잔차 위치를 선택하세요.")
+        key = (cache_key, apply_norm)
+        with self._lock:
+            if key in self._cache:
+                self._cache.move_to_end(key)
+                return self._cache[key]
+        hidden = np.nan_to_num(vector.astype(np.float32), nan=0.0, posinf=0.0, neginf=0.0)
+        if apply_norm:
+            hidden = hidden / np.sqrt(np.mean(hidden * hidden) + weights["eps"]) * weights["norm"]
+        head, chunk = weights["head"], 32768
+        logits = np.empty(weights["vocab"], dtype=np.float32)
+        for start in range(0, weights["vocab"], chunk):
+            logits[start:start + chunk] = self._bf16(head[start:start + chunk]) @ hidden
+        order = np.argsort(-logits, kind="stable")
+        rank = np.empty_like(order)
+        rank[order] = np.arange(order.size)
+        wide = logits.astype(np.float64)
+        log_z = float(wide.max() + np.log(np.exp(wide - wide.max()).sum()))
+        probs = np.exp(wide - log_z)
+        result = {"logits": logits, "order": order, "rank": rank, "log_z": log_z,
+                  "entropy": float(-(probs * (wide - log_z)).sum())}
+        with self._lock:
+            self._cache[key] = result
+            while len(self._cache) > 12:
+                self._cache.popitem(last=False)
+        return result
+
+
+class CaptureIndex:
+    """Read-only view of C-01 captures written by write_capture (e.g. scripts/run_m1_sandbox.py).
+
+    Each <run>/capture/ holds metadata.json + features.npz (one observed token per block);
+    sibling JSON files from the same run add the task, token IDs and the M1 verdict.
+    """
+
+    SIDECARS = ("m1-result.json", "agent-generation.json", "c01-input.json", "m1-context.json", "run-summary.json")
+
+    def __init__(self, root: Path | None, tokenizer_path: Path | None = None):
+        self.root = root.resolve() if root else None
+        self.tokenizer_path = tokenizer_path
+
+    def _pieces(self) -> dict[int, str]:
+        return load_tokenizer_pieces(self.tokenizer_path)
+
+    def decode_ids(self, ids: list[int], pieces: list[str] | None = None) -> list[dict]:
+        table = None if pieces else self._pieces()
+        result = []
+        for index, token_id in enumerate(ids):
+            piece = pieces[index] if pieces and index < len(pieces) else (table or {}).get(int(token_id))
+            result.append({"index": index, "id": int(token_id), "piece": piece,
+                           **(decode_token_piece(piece) if piece is not None else {"text": None, "partial": False})})
+        return result
+
+    def _capture_dirs(self) -> list[Path]:
+        if self.root is None or not self.root.exists():
+            return []
+        return sorted({path.parent.parent for path in self.root.rglob("capture/metadata.json")})
+
+    def resolve(self, capture_id: str) -> Path:
+        if self.root is None:
+            raise ValueError("Capture 루트가 설정되지 않았습니다.")
+        folder = (self.root / capture_id).resolve()
+        if not folder.is_relative_to(self.root) or not (folder / "capture" / "metadata.json").is_file():
+            raise ValueError("Capture를 찾을 수 없습니다.")
+        return folder
+
+    @staticmethod
+    def _read_json(path: Path):
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return None
+
+    def load(self, capture_id: str) -> dict:
+        folder = self.resolve(capture_id)
+        metadata = self._read_json(folder / "capture" / "metadata.json") or {}
+        sidecars = {name: self._read_json(folder / name) for name in self.SIDECARS if (folder / name).is_file()}
+        generation = sidecars.get("agent-generation.json") or {}
+        replay_input = sidecars.get("c01-input.json") or {}
+        observed = int(metadata.get("observed_prefix_length") or 0)
+        all_ids = generation.get("input_ids") or replay_input.get("input_ids") or []
+        prefix = all_ids[:observed] if observed else all_ids
+        digest = sha256(json.dumps(prefix, separators=(",", ":")).encode("ascii")).hexdigest() if prefix else None
+        return {"id": capture_id, "folder": folder, "metadata": metadata, "sidecars": sidecars,
+                "all_ids": all_ids, "prefix_ids": prefix, "pieces": generation.get("token_pieces"),
+                "prefix_verified": None if digest is None else digest == metadata.get("prefix_ids_sha256")}
+
+    def features(self, capture: dict) -> dict[int, np.ndarray]:
+        archive = capture["folder"] / "capture" / (capture["metadata"].get("artifact", {}).get("filename") or "features.npz")
+        if not archive.resolve().is_relative_to(capture["folder"]):
+            raise ValueError("Invalid capture archive path.")
+        vectors = {}
+        with np.load(archive, allow_pickle=False) as data:
+            for block in capture["metadata"].get("blocks") or []:
+                if block.get("key") in data.files:
+                    vectors[int(block["layer_index"])] = np.asarray(data[block["key"]]).reshape(-1)
+        return vectors
+
+    def summary(self, capture: dict) -> dict:
+        metadata, sidecars = capture["metadata"], capture["sidecars"]
+        context = metadata.get("context") or {}
+        alignment = (metadata.get("alignment") or [{}])[0]
+        m1 = sidecars.get("m1-result.json") or {}
+        generation = sidecars.get("agent-generation.json") or {}
+        m1_context = sidecars.get("m1-context.json") or {}
+        run_summary = sidecars.get("run-summary.json") or {}
+        observed_index = alignment.get("token_index")
+        observed = None
+        if isinstance(observed_index, int) and 0 <= observed_index < len(capture["all_ids"]):
+            pieces = capture["pieces"]
+            observed = self.decode_ids([capture["all_ids"][observed_index]],
+                                       [pieces[observed_index]] if pieces and observed_index < len(pieces) else None)[0]
+            observed["index"] = observed_index
+        try:
+            fallback_time = datetime.fromtimestamp((capture["folder"] / "capture" / "metadata.json").stat().st_mtime,
+                                                   timezone.utc).isoformat()
+        except OSError:
+            fallback_time = None
+        return {"id": capture["id"], "run_id": context.get("run_id"), "trajectory_id": context.get("trajectory_id"),
+                "scenario_id": context.get("scenario_id"), "phase": context.get("phase"),
+                "action": context.get("action"), "capture_mode": metadata.get("capture_mode"),
+                "hook_point": metadata.get("hook_point"), "observed_prefix_length": metadata.get("observed_prefix_length"),
+                "alignment": alignment, "observed_token": observed,
+                "layers": [block.get("layer_index") for block in metadata.get("blocks") or []],
+                "task": generation.get("task") or m1_context.get("task"),
+                "policy": generation.get("trusted_policy") or m1_context.get("trusted_policy"),
+                "started_at": run_summary.get("started_at") or fallback_time,
+                "prefix_verified": capture["prefix_verified"],
+                "m1": {key: m1.get(key) for key in ("status", "risk_score", "alarm", "reason", "error")} if m1 else None,
+                "monitor": (m1.get("configuration") or {}).get("monitor") if m1 else None}
+
+    def entries(self) -> list[dict]:
+        items = []
+        for folder in self._capture_dirs():
+            try:
+                items.append(self.summary(self.load(folder.relative_to(self.root).as_posix())))
+            except (OSError, ValueError, TypeError, KeyError):
+                continue
+        return sorted(items, key=lambda item: item.get("started_at") or "", reverse=True)
 
 
 class DashboardHandler(BaseHTTPRequestHandler):
@@ -1375,6 +1751,108 @@ class DashboardHandler(BaseHTTPRequestHandler):
         except (OSError, ValueError, RuntimeError, subprocess.TimeoutExpired) as error:
             self._json({"status": "ERROR", "reason": str(error)}, 502)
 
+    # ---------- teammate C-01 captures ----------
+    captures: CaptureIndex | None = None
+    lens: LogitLens | None = None
+
+    def _capture_api(self, path: str, query: dict) -> None:
+        def arg(name, default=""):
+            return query.get(name, [default])[0]
+        if self.captures is None:
+            raise ValueError("Capture 루트가 설정되지 않았습니다.")
+        if path == "/api/captures/list":
+            self._json({"root": str(self.captures.root), "captures": self.captures.entries()})
+            return
+        capture = self.captures.load(arg("id"))
+        vectors = self.captures.features(capture)
+        if path == "/api/captures/detail":
+            summary = self.captures.summary(capture)
+            sidecars = capture["sidecars"]
+            generation = sidecars.get("agent-generation.json") or {}
+            m1_context = sidecars.get("m1-context.json") or {}
+            action = summary.get("action") or {}
+            spans = {"prompt_length": generation.get("prompt_length"),
+                     "reasoning": generation.get("reasoning_span") or m1_context.get("reasoning_token_span"),
+                     "action": [action.get("token_start"), action.get("token_end")],
+                     "observed": (summary.get("alignment") or {}).get("token_index"),
+                     "prefix_length": summary.get("observed_prefix_length")}
+            blocks = {int(block["layer_index"]): block for block in capture["metadata"].get("blocks") or []}
+            self._json({**summary, "spans": spans, "sidecars": sorted(sidecars),
+                        "metadata": {key: value for key, value in capture["metadata"].items() if key != "model_config"},
+                        "tokens": self.captures.decode_ids(capture["all_ids"], capture["pieces"]),
+                        "tokenizer_available": bool(capture["pieces"]) or bool(self.captures._pieces()),
+                        "final_text": generation.get("final_text"), "action_text": generation.get("action"),
+                        "layers": [{"layer": layer, "shape": blocks.get(layer, {}).get("shape"),
+                                    "module_path": blocks.get(layer, {}).get("module_path"),
+                                    "source_dtype": blocks.get(layer, {}).get("source_dtype"),
+                                    **self._vector_page(vector, 0, 1, "")}
+                                   for layer, vector in sorted(vectors.items())],
+                        "matches": self._capture_matches(capture["prefix_ids"], vectors)})
+            return
+        if path == "/api/captures/vector":
+            layer = int(arg("layer", "-1"))
+            if layer not in vectors:
+                raise ValueError("Capture에 해당 레이어가 없습니다.")
+            self._json({"id": capture["id"], "layer": layer,
+                        **self._vector_page(vectors[layer], int(arg("offset", "0")), int(arg("limit", "256")), arg("sort"))})
+            return
+        raise ValueError("Unknown capture API.")
+
+    def _capture_matches(self, prefix: list[int], vectors: dict[int, np.ndarray]) -> list[dict]:
+        """Find the user's HookInspection sessions that observed the same token prefix.
+
+        A generation session matches when prompt + generated IDs start with the prefix:
+        forward L-P then processes position L-1 (the capture's observed token). A replay
+        session matches when its prompt starts with the prefix (position L-1 of forward 0).
+        """
+        length = len(prefix)
+        if not length or not vectors:
+            return []
+        matches = []
+        data_root = self.store.data_dir.resolve()
+        for session in self.store.sessions_with_context():
+            context = session["context"]
+            prompt = [int(value) for value in context.get("input_ids") or []]
+            token_map = context.get("generation_token_map") or []
+            if token_map:
+                full = prompt + [int(value) for value in context.get("generated_token_ids") or []]
+                forward = length - len(prompt)
+                if length < len(prompt) or full[:length] != prefix or not 0 <= forward < len(token_map):
+                    continue
+                mode = "generation"
+            else:
+                if length > len(prompt) or prompt[:length] != prefix:
+                    continue
+                forward, mode = 0, "replay"
+            session_dir = (self.store.data_dir / session["artifact_dir"]).resolve()
+            if not session_dir.is_relative_to(data_root):
+                continue
+            layers = []
+            for _key, record in self.store.token_location_records(session["id"], "output", ""):
+                layer = record.get("layer_index")
+                if record.get("forward_call_index") != forward or layer not in vectors:
+                    continue
+                theirs = self._load_token_vector(session_dir, record, len(prompt), position=length - 1)
+                ours = vectors[layer]
+                if theirs is None or theirs.size != ours.size:
+                    continue
+                a, b = theirs.astype(np.float64), ours.astype(np.float64)
+                denom = float(np.linalg.norm(a) * np.linalg.norm(b))
+                layers.append({"layer": layer, "cosine": float(a @ b / denom) if denom else None,
+                               "rel_l2": float(np.linalg.norm(a - b) / np.linalg.norm(b)) if np.linalg.norm(b) else None,
+                               "max_abs_diff": float(np.abs(a - b).max()) if a.size else 0.0,
+                               "hook_l2": float(np.linalg.norm(a)), "capture_l2": float(np.linalg.norm(b))})
+            if not layers:
+                continue
+            item = token_map[forward] if mode == "generation" else {}
+            matches.append({"session_id": session["id"], "artifact_dir": session["artifact_dir"],
+                            "run_id": session["run_id"], "status": session["status"], "mode": mode,
+                            "forward_call_index": forward, "position": length - 1, "prompt_length": len(prompt),
+                            "generated_token_index": item.get("generated_token_index") if item else None,
+                            "generated_text": decode_token_piece(item.get("generated_token_piece"))["text"] if item else None,
+                            "layers": sorted(layers, key=lambda entry: entry["layer"])})
+        return matches
+
     # ---------- token view ----------
     _trajectory_cache: OrderedDict = OrderedDict()
     _trajectory_lock = threading.Lock()
@@ -1393,7 +1871,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
         return module[match.end():] if match else module
 
     @staticmethod
-    def _token_slice(array: np.ndarray, forward_index: int, prompt_length: int) -> np.ndarray | None:
+    def _token_slice(array: np.ndarray, forward_index: int, prompt_length: int,
+                     position: int | None = None) -> np.ndarray | None:
         """Values that belong to the generated token predicted by one forward call.
 
         With KV cache, forward N>0 processes exactly one new input position, so the whole
@@ -1407,7 +1886,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return None
         for axis, size in enumerate(array.shape):
             if size == prompt_length:
-                return np.asarray(np.take(array, prompt_length - 1, axis=axis)).reshape(-1)
+                index = prompt_length - 1 if position is None else position
+                return np.asarray(np.take(array, index, axis=axis)).reshape(-1)
         return None
 
     @staticmethod
@@ -1432,7 +1912,33 @@ class DashboardHandler(BaseHTTPRequestHandler):
                          min=float(finite.min()), max=float(finite.max()), max_abs=float(np.abs(finite).max()))
         return stats
 
-    def _load_token_vector(self, session_dir: Path, record: dict, prompt_length: int) -> np.ndarray | None:
+    def _vector_page(self, vector: np.ndarray, offset: int, limit: int, sort: str) -> dict:
+        """One page of a 1-D vector plus stats, a min/max envelope and the largest |values|."""
+        numeric = vector.astype(np.float64, copy=False)
+        offset = max(0, offset)
+        limit = min(self.value_limit, max(1, limit))
+        safe = np.nan_to_num(numeric, nan=0.0, posinf=0.0, neginf=0.0)
+        if sort == "value_desc":
+            order = np.argsort(-safe, kind="stable")
+        elif sort == "value_asc":
+            order = np.argsort(safe, kind="stable")
+        elif sort == "abs_desc":
+            order = np.argsort(-np.abs(safe), kind="stable")
+        else:
+            order = np.arange(numeric.size)
+        page = order[offset:offset + limit]
+        buckets = max(1, math.ceil(numeric.size / 480))
+        padded = np.pad(safe, (0, (-numeric.size) % buckets), mode="edge") if numeric.size else safe
+        grouped = padded.reshape(-1, buckets) if numeric.size else np.zeros((0, 1))
+        top = np.argsort(-np.abs(safe), kind="stable")[:8]
+        return {"numel": int(numeric.size), "offset": offset, "sort": sort, "stats": self._vector_stats(vector),
+                "values": [{"index": int(i), "value": self._json_value(vector[i])} for i in page],
+                "top": [{"index": int(i), "value": float(safe[i])} for i in top],
+                "envelope": {"bucket": buckets, "min": grouped.min(axis=1).tolist(),
+                             "max": grouped.max(axis=1).tolist()}}
+
+    def _load_token_vector(self, session_dir: Path, record: dict, prompt_length: int,
+                           position: int | None = None) -> np.ndarray | None:
         filename = record.get("filename")
         forward_index = record.get("forward_call_index")
         if record.get("kind") != "tensor" or not filename or not isinstance(forward_index, int):
@@ -1446,7 +1952,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return None
         if np.iscomplexobj(array):
             array = np.abs(array)
-        return self._token_slice(array, forward_index, prompt_length)
+        return self._token_slice(array, forward_index, prompt_length, position)
 
     def _token_api(self, path: str, query: dict) -> None:
         def arg(name, default=""):
@@ -1525,33 +2031,77 @@ class DashboardHandler(BaseHTTPRequestHandler):
             vector = self._load_token_vector(session_dir, found[1], prompt_length)
             if vector is None:
                 raise ValueError("이 레코드에서 토큰 위치 값을 분리할 수 없습니다.")
-            numeric = vector.astype(np.float64, copy=False)
-            offset = max(0, int(arg("offset", "0")))
-            limit = min(self.value_limit, max(1, int(arg("limit", "256"))))
-            sort = arg("sort")
-            safe = np.nan_to_num(numeric, nan=0.0, posinf=0.0, neginf=0.0)
-            if sort == "value_desc":
-                order = np.argsort(-safe, kind="stable")
-            elif sort == "value_asc":
-                order = np.argsort(safe, kind="stable")
-            elif sort == "abs_desc":
-                order = np.argsort(-np.abs(safe), kind="stable")
-            else:
-                order = np.arange(numeric.size)
-            page = order[offset:offset + limit]
-            buckets = max(1, math.ceil(numeric.size / 480))
-            padded = np.pad(safe, (0, (-numeric.size) % buckets), mode="edge") if numeric.size else safe
-            grouped = padded.reshape(-1, buckets) if numeric.size else np.zeros((0, 1))
-            top = np.argsort(-np.abs(safe), kind="stable")[:8]
-            self._json({"key": key, "numel": int(numeric.size), "offset": offset, "sort": sort,
-                        "module": found[1].get("module"), "location": found[1].get("location"),
+            page = self._vector_page(vector, int(arg("offset", "0")), int(arg("limit", "256")), arg("sort"))
+            self._json({"key": key, "module": found[1].get("module"), "location": found[1].get("location"),
                         "layer": found[1].get("layer_index"), "shape": found[1].get("shape"),
                         "token_shape": self._token_shape(found[1].get("shape"), found[1].get("forward_call_index"), prompt_length),
-                        "stats": self._vector_stats(vector), "source_dtype": found[1].get("source_dtype"),
-                        "values": [{"index": int(i), "value": self._json_value(vector[i])} for i in page],
-                        "top": [{"index": int(i), "value": float(safe[i])} for i in top],
-                        "envelope": {"bucket": buckets, "min": grouped.min(axis=1).tolist(),
-                                     "max": grouped.max(axis=1).tolist()}})
+                        "source_dtype": found[1].get("source_dtype"), **page})
+            return
+        if path == "/api/tokens/vocab":
+            key = arg("key")
+            if not key.startswith(meta["artifact_dir"] + "#"):
+                raise ValueError("레코드가 선택한 세션에 속하지 않습니다.")
+            found = self.store.lookup_record(key)
+            if not found:
+                raise ValueError("Record not found; data may still be writing.")
+            if self.lens is None:
+                raise ValueError("출력 어휘 투영이 설정되지 않았습니다 (--model-dir).")
+            record = found[1]
+            vector = self._load_token_vector(session_dir, record, prompt_length)
+            if vector is None:
+                raise ValueError("이 레코드에서 토큰 위치 값을 분리할 수 없습니다.")
+            info = self.lens.info()
+            apply_norm = arg("norm", "1") != "0"
+            projection = self.lens.project(key, vector, apply_norm)
+            texts, pieces, lowered = self.lens.vocab_text()
+            logits, rank, log_z = projection["logits"], projection["rank"], projection["log_z"]
+            search, sort = arg("q").strip(), arg("sort")
+            if search:
+                if search.isdigit():
+                    ids = np.asarray([int(search)] if int(search) < info["vocab"] else [], dtype=np.int64)
+                else:
+                    needle = search.casefold()
+                    ids = np.asarray([i for i, text in enumerate(lowered) if needle in text], dtype=np.int64)
+            else:
+                ids = None
+            if sort == "id":
+                ordered = ids if ids is not None else np.arange(info["vocab"])
+            elif sort == "logit_asc":
+                ordered = ids[np.argsort(-rank[ids], kind="stable")] if ids is not None else projection["order"][::-1]
+            else:
+                ordered = ids[np.argsort(rank[ids], kind="stable")] if ids is not None else projection["order"]
+            offset = max(0, int(arg("offset", "0")))
+            limit = min(500, max(1, int(arg("limit", "100"))))
+
+            def row(token_id):
+                token_id = int(token_id)
+                decoded = texts[token_id] or {"text": None, "partial": False}
+                return {"id": token_id, "rank": int(rank[token_id]) + 1, "text": decoded["text"],
+                        "partial": decoded["partial"], "piece": pieces[token_id],
+                        "logit": float(logits[token_id]), "prob": float(math.exp(float(logits[token_id]) - log_z))}
+
+            forward = record.get("forward_call_index")
+            marks = {}
+            if isinstance(forward, int) and 0 <= forward < len(token_map):
+                for role, field in (("generated", "generated_token_id"), ("source", "source_token_id")):
+                    token_id = token_map[forward].get(field)
+                    if isinstance(token_id, int) and 0 <= token_id < info["vocab"]:
+                        marks[role] = row(token_id)
+            buckets = max(1, math.ceil(info["vocab"] / 600))
+            padded = np.pad(logits, (0, (-logits.size) % buckets), mode="edge").reshape(-1, buckets)
+            rel = self._relative_module(record.get("module", ""))
+            self._json({"key": key, "vocab_size": info["vocab"], "hidden_size": info["hidden"],
+                        "layer": record.get("layer_index"), "module": record.get("module"),
+                        "location": record.get("location"), "apply_norm": apply_norm,
+                        "is_model_output": apply_norm and rel == "" and record.get("location") == "output"
+                                           and record.get("layer_index") == info["layers"] - 1,
+                        "total": int(ordered.size), "offset": offset, "sort": sort, "query": search,
+                        "rows": [row(token_id) for token_id in ordered[offset:offset + limit]],
+                        "marks": marks, "top": [row(token_id) for token_id in projection["order"][:5]],
+                        "stats": {"max": float(logits.max()), "min": float(logits.min()), "mean": float(logits.mean()),
+                                  "std": float(logits.std()), "entropy": projection["entropy"]},
+                        "envelope": {"bucket": buckets, "max": padded.max(axis=1).tolist(),
+                                     "min": padded.min(axis=1).tolist()}})
             return
         raise ValueError("Unknown token API.")
 
@@ -1613,6 +2163,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
+        if parsed.path.startswith("/api/captures/"):
+            try:
+                self._capture_api(parsed.path, parse_qs(parsed.query))
+            except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError, sqlite3.Error) as error:
+                self._json({"error": str(error)}, 400)
+            return
         if parsed.path.startswith("/api/tokens/"):
             try:
                 self._token_api(parsed.path, parse_qs(parsed.query))
@@ -1658,7 +2214,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             except (OSError, ValueError, RuntimeError, subprocess.TimeoutExpired) as error:
                 self._json({"status": "ERROR", "reason": str(error)}, 502)
             return
-        if parsed.path in ("/", "/hooks", "/tokens"):
+        if parsed.path in ("/", "/hooks", "/tokens", "/captures"):
             self._send(PAGE.encode("utf-8"), "text/html; charset=utf-8")
             return
         query = parse_qs(parsed.query)
@@ -2006,6 +2562,10 @@ def main() -> None:
                         help="SQLite 인덱스 파일 경로")
     parser.add_argument("--detector-dir", type=Path, default=PROJECT_ROOT / "artifacts",
                         help="M1/M2/Probe 결과 JSON 루트 (기본값: 저장소/artifacts)")
+    parser.add_argument("--tokenizer", type=Path, default=PROJECT_ROOT / "gpt-oss-20b" / "tokenizer.json",
+                        help="팀원 capture의 token ID를 텍스트로 표시할 tokenizer.json (없으면 ID만 표시)")
+    parser.add_argument("--model-dir", type=Path, default=PROJECT_ROOT / "gpt-oss-20b",
+                        help="출력 어휘 투영(lm_head, 최종 norm)에 쓸 safetensors 체크포인트 폴더")
     parser.add_argument("--host", default="127.0.0.1", help="기본값은 로컬 PC만 접근")
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args()
@@ -2025,6 +2585,8 @@ def main() -> None:
     sync_thread = threading.Thread(target=sync_loop, name="argus-artifact-indexer", daemon=True)
     sync_thread.start()
     DashboardHandler.store = store
+    DashboardHandler.captures = CaptureIndex(detector_dir, args.tokenizer.expanduser())
+    DashboardHandler.lens = LogitLens(args.model_dir.expanduser().resolve(), args.tokenizer.expanduser())
     server = ThreadingHTTPServer((args.host, args.port), DashboardHandler)
     print(f"Research dashboard: http://{args.host}:{args.port}/")
     print(f"Watching Hook artifacts under: {data_dir}")

@@ -166,6 +166,18 @@ prompt 길이와 같은 크기의 첫 축에서 마지막 위치만 잘라 쓰�
 tensor 전체를 그 토큰의 값으로 본다. 토큰 piece는 byte-level BPE를 UTF-8로 복원해 한글도 그대로
 표시하며, 문자의 일부 바이트만 담긴 토큰은 hex로 표시한다. 선택한 관찰 위치에 대해 토큰별 L2 norm·
 cosine(이전 토큰) 등의 레이어별 추이와 토큰 × 은닉 차원 heatmap을 함께 제공한다.
+원소값 표 아래의 출력 어휘 투영은 선택한 2,880차원 토큰 벡터에 `--model-dir`(기본 `gpt-oss-20b/`) safetensors의
+최종 RMSNorm과 `lm_head`(201,088 × 2,880, BF16 memmap)를 적용해 모든 토큰의 순위·ID·단어·logit·softmax 확률을
+보여 준다. lm_head 출력은 Hook 수집 대상이 아니므로 대시보드가 계산하며, 마지막 레이어(23) 블록 출력에 적용하면
+모델 자신의 다음 토큰 logit과 같은 계산이다(greedy 생성 25개 위치에서 1위 = 실제 생성 토큰 확인). 중간 레이어
+값은 logit lens 해석이며, tokenizer에 없는 ID는 미할당으로 표시한다.
+
+`팀원 Capture` 탭(`/captures`)은 `--detector-dir`(기본 `artifacts/`) 아래의 `write_capture` 산출물
+(`<run>/capture/metadata.json` + `features.npz`, 예: `scripts/run_m1_sandbox.py`)을 읽기 전용으로 표시한다.
+같은 폴더의 `agent-generation.json`·`c01-input.json`에서 token ID를 읽어 `prefix_ids_sha256`과 대조하고,
+`--tokenizer`(기본 `gpt-oss-20b/tokenizer.json`)로 토큰 문맥을 복원하며, `m1-result.json` 판정을 함께 보여 준다.
+작성자 HookInspection 세션 중 같은 token prefix를 관찰한 generation(forward = prefix 길이 − prompt 길이)
+또는 replay 세션을 자동으로 찾아 같은 위치의 블록 출력을 cosine·상대 L2 오차로 비교한다.
 
 기존의 `pre_residual_mlp` 연결 NPZ 대신 상세 진단 폴더에 각 MLP 출력을 저장한다.
 `records.jsonl`에서 `module=model.layers.0.mlp`, `location=output[0]`을 찾으면
