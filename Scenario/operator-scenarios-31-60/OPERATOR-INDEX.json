@@ -1,0 +1,160 @@
+{
+  "visibility": "OPERATOR_ONLY",
+  "batch": "additional",
+  "model_rollouts": 0,
+  "scenario_count": 30,
+  "conditions": 90,
+  "entries": [
+    {
+      "scenario": "AV-S31",
+      "file": "AV-S31.v1.json",
+      "sha256": "e00e79b6b9fc32613bb31eab18ed466486373d5a325298dd17492d4e8770a0c7"
+    },
+    {
+      "scenario": "AV-S32",
+      "file": "AV-S32.v1.json",
+      "sha256": "50c48193a0b2ce7c7d3192087eece8155d40b94e8edef2e94811a1fab78fdba4"
+    },
+    {
+      "scenario": "AV-S33",
+      "file": "AV-S33.v1.json",
+      "sha256": "b4bc8220246f31bc11183a8e5c1437d3618bf3f5e7bb7d09ad973d128d2f52d9"
+    },
+    {
+      "scenario": "AV-S34",
+      "file": "AV-S34.v1.json",
+      "sha256": "062498e24d2e5262d7a01789513acdc9582030f4f0c3c54bddd8c93d481aca0f"
+    },
+    {
+      "scenario": "AV-S35",
+      "file": "AV-S35.v1.json",
+      "sha256": "b01771a68489cb64596ca693a1c954319af8b96e142ced772e11fe46fb5dc270"
+    },
+    {
+      "scenario": "AV-S36",
+      "file": "AV-S36.v1.json",
+      "sha256": "4c4e7a277412a738f762b1d9307f7f3aea198dd4b3b5eb8daa50a1c1cc835da7"
+    },
+    {
+      "scenario": "AV-S37",
+      "file": "AV-S37.v1.json",
+      "sha256": "f0d204ce38042cd3c004155fcecee0781f0b0f54d2344b30155541e57892d6f9"
+    },
+    {
+      "scenario": "AV-S38",
+      "file": "AV-S38.v1.json",
+      "sha256": "244056e010031031228a5b3e5e25bd841cd50aa57e7f30078bbf3dd36964caf7"
+    },
+    {
+      "scenario": "AV-S39",
+      "file": "AV-S39.v1.json",
+      "sha256": "99f1c15ab20273b9b2d36f84aa791ff589504a16b305bd15607a91fa35c222b1"
+    },
+    {
+      "scenario": "AV-S40",
+      "file": "AV-S40.v1.json",
+      "sha256": "5f69c11946304b1c35e06d6c259b6a74c8662b4a67a4235d8b6c05d2899735e9"
+    },
+    {
+      "scenario": "AV-S41",
+      "file": "AV-S41.v1.json",
+      "sha256": "2d46276bd036f50b1ed30695cd5f7050307490a74eefd85be8c6e6c1091427c1"
+    },
+    {
+      "scenario": "AV-S42",
+      "file": "AV-S42.v1.json",
+      "sha256": "aa0beba7779fc57fe3ff3275181b81eee0bb2fe963b7e4605d471d670995e87b"
+    },
+    {
+      "scenario": "AV-S43",
+      "file": "AV-S43.v1.json",
+      "sha256": "478e852da168d8fd9394024ba0cae8560ec246d7166a63b08f0ae46709921f70"
+    },
+    {
+      "scenario": "AV-S44",
+      "file": "AV-S44.v1.json",
+      "sha256": "d90d3f5114388aa5cc5eb2c795fa09f923ee2f6e318f252dab132665536c89c3"
+    },
+    {
+      "scenario": "AV-S45",
+      "file": "AV-S45.v1.json",
+      "sha256": "401314ea090557dce94f6c07ac9ed19839eab2cd92b93786fda45aee372166b9"
+    },
+    {
+      "scenario": "AV-S46",
+      "file": "AV-S46.v1.json",
+      "sha256": "ef5631ac18b741990b33eaf4fba5100d87d66f650efe9233cdc5a93062030149"
+    },
+    {
+      "scenario": "AV-S47",
+      "file": "AV-S47.v1.json",
+      "sha256": "34870251fe468eb775c79ddeb12847283d44603d7b7296a642f97015ccc01e38"
+    },
+    {
+      "scenario": "AV-S48",
+      "file": "AV-S48.v1.json",
+      "sha256": "868e296f2f8dbdbc7ec7b7b60e445ddc64673d72dc0503f6037da7e8253079e3"
+    },
+    {
+      "scenario": "AV-S49",
+      "file": "AV-S49.v1.json",
+      "sha256": "b4a0951d4f406f607bee270213e233936df0c93baef18dd63b431019e1c58b52"
+    },
+    {
+      "scenario": "AV-S50",
+      "file": "AV-S50.v1.json",
+      "sha256": "598c73378aa434616403bd68840d089e83b953c135c2148c9eb34005e97728ef"
+    },
+    {
+      "scenario": "AV-S51",
+      "file": "AV-S51.v1.json",
+      "sha256": "5715d3176c390577039b05f85cbdba44ffd5630a0d7dd2d776608e031baa2eaf"
+    },
+    {
+      "scenario": "AV-S52",
+      "file": "AV-S52.v1.json",
+      "sha256": "31ca51d1d70321ad514437299dd1305e95a0ba5596f228b97b27b6bc7d465872"
+    },
+    {
+      "scenario": "AV-S53",
+      "file": "AV-S53.v1.json",
+      "sha256": "6d8beaf07ef8b34359edc76797064dbff4b3e0890b206dca27733e5392fa08c0"
+    },
+    {
+      "scenario": "AV-S54",
+      "file": "AV-S54.v1.json",
+      "sha256": "02eda8b5cd82abbb25de6228cdb45a20edddeb8e3184c30e888ce935b2112ccb"
+    },
+    {
+      "scenario": "AV-S55",
+      "file": "AV-S55.v1.json",
+      "sha256": "b9ea08c083c9328937d22ac7ba1cd1cadfeed7402d240a99808a67ce684ee5ea"
+    },
+    {
+      "scenario": "AV-S56",
+      "file": "AV-S56.v1.json",
+      "sha256": "7d35f96615526fd2de925d1fc7b484856665c81e7c7670a88969aa430a025f0b"
+    },
+    {
+      "scenario": "AV-S57",
+      "file": "AV-S57.v1.json",
+      "sha256": "cb1b09def04824cbaa8ab3d2df87a3614176d14174e16e4a8a6355f30e2683ba"
+    },
+    {
+      "scenario": "AV-S58",
+      "file": "AV-S58.v1.json",
+      "sha256": "9a519b48a2bb64ead50017f0f51fa3e3df583104323609df36a88c37514dc372"
+    },
+    {
+      "scenario": "AV-S59",
+      "file": "AV-S59.v1.json",
+      "sha256": "87e0c330e31f97942f33db99b5d0b2f64b147a04459a27d01ee5d8f08af1ebec"
+    },
+    {
+      "scenario": "AV-S60",
+      "file": "AV-S60.v1.json",
+      "sha256": "d4abb0ae5beab71ccd724438e52e8b85e94734f79db26035c4bfdb76afcf0a20"
+    }
+  ],
+  "warning": "Contains private fixtures, plans and gold. Do not expose to the agent."
+}
