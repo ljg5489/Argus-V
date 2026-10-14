@@ -275,6 +275,23 @@ canvas{display:block;width:100%}
 #tv-vocab-strip{height:44px;cursor:pointer}
 #tv-vocab-rows tr.tv-vocab-gen td{box-shadow:inset 0 1px 0 var(--highlight),inset 0 -1px 0 var(--highlight)}
 #tv-vocab-rows td{font-size:12px}
+/* rollout records */
+#ro-list tr[data-id]{cursor:pointer}
+#ro-list tr[data-id]:hover td{background:var(--surface-2)}
+#ro-list tr.selected td{background:var(--accent-soft)}
+#ro-list tr.selected td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+.ro-step{border:1px solid var(--line);border-radius:10px;margin-top:12px;background:var(--surface)}
+.ro-step.violation{border-color:var(--critical);box-shadow:inset 3px 0 0 var(--critical)}
+.ro-step-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--line)}
+.ro-step-head code{font-size:12px}
+.ro-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:12px}
+@media(max-width:1300px){.ro-grid{grid-template-columns:1fr}}
+.ro-col h4{margin:0 0 6px;font-size:11px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.ro-col pre{margin:0 0 8px;max-height:320px}
+.ro-msg{border-left:3px solid var(--line-strong);padding-left:8px;margin-bottom:8px}
+.ro-msg b{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.ro-findings{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}
+.ro-findings code{font-size:11px;background:var(--critical-soft);border:1px solid var(--critical);border-radius:5px;padding:0 5px}
 /* tooltip */
 #tip{position:fixed;z-index:50;pointer-events:none;background:var(--surface);color:var(--text);border:1px solid var(--line-strong);border-radius:8px;padding:6px 9px;font-size:12px;box-shadow:0 6px 20px rgba(0,0,0,.3);max-width:320px;display:none;white-space:pre-line}
 #tip b{font-family:var(--mono)}
@@ -308,6 +325,8 @@ canvas{display:block;width:100%}
  <nav class="tabs" role="tablist">
   <button class="tab" type="button" role="tab" data-view="view-analysis" aria-selected="true">Hidden State 분석</button>
   <button class="tab" type="button" role="tab" data-view="view-tokens" aria-selected="false">토큰별 은닉 상태</button>
+  <button class="tab" type="button" role="tab" data-view="view-rollouts" aria-selected="false">시나리오 실행</button>
+  <button class="tab" type="button" role="tab" data-view="view-scenario-hidden" aria-selected="false">시나리오 은닉 상태</button>
   <button class="tab" type="button" role="tab" data-view="view-captures" aria-selected="false">팀원 Capture</button>
   <button class="tab" type="button" role="tab" data-view="view-compare" aria-selected="false">A/B 비교 <span id="ab-count" class="status"></span></button>
   <button class="tab" type="button" role="tab" data-view="view-hooks" aria-selected="false">Hook 위치</button>
@@ -432,6 +451,64 @@ canvas{display:block;width:100%}
   </div>
  </div>
 </div>
+<div id="view-rollouts" class="view" hidden>
+ <section class="panel">
+  <div class="panel-head"><h2>시나리오 실행 기록</h2><span class="status">scenario_rollout.py 결과 · step마다 모델 입력, LLM 출력, 실행 결과, 판정</span><span id="ro-root" class="status hint"></span><button id="ro-refresh" type="button" class="primary">새로고침</button></div>
+  <div class="panel-body" style="padding-bottom:8px">
+   <div class="toolbar"><input id="ro-search" type="search" placeholder="시나리오 · 조건 · 과제 검색" style="width:260px">
+    <label class="status">종류 <select id="ro-kind"><option value="">전체</option><option value="suite">scenario_suite</option><option value="workspace">workspace</option></select></label>
+    <label class="status">판정 <select id="ro-filter"><option value="">전체</option><option value="violation">위반 있음</option><option value="clean">위반 없음</option><option value="running">미완료</option></select></label>
+    <span id="ro-count" class="status"></span></div>
+  </div>
+  <div class="tablewrap" style="max-height:300px;min-height:0"><table><thead><tr><th>시작</th><th>시나리오 / 조건</th><th class="num">seed</th><th>종류</th><th>종료</th><th class="num">행동</th><th class="num">위반</th><th>업무 완료</th><th>과제</th></tr></thead><tbody id="ro-list"><tr><td colspan="9"><div class="empty">탭을 열면 실행 기록을 불러옵니다.</div></td></tr></tbody></table></div>
+ </section>
+ <section class="panel" style="margin-top:16px">
+  <div class="panel-head detail-head"><div class="tv-token-head"><h2 id="ro-title">실행 기록을 선택하세요</h2><span class="spacer"></span><a id="ro-transcript" class="status" target="_blank" hidden>transcript.md 열기</a></div><div id="ro-sub" class="status"></div></div>
+  <div class="panel-body">
+   <div id="ro-metrics" class="metrics"></div>
+   <details class="inline" id="ro-context-box"><summary>시나리오 JSON 요약 · 모델에 준 과제 · 정책 · 도구</summary><pre id="ro-context"></pre></details>
+   <div id="ro-steps"></div>
+  </div>
+ </section>
+</div>
+<div id="view-scenario-hidden" class="view" hidden>
+ <section class="panel"><div class="filters tv-filters" style="grid-template-columns:minmax(220px,1.2fr) minmax(320px,2fr) auto">
+  <label class="field">시나리오<select id="sh-scenario"><option value="">불러오는 중…</option></select></label>
+  <label class="field">실행 (조건 · seed · 시각 · 위반)<select id="sh-rollout"></select></label>
+  <div class="actions"><button id="sh-refresh" type="button" class="primary">새로고침</button></div>
+ </div><div id="sh-status" class="status" style="padding:0 16px 12px">scenario_rollout.py가 저장한 관찰 시점 은닉 상태(C-01, 모든 블록)를 분석합니다.</div></section>
+ <section class="panel" style="margin-top:16px">
+  <div class="panel-head detail-head"><div class="tv-token-head"><h2 id="sh-title">시나리오를 선택하세요</h2><span class="spacer"></span><button id="sh-open-record" type="button" class="ghost">실행 기록 보기 →</button></div><div id="sh-sub" class="status"></div></div>
+  <div class="panel-body">
+   <div id="sh-brief" class="metrics"></div>
+   <h3 class="sub">step 흐름 · 레이어별 행동 직전(pre_action) L2 <small class="muted">각 레이어 안에서 정규화 · 위 띠 = 판정(빨강 위반) · 클릭하면 step 선택</small></h3>
+   <div class="chartbox"><canvas id="sh-trend" style="height:230px;cursor:pointer"></canvas></div>
+   <div id="sh-steps" class="toolbar" style="margin-top:8px"></div>
+  </div>
+ </section>
+ <section class="panel" style="margin-top:16px">
+  <div class="panel-head detail-head"><h2 id="sh-step-title">step</h2><div id="sh-step-meta" class="status"></div></div>
+  <div class="panel-body">
+   <div class="ro-grid" style="padding:0"><div class="ro-col"><h4>LLM 추론</h4><pre id="sh-reasoning"></pre></div><div class="ro-col"><h4>LLM 행동</h4><pre id="sh-action"></pre></div><div class="ro-col"><h4>실행 결과 · 판정</h4><div id="sh-findings" class="ro-findings"></div><pre id="sh-observation"></pre></div></div>
+   <h3 class="sub">토큰 문맥 <small class="muted">노랑 = 관찰 시점(클릭하여 선택) · 회색 = prompt · 흰색 = 이번 step 추론</small></h3>
+   <div id="sh-tokens" class="tv-token-list cap-tokens"></div>
+   <h3 class="sub">레이어 × 관찰 시점 L2 <small class="muted">각 레이어 안에서 정규화 · 칸을 클릭하면 아래에 그 위치·레이어를 분석</small></h3>
+   <div class="chartbox"><canvas id="sh-grid" style="height:300px;cursor:crosshair"></canvas></div>
+  </div>
+ </section>
+ <section class="panel" style="margin-top:16px">
+  <div class="panel-head"><h2 id="sh-cell-title">선택한 위치 · 레이어</h2><span class="spacer"></span><label class="status">레이어 <select id="sh-layer"></select></label></div>
+  <div class="panel-body">
+   <div class="tv-cards" style="grid-template-columns:minmax(0,1fr) minmax(0,2fr)"><div class="tv-card"><div id="sh-stats" class="tv-stats"></div><div id="sh-top" class="tv-top"></div></div>
+    <div class="tv-card"><div class="chartbox"><canvas class="tv-spark" id="sh-spark" style="height:120px"></canvas></div><div class="axis-note"><span>dim 0</span><span id="sh-spark-note"></span></div></div></div>
+   <div class="toolbar" style="margin-top:12px"><h3>원소값</h3><span id="sh-sorts" class="seg"><button type="button" data-sort="">index 순</button><button type="button" data-sort="value_desc">값 ↓</button><button type="button" data-sort="value_asc">값 ↑</button><button type="button" data-sort="abs_desc">|값| ↓</button></span><button id="sh-val-prev" type="button" disabled>← 256</button><button id="sh-val-next" type="button" disabled>256 →</button><span id="sh-value-meta" class="status"></span></div>
+   <div class="tablewrap valuebox"><table><thead><tr><th class="num">Hidden dim</th><th class="num">Value</th></tr></thead><tbody id="sh-values"></tbody></table></div>
+   <div class="toolbar" style="margin-top:16px"><h3>출력 어휘 투영 · 201,088개 토큰 (logit lens)</h3><label class="status"><input id="sh-vocab-norm" type="checkbox" checked> 최종 RMSNorm 적용</label><span class="spacer"></span><input id="sh-vocab-q" type="search" placeholder="단어 · token ID 검색" style="width:200px"><span id="sh-vocab-sorts" class="seg"><button type="button" data-sort="">logit ↓</button><button type="button" data-sort="logit_asc">logit ↑</button><button type="button" data-sort="id">ID 순</button></span><button id="sh-vocab-prev" type="button" disabled>← 100</button><button id="sh-vocab-next" type="button" disabled>100 →</button></div>
+   <div id="sh-vocab-meta" class="status" style="margin-top:6px"></div>
+   <div class="tablewrap valuebox" style="max-height:380px"><table><thead><tr><th class="num">순위</th><th class="num">Token ID</th><th>단어</th><th>piece</th><th class="num">Logit</th><th class="num">확률</th></tr></thead><tbody id="sh-vocab-rows"></tbody></table></div>
+  </div>
+ </section>
+</div>
 <div id="view-captures" class="view" hidden>
  <section class="panel">
   <div class="panel-head"><h2>팀원 C-01 Capture</h2><span class="status">write_capture 산출물(scripts/run_m1_sandbox.py 등) · 행동 직전 관찰 토큰 1개의 블록 출력</span><span id="cap-root" class="status hint"></span><button id="cap-refresh" type="button" class="primary">새로고침</button></div>
@@ -551,8 +628,8 @@ function histTip(ev,g,p,hist,range){const i=Math.floor((p.x-g.left)/g.bw);if(i<0
 
 /* ---------- tabs / theme / redraw ---------- */
 let lastPlot=null,lastHeat=null,lastHeatPos=-1,lastEmbed=null,lastCompare=null,histA=null,histB=null,promptPieces=[];
-function redrawAll(){tvRedraw();capRedraw();if(lastPlot)renderPlot(lastPlot);if(lastHeat)renderHeatmap(lastHeat,lastHeatPos);if(lastEmbed)renderEmbedding(lastEmbed);if(histA)drawHist('chart-a',histA,'A 분포');if(histB)drawHist('chart-b',histB,'B 분포');if(lastCompare)renderDelta(lastCompare)}
-function showView(id){document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.view===id)));document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!==id);hideTip();requestAnimationFrame(redrawAll);if(id==='view-tokens')tvEnsureLoaded();if(id==='view-captures')capEnsureLoaded();if(id==='view-hooks'&&!hookLoaded)loadHookSessions()}
+function redrawAll(){tvRedraw();capRedraw();shRedraw();if(lastPlot)renderPlot(lastPlot);if(lastHeat)renderHeatmap(lastHeat,lastHeatPos);if(lastEmbed)renderEmbedding(lastEmbed);if(histA)drawHist('chart-a',histA,'A 분포');if(histB)drawHist('chart-b',histB,'B 분포');if(lastCompare)renderDelta(lastCompare)}
+function showView(id){document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.view===id)));document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!==id);hideTip();requestAnimationFrame(redrawAll);if(id==='view-tokens')tvEnsureLoaded();if(id==='view-captures')capEnsureLoaded();if(id==='view-rollouts')roEnsureLoaded();if(id==='view-scenario-hidden')shEnsureLoaded();if(id==='view-hooks'&&!hookLoaded)loadHookSessions()}
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>showView(t.dataset.view));$('open-compare').onclick=()=>showView('view-compare');
 $('theme-toggle').onclick=()=>{const next=document.documentElement.dataset.theme==='light'?'dark':'light';document.documentElement.dataset.theme=next;try{localStorage.setItem('argus-theme',next)}catch(e){}redrawAll()};
 document.querySelectorAll('details.section').forEach(d=>d.addEventListener('toggle',()=>{if(d.open)redrawAll()}));
@@ -902,6 +979,114 @@ $('cap-sorts').onclick=ev=>{const b=ev.target.closest('button[data-sort]');if(!b
 $('cap-val-prev').onclick=()=>{capValueOffset=Math.max(0,capValueOffset-256);capLoadValues()};$('cap-val-next').onclick=()=>{capValueOffset+=256;capLoadValues()};
 $('cap-matches').onclick=ev=>{const b=ev.target.closest('button[data-open]');if(b)capOpenInTokens(capDetail.matches[+b.dataset.open])};
 if(location.pathname==='/captures')showView('view-captures');
+/* ---------- scenario rollout records: model input, LLM output, result and verdict per step ---------- */
+let roLoaded=false,roListReq=0,roDetailReq=0,roList=[],roSelected=null;
+function roEnsureLoaded(){if(!roLoaded){roLoaded=true;roLoadList()}}
+function roLabelBadge(label,decision){return label===1?'<span class="badge danger">위반</span>':label===0?'<span class="badge safe">준수</span>':`<span class="badge unknown">${esc(decision||'미판정')}</span>`}
+function roRenderList(){const q=$('ro-search').value.trim().toLowerCase(),kind=$('ro-kind').value,filter=$('ro-filter').value;
+ const rows=roList.filter(r=>(!kind||r.kind===kind)&&(!filter||(filter==='violation'?r.violations>0:filter==='clean'?r.finished&&!r.violations:!r.finished))&&(!q||[r.scenario_key,r.family,r.task,r.id].join(' ').toLowerCase().includes(q)));
+ $('ro-count').textContent=`${rows.length} / ${roList.length}개 · 위반 rollout ${roList.filter(r=>r.violations>0).length}개`;
+ $('ro-list').innerHTML=rows.map(r=>`<tr data-id="${esc(r.id)}" class="${r.id===roSelected?'selected':''}"><td class="mono">${esc(r.started_at||'—')}</td><td class="mono">${esc(r.scenario_key)}</td><td class="num">${esc(r.seed)}</td><td>${esc(r.kind)}</td><td>${esc(r.termination)}</td><td class="num">${esc(r.actions)}</td><td class="num">${r.violations?`<span class="badge danger">${r.violations}</span>`:'0'}</td><td>${r.business_completed==null?'—':r.business_completed?'<span class="badge safe">완료</span>':'<span class="badge unknown">미완료</span>'}</td><td class="task" title="${esc(r.task||'')}">${esc(r.task||'')}</td></tr>`).join('')||'<tr><td colspan="9"><div class="empty">조건에 맞는 실행 기록이 없습니다.</div></td></tr>'}
+async function roLoadList(){const cur=++roListReq;try{const d=await tvJson('/api/rollouts/list');if(cur!==roListReq)return;roList=d.rollouts;$('ro-root').textContent=d.root?`폴더: ${d.root}`:'';roRenderList();if(!roSelected&&roList.length)roSelect(roList[0].id)}catch(e){$('ro-list').innerHTML=`<tr><td colspan="9"><div class="empty">${esc(e.message)}</div></td></tr>`}}
+function roMessages(messages){return (messages||[]).map(m=>`<div class="ro-msg"><b>${esc(m.role)}</b><pre>${esc(m.content)}</pre></div>`).join('')}
+function roStepHtml(step,index,previous){const violation=step.policy_label===1,findings=[...(step.static_findings||[]),...(step.effect_findings||[])],out=step.output||{},input=step.input_messages||[];
+ const fresh=index===0?input:input.slice(Math.max(0,(previous?.input_messages||[]).length));
+ const failures=(step.format_failures||[]).map(f=>`<details class="inline"><summary>거부된 시도 ${f.attempt}: ${esc(f.reason)}</summary><pre>${esc(f.raw||'')}</pre></details>`).join('');
+ const exec=step.execution?Object.entries(step.execution).filter(([k,v])=>v!=null&&k!=='logs').map(([k,v])=>`${k}=${v}`).join(' · '):'';
+ return `<div class="ro-step${violation?' violation':''}"><div class="ro-step-head"><b>Step ${step.step_index}</b>${step.kind?`<span class="badge unknown">${esc(step.kind)}</span>`:''}${step.outcome==='format_failure'?'<span class="badge unknown">형식 실패</span>':roLabelBadge(step.policy_label,step.decision)}<span class="status">시도 ${esc(step.attempts)}회${step.generated_tokens?` · 생성 ${step.generated_tokens} 토큰`:''}${exec?' · '+esc(exec):''}</span><span class="spacer"></span>${step.capture_id?`<button type="button" data-hidden-step="${step.step_index}">은닉 상태 분석 →</button><button type="button" data-capture="${esc(step.capture_id)}">은닉층 보기 →</button>`:''}</div>
+ <div class="ro-grid"><div class="ro-col"><h4>모델 입력 ${index===0?'(시스템 + 과제)':'(새로 추가된 메시지)'}</h4>${roMessages(fresh)||'<div class="status">—</div>'}${index>0&&input.length?`<details class="inline"><summary>이 step에서 모델이 본 전체 대화 (${input.length}개 메시지)</summary>${roMessages(input)}</details>`:''}</div>
+ <div class="ro-col"><h4>LLM 출력</h4>${out.reasoning?`<details class="inline" open><summary>추론 (analysis)</summary><pre>${esc(out.reasoning)}</pre></details>`:''}${step.command!=null?`<b class="status">최종 행동</b><pre>${esc(step.command)}</pre>`:''}${out.raw?`<details class="inline"><summary>원문 출력 (Harmony 토큰 포함)</summary><pre>${esc(out.raw)}</pre></details>`:''}${failures}</div>
+ <div class="ro-col"><h4>실행 결과 · 판정</h4>${findings.length?`<div class="ro-findings">${findings.map(f=>`<code>${esc(f)}</code>`).join('')}</div>`:''}${step.oracle_reason?`<div class="status">suite 판정 근거: ${esc(step.oracle_reason)}</div>`:''}<pre>${esc(step.observation||(step.kind==='stop'?'(stop: 실행 없음)':'—'))}</pre></div></div></div>`}
+async function roSelect(id){roSelected=id;roRenderList();const cur=++roDetailReq;$('ro-title').textContent='불러오는 중…';
+ try{const d=await tvJson('/api/rollouts/detail?'+new URLSearchParams({id}));if(cur!==roDetailReq)return;
+  $('ro-title').textContent=`${d.scenario_key} · seed ${d.seed}`;$('ro-sub').textContent=`${d.id} · ${d.kind} · 종료 ${d.termination} · 라벨 ${d.label_source||''} · 샘플링 ${JSON.stringify(d.sampling||{})}`;
+  const link=$('ro-transcript');link.hidden=false;link.href='/api/rollouts/transcript?'+new URLSearchParams({id});
+  const op=d.operator_report||{};
+  const b=d.scenario_brief||{};
+  $('ro-metrics').innerHTML=[['시나리오 JSON',b.source_json||'—'],['제목 (운영자용)',b.title||'—'],['조건 의미',b.condition_meaning||d.condition],['모델에 준 TASK',b.task_given_to_model||d.task||'—'],['행동 / 위반 / 미판정',`${d.actions} / ${d.violations} / ${d.unlabelled}`],['첫 위반 step',d.first_violation_step??'없음'],['업무 완료 (suite 판정)',d.business_completed==null?'—':d.business_completed?'완료':'미완료'],['suite 위반 시도 / 실행',op.violation_attempts==null?'—':`${op.violation_attempts} / ${op.violation_executed}`]].map(([a,b])=>`<div class="metric"><b>${esc(a)}</b>${esc(b)}</div>`).join('');
+  const ctx=(d.scenario_brief?'# 시나리오 요약 (운영자용)\n'+JSON.stringify(d.scenario_brief,null,2)+'\n\n':'')+(d.public_context?'# 모델에 준 공개 컨텍스트\n'+JSON.stringify(d.public_context,null,2):`Task: ${d.task||''}\n\nTrusted policy: ${d.trusted_policy||''}`);$('ro-context').textContent=ctx;
+  $('ro-steps').innerHTML=d.steps.map((s,i)=>roStepHtml(s,i,d.steps[i-1])).join('')||'<div class="empty">아직 기록된 step이 없습니다.</div>'}
+ catch(e){if(cur===roDetailReq){$('ro-title').textContent='불러오기 실패';$('ro-sub').textContent=e.message}}}
+$('ro-refresh').onclick=roLoadList;$('ro-search').oninput=roRenderList;$('ro-kind').onchange=roRenderList;$('ro-filter').onchange=roRenderList;
+$('ro-list').onclick=ev=>{const tr=ev.target.closest('tr[data-id]');if(tr)roSelect(tr.dataset.id)};
+$('ro-steps').onclick=ev=>{const h=ev.target.closest('button[data-hidden-step]');if(h){shOpenFromRecord(roSelected,+h.dataset.hiddenStep);return}const b=ev.target.closest('button[data-capture]');if(!b)return;capLoaded=true;showView('view-captures');capLoadList().then(()=>capSelect(b.dataset.capture))};
+if(location.pathname==='/rollouts')showView('view-rollouts');
+/* ---------- scenario rollout hidden states: scenario → rollout → step → observation point × layer ---------- */
+let shLoaded=false,shRollouts=[],shId=null,shStep=null,shData=null,shTrend=null,shPoint=null,shLayer=null,shValueSort='abs_desc',shValueOffset=0,shVocabSort='',shVocabOffset=0,shReq=0,shCellReq=0,shSpark=null;
+function shEnsureLoaded(){if(!shLoaded){shLoaded=true;shLoadList()}}
+async function shLoadList(){try{const d=await tvJson('/api/rollouts/list');shRollouts=d.rollouts.filter(r=>r.actions>0);const groups={};shRollouts.forEach(r=>{(groups[r.scenario_id]??=[]).push(r)});
+ const ids=Object.keys(groups).sort((a,b)=>(a.startsWith('AV-S')-b.startsWith('AV-S'))||a.localeCompare(b));const prev=$('sh-scenario').value;
+ $('sh-scenario').innerHTML=ids.map(id=>`<option value="${esc(id)}">${esc(id)} · ${groups[id].length}회 실행 · 위반 ${groups[id].filter(r=>r.violations>0).length}회</option>`).join('')||'<option value="">실행 기록 없음</option>';
+ if(ids.includes(prev))$('sh-scenario').value=prev;$('sh-status').textContent=`${shRollouts.length}개 rollout · ${ids.length}개 시나리오 · 폴더 ${d.root}`;shFillRollouts()}catch(e){$('sh-status').textContent='불러오기 실패: '+e.message}}
+function shFillRollouts(keep){const sid=$('sh-scenario').value,rows=shRollouts.filter(r=>r.scenario_id===sid);
+ $('sh-rollout').innerHTML=rows.map(r=>`<option value="${esc(r.id)}">${esc(r.condition)} · seed ${esc(r.seed)} · ${esc(r.started_at||'')} · 행동 ${r.actions} · 위반 ${r.violations}${r.finished?'':' · 미완료'}</option>`).join('');
+ if(keep&&rows.some(r=>r.id===keep))$('sh-rollout').value=keep;if($('sh-rollout').value)shOpen($('sh-rollout').value)}
+async function shOpen(id,step){shId=id;const cur=++shReq;try{const t=await tvJson('/api/rollouts/trend?'+new URLSearchParams({id}));if(cur!==shReq)return;shTrend=t;shRenderTrend();
+ $('sh-steps').innerHTML=t.steps.map(s=>`<button type="button" data-step="${s.step_index}" title="${esc(s.command||s.outcome||'')}">Step ${s.step_index} ${s.policy_label===1?'⚠':s.policy_label===0?'✓':'?'} ${esc(s.kind||'')}</button>`).join('');
+ const first=step??t.steps.find(s=>s.kind)?.step_index??0;await shSelectStep(first)}catch(e){$('sh-title').textContent='불러오기 실패';$('sh-sub').textContent=e.message}}
+function shNormRows(matrix){return matrix.map(row=>{const vals=row.filter(v=>v!=null);const lo=Math.min(...vals),hi=Math.max(...vals);return row.map(v=>v==null?null:(hi>lo?(v-lo)/(hi-lo):.5))})}
+function shDrawGrid(c,matrix,cols,opt){const x=fitCanvas(c),s=c._s,W=c.width,H=c.height,left=50*s,top=(opt.bands?12:4)*s,bottom=H-18*s,rows=matrix.length;if(!rows||!cols){c._g=null;return}
+ const cw=(W-left-8*s)/cols,rh=(bottom-top)/rows,norm=shNormRows(matrix),lo=hexRgb(cssVar('--seq-lo')),hi=hexRgb(cssVar('--seq-hi'));
+ for(let r=0;r<rows;r++)for(let k=0;k<cols;k++){const v=norm[r][k];x.fillStyle=v==null?cssVar('--surface-3'):`rgb(${mix(lo,hi,v).join(',')})`;x.fillRect(left+k*cw,top+r*rh,Math.ceil(cw)-(cw>4*s?1:0),Math.ceil(rh))}
+ if(opt.bands)opt.bands.forEach((label,k)=>{x.fillStyle=label===1?cssVar('--critical'):label===0?cssVar('--good'):cssVar('--muted');x.fillRect(left+k*cw,0,Math.ceil(cw)-1,8*s)});
+ x.fillStyle=cssVar('--muted');x.textAlign='right';[0,Math.floor(rows/2),rows-1].forEach(r=>x.fillText(`L${opt.layers[r]}`,left-6*s,top+(r+.5)*rh));x.textAlign='center';
+ const every=Math.max(1,Math.ceil(cols/12));for(let k=0;k<cols;k+=every)x.fillText(opt.colLabel(k),left+(k+.5)*cw,H-8*s);x.textAlign='left';
+ if(opt.selectedCol!=null&&opt.selectedCol>=0){x.lineWidth=2*s;x.strokeStyle=cssVar('--highlight');const px=left+opt.selectedCol*cw;if(opt.selectedRow!=null&&opt.selectedRow>=0)x.strokeRect(px,top+opt.selectedRow*rh,cw,rh);else x.strokeRect(px,top,cw,bottom-top)}
+ c._g={left,top,cw,rh,rows,cols}}
+function shCell(c,ev){const g=c._g;if(!g)return null;const p=canvasPoint(c,ev),k=Math.floor((p.x-g.left)/g.cw),r=Math.floor((p.y-g.top)/g.rh);return k>=0&&k<g.cols?{col:k,row:Math.min(g.rows-1,Math.max(0,r))}:null}
+function shRenderTrend(){const t=shTrend;if(!t)return;const cols=t.steps.length;shDrawGrid($('sh-trend'),t.pre_action_l2,cols,{layers:t.layers,bands:t.steps.map(s=>s.policy_label),colLabel:k=>'S'+t.steps[k].step_index,selectedCol:t.steps.findIndex(s=>s.step_index===shStep)})}
+async function shSelectStep(step){shStep=step;const cur=++shReq;document.querySelectorAll('#sh-steps button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.step===step)));shRenderTrend();
+ try{const d=await tvJson('/api/rollouts/hidden?'+new URLSearchParams({id:shId,step}));if(cur!==shReq)return;shData=d;const b=d.scenario_brief||{},st=d.step||{};
+  $('sh-title').textContent=`${d.scenario_key} · seed ${d.seed}`;$('sh-sub').textContent=`${d.id} · step ${d.steps.length}개 · 관찰 시점마다 ${d.layers.length}개 블록 출력 저장`;
+  $('sh-brief').innerHTML=[['시나리오',b.title&&b.title!==d.scenario_key.split('/')[0]?`${d.scenario_key.split('/')[0]} · ${b.title}`:d.scenario_key],['조건 의미',b.condition_meaning||d.condition],['모델에 준 TASK',b.task_given_to_model||'—'],['시나리오 JSON',b.source_json||'—']].map(([a,v])=>`<div class="metric"><b>${esc(a)}</b>${esc(v)}</div>`).join('');
+  $('sh-step-title').innerHTML=`Step ${d.step_index} ${st.policy_label===1?'<span class="badge danger">위반</span>':st.policy_label===0?'<span class="badge safe">준수</span>':'<span class="badge unknown">미판정</span>'} <span class="badge unknown">${esc(st.kind||'')}</span>`;
+  $('sh-step-meta').textContent=`prompt ${d.prompt_length} 토큰 · 추론 ${d.reasoning_span?d.reasoning_span.join('–'):'없음'} · 행동 시작 #${d.action_start} · 관찰 시점 ${d.points.length}개`;
+  $('sh-reasoning').textContent=st.output?.reasoning||'—';$('sh-action').textContent=st.command||'—';$('sh-observation').textContent=st.observation||'—';
+  $('sh-findings').innerHTML=[...(st.static_findings||[]),...(st.effect_findings||[])].map(f=>`<code>${esc(f)}</code>`).join('')+(st.oracle_reason?`<span class="status">${esc(st.oracle_reason)}</span>`:'');
+  const pts=new Set(d.points.map(p=>p.token_index));
+  $('sh-tokens').innerHTML=d.tokens.map(t=>`<span class="cap-tok ${pts.has(t.index)?'observed':t.role==='prompt'?'prompt':'reasoning'}" data-point="${pts.has(t.index)?t.index:''}" title="#${t.index}">${esc(String(t.text??'').replace(/\n/g,'⏎\n'))}</span>`).join('');
+  $('sh-layer').innerHTML=d.layers.map(l=>`<option value="${l}">Layer ${l}</option>`).join('');
+  const pre=d.points.find(p=>p.kind==='pre_action')||d.points[d.points.length-1];shVocabOffset=0;shValueOffset=0;
+  await shSelectCell(pre.token_index,shLayer!=null&&d.layers.includes(shLayer)?shLayer:d.layers[d.layers.length-1])}
+ catch(e){if(cur===shReq){$('sh-step-title').textContent='step 불러오기 실패';$('sh-step-meta').textContent=e.message}}}
+function shRenderGrid(){const d=shData;if(!d)return;shDrawGrid($('sh-grid'),d.stats.l2,d.points.length,{layers:d.layers,colLabel:k=>'#'+d.points[k].token_index,selectedCol:d.points.findIndex(p=>p.token_index===shPoint),selectedRow:d.layers.indexOf(shLayer)})}
+async function shSelectCell(point,layer){shPoint=point;shLayer=layer;$('sh-layer').value=String(layer);shRenderGrid();
+ const box=$('sh-tokens');box.querySelectorAll('.cap-tok').forEach(el=>el.style.outline=+el.dataset.point===point&&el.dataset.point!==''?'2px solid var(--accent)':'');const el=box.querySelector(`[data-point="${point}"]`);if(el)box.scrollTop=Math.max(0,el.offsetTop-box.clientHeight/2);
+ const p=shData.points.find(x=>x.token_index===point),li=shData.layers.indexOf(layer);
+ $('sh-cell-title').textContent=`관찰 #${point} (${p?.kind}) "${tvShow(p?.text??'')}" · Layer ${layer}`;
+ $('sh-stats').innerHTML=[['L2',shData.stats.l2[li][shData.points.indexOf(p)]],['mean',shData.stats.mean[li][shData.points.indexOf(p)]],['std',shData.stats.std[li][shData.points.indexOf(p)]],['max |x|',shData.stats.max_abs[li][shData.points.indexOf(p)]]].map(([k,v])=>`<div><b>${k}</b><span>${tvFmt(v)}</span></div>`).join('');
+ const cur=++shCellReq;await Promise.all([shLoadValues(cur),shLoadVocab(cur)])}
+async function shLoadValues(cur){document.querySelectorAll('#sh-sorts button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.sort===shValueSort)));
+ try{const v=await tvJson('/api/rollouts/vector?'+new URLSearchParams({id:shId,step:shStep,point:shPoint,layer:shLayer,offset:shValueOffset,limit:256,sort:shValueSort}));if(cur!==shCellReq)return;
+  shSpark=v;drawEnvelope($('sh-spark'),v.envelope,v.numel,cssVar('--series-1'),`Layer ${shLayer}`);$('sh-spark-note').textContent=`원소 ${v.numel.toLocaleString()}개`;
+  $('sh-top').innerHTML='<span class="status">|값| 상위</span>'+v.top.map(t=>`<code>#${t.index} ${esc(fmt(t.value))}</code>`).join('');
+  const mean=v.stats.mean,std=v.stats.std;$('sh-values').innerHTML=v.values.map(x=>`<tr><td class="num">${x.index}</td><td class="num ${typeof x.value==='number'&&std>0&&Math.abs(x.value-mean)>3*std?'outlier':''}">${esc(x.value)}</td></tr>`).join('');
+  $('sh-value-meta').textContent=`${v.offset}–${v.offset+v.values.length} / ${v.numel.toLocaleString()} · ${tvSortLabel[shValueSort]}`;$('sh-val-prev').disabled=v.offset===0;$('sh-val-next').disabled=v.offset+v.values.length>=v.numel}
+ catch(e){if(cur===shCellReq)$('sh-value-meta').textContent=e.message}}
+async function shLoadVocab(cur){document.querySelectorAll('#sh-vocab-sorts button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.sort===shVocabSort)));$('sh-vocab-meta').textContent='201,088개 토큰에 투영 중…';
+ try{const d=await tvJson('/api/rollouts/vocab?'+new URLSearchParams({id:shId,step:shStep,point:shPoint,layer:shLayer,offset:shVocabOffset,limit:100,sort:shVocabSort,q:$('sh-vocab-q').value.trim(),norm:$('sh-vocab-norm').checked?'1':'0'}));if(cur!==shCellReq)return;
+  const st=d.stats,m=Math.max(Math.abs(st.max),Math.abs(st.min))||1,neg=hexRgb(cssVar('--div-neg')),pos=hexRgb(cssVar('--div-pos')),gen=d.marks.generated,src=d.marks.source,prob=p=>p<1e-4?p.toExponential(2):(p*100).toFixed(2)+'%';
+  $('sh-vocab-rows').innerHTML=d.rows.map(r=>{const t=r.logit/m,c=t>=0?pos:neg;return `<tr class="${gen&&r.id===gen.id?'tv-vocab-gen':''}"><td class="num">${r.rank.toLocaleString()}</td><td class="num">${r.id}</td><td class="mono">${r.text==null?'<span class="muted">(미할당 ID)</span>':esc(tvShow(r.text))}${gen&&r.id===gen.id?' <span class="badge safe">실제 다음 토큰</span>':''}${src&&r.id===src.id?' <span class="badge unknown">관찰 토큰</span>':''}</td><td class="mono muted">${esc(r.piece??'')}</td><td class="num mono" style="background:rgba(${c.join(',')},${(Math.min(1,Math.abs(t))*.55).toFixed(3)})">${esc(fmt(r.logit))}</td><td class="num mono">${prob(r.prob)}</td></tr>`}).join('')||'<tr><td colspan="6"><div class="empty">검색 결과가 없습니다.</div></td></tr>';
+  $('sh-vocab-meta').textContent=`${d.is_model_output?'마지막 레이어 → 실제 모델 출력과 같은 계산':'logit lens'} · 실제 다음 토큰 ${gen?`"${tvShow(gen.text??'')}" 순위 ${gen.rank.toLocaleString()} (p ${prob(gen.prob)})`:'—'} · 1위 "${tvShow(d.top[0]?.text??'')}" · ${(d.offset+1).toLocaleString()}–${(d.offset+d.rows.length).toLocaleString()} / ${d.total.toLocaleString()}`;
+  $('sh-vocab-prev').disabled=d.offset===0;$('sh-vocab-next').disabled=d.offset+d.rows.length>=d.total}
+ catch(e){if(cur===shCellReq){$('sh-vocab-rows').innerHTML=`<tr><td colspan="6"><div class="empty">${esc(e.message)}</div></td></tr>`;$('sh-vocab-meta').textContent=''}}}
+function shRedraw(){if($('view-scenario-hidden').hidden)return;shRenderTrend();shRenderGrid();if(shSpark)drawEnvelope($('sh-spark'),shSpark.envelope,shSpark.numel,cssVar('--series-1'),`Layer ${shLayer}`)}
+$('sh-refresh').onclick=shLoadList;$('sh-scenario').onchange=()=>shFillRollouts();$('sh-rollout').onchange=()=>shOpen($('sh-rollout').value);
+$('sh-steps').onclick=ev=>{const b=ev.target.closest('button[data-step]');if(b)shSelectStep(+b.dataset.step)};
+$('sh-trend').onclick=ev=>{const c=shCell($('sh-trend'),ev);if(c&&shTrend)shSelectStep(shTrend.steps[c.col].step_index)};
+$('sh-trend').onmousemove=ev=>{const c=shCell($('sh-trend'),ev);if(!c||!shTrend){hideTip();return}const s=shTrend.steps[c.col];showTip(ev,`<b>Step ${s.step_index} · Layer ${shTrend.layers[c.row]}</b>\npre_action L2 ${tvFmt(shTrend.pre_action_l2[c.row][c.col])}\n판정 ${s.policy_label===1?'위반':s.policy_label===0?'준수':'미판정'} · ${esc((s.command||s.outcome||'').slice(0,80))}`)};$('sh-trend').onmouseleave=hideTip;
+$('sh-grid').onclick=ev=>{const c=shCell($('sh-grid'),ev);if(c&&shData)shSelectCell(shData.points[c.col].token_index,shData.layers[c.row])};
+$('sh-grid').onmousemove=ev=>{const c=shCell($('sh-grid'),ev);if(!c||!shData){hideTip();return}const p=shData.points[c.col];showTip(ev,`<b>#${p.token_index} ${esc(p.kind)} · Layer ${shData.layers[c.row]}</b>\n"${esc(tvShow(p.text??''))}"\nL2 ${tvFmt(shData.stats.l2[c.row][c.col])}`)};$('sh-grid').onmouseleave=hideTip;
+$('sh-tokens').onclick=ev=>{const el=ev.target.closest('[data-point]');if(el&&el.dataset.point!=='')shSelectCell(+el.dataset.point,shLayer)};
+$('sh-layer').onchange=()=>shSelectCell(shPoint,+$('sh-layer').value);
+$('sh-sorts').onclick=ev=>{const b=ev.target.closest('button[data-sort]');if(!b)return;shValueSort=b.dataset.sort;shValueOffset=0;shLoadValues(shCellReq)};
+$('sh-val-prev').onclick=()=>{shValueOffset=Math.max(0,shValueOffset-256);shLoadValues(shCellReq)};$('sh-val-next').onclick=()=>{shValueOffset+=256;shLoadValues(shCellReq)};
+$('sh-vocab-sorts').onclick=ev=>{const b=ev.target.closest('button[data-sort]');if(!b)return;shVocabSort=b.dataset.sort;shVocabOffset=0;shLoadVocab(shCellReq)};
+$('sh-vocab-prev').onclick=()=>{shVocabOffset=Math.max(0,shVocabOffset-100);shLoadVocab(shCellReq)};$('sh-vocab-next').onclick=()=>{shVocabOffset+=100;shLoadVocab(shCellReq)};
+$('sh-vocab-norm').onchange=()=>{shVocabOffset=0;shLoadVocab(shCellReq)};let shVocabTimer=null;$('sh-vocab-q').oninput=()=>{clearTimeout(shVocabTimer);shVocabTimer=setTimeout(()=>{shVocabOffset=0;shLoadVocab(shCellReq)},300)};
+$('sh-open-record').onclick=()=>{if(!shId)return;roLoaded=true;showView('view-rollouts');roLoadList().then(()=>roSelect(shId))};
+async function shOpenFromRecord(id,step){shLoaded=true;showView('view-scenario-hidden');await shLoadList();const r=shRollouts.find(x=>x.id===id);if(!r)return;$('sh-scenario').value=r.scenario_id;$('sh-rollout').innerHTML='';shFillRollouts(id);await shOpen(id,step)}
+if(location.pathname==='/scenario-hidden')showView('view-scenario-hidden');
 if(location.pathname==='/hooks')showView('view-hooks');
 
 </script></body></html>"""
@@ -1508,6 +1693,98 @@ class LogitLens:
         return result
 
 
+class RolloutIndex:
+    """Read-only view of scenario_rollout outputs: per step model input, LLM output, result, verdict."""
+
+    def __init__(self, root: Path | None):
+        self.root = root.resolve() if root else None
+
+    def _folder(self, identifier: str) -> Path:
+        if self.root is None:
+            raise ValueError("rollout 폴더가 설정되지 않았습니다.")
+        folder = (self.root / identifier).resolve()
+        if folder.parent != self.root or not (folder / "rollout.json").is_file():
+            raise ValueError("rollout을 찾을 수 없습니다.")
+        return folder
+
+    @staticmethod
+    def _summary(folder: Path, rollout: dict) -> dict:
+        report = rollout.get("report") or {}
+        steps = rollout.get("steps", [])
+        operator = rollout.get("operator_report") or {}
+        return {"id": folder.name, "kind": rollout.get("kind", "workspace"),
+                "scenario_key": rollout.get("scenario_key") or f"{rollout.get('scenario_id')}/{rollout.get('condition')}",
+                "scenario_id": rollout.get("scenario_id"), "condition": rollout.get("condition"),
+                "seed": rollout.get("seed"), "family": rollout.get("family"),
+                "termination": rollout.get("termination") or ("running" if "report" not in rollout else "—"),
+                "finished": "report" in rollout, "actions": report.get("actions", len(steps)),
+                "violations": report.get("violations", sum(1 for s in steps if s.get("policy_label") == 1)),
+                "unlabelled": report.get("unlabelled", 0), "first_violation_step": report.get("first_violation_step"),
+                "business_completed": operator.get("business_completed"),
+                "started_at": datetime.fromtimestamp(rollout["started_at"], timezone.utc).isoformat()
+                if isinstance(rollout.get("started_at"), (int, float)) else None,
+                "task": rollout.get("task")}
+
+    def entries(self) -> list[dict]:
+        if self.root is None or not self.root.is_dir():
+            return []
+        items = []
+        for path in self.root.glob("*/rollout.json"):
+            try:
+                items.append(self._summary(path.parent, json.loads(path.read_text(encoding="utf-8"))))
+            except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError):
+                continue
+        return sorted(items, key=lambda item: item.get("started_at") or "", reverse=True)
+
+    def detail(self, identifier: str) -> dict:
+        folder = self._folder(identifier)
+        rollout = json.loads((folder / "rollout.json").read_text(encoding="utf-8"))
+        steps = []
+        for index, compact in enumerate(rollout.get("steps", [])):
+            path = folder / "steps" / f"step_{compact['step_index']:03d}" / "step.json"
+            record = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else dict(compact)
+            capture = folder / "steps" / f"step_{compact['step_index']:03d}" / "capture" / "metadata.json"
+            record["capture_id"] = f"{self.root.name}/{folder.name}/steps/step_{compact['step_index']:03d}" \
+                if capture.is_file() else None
+            steps.append(record)
+        public = {key: rollout.get(key) for key in ("task", "trusted_policy", "public_context", "rules", "sampling",
+                                                     "identity", "observe_every", "label_source", "suite",
+                                                     "scenario_brief")}
+        return {**self._summary(folder, rollout), **public, "report": rollout.get("report"),
+                "operator_report": rollout.get("operator_report"), "steps": steps}
+
+    def load_step(self, identifier: str, step_index: int) -> dict:
+        """One step's C-01 capture (all captured blocks × observation points) plus its token record."""
+        folder = self._folder(identifier)
+        step_dir = folder / "steps" / f"step_{int(step_index):03d}"
+        capture_dir = step_dir / "capture"
+        if not (capture_dir / "metadata.json").is_file():
+            raise ValueError("이 step에는 은닉 상태 capture가 없습니다 (형식 실패 step 등).")
+        metadata = json.loads((capture_dir / "metadata.json").read_text(encoding="utf-8"))
+        record = json.loads((step_dir / "step.json").read_text(encoding="utf-8")) if (step_dir / "step.json").is_file() else {}
+        generation = json.loads((step_dir / "agent-generation.json").read_text(encoding="utf-8")) \
+            if (step_dir / "agent-generation.json").is_file() else {}
+        features = {}
+        with np.load(capture_dir / metadata.get("artifact", {}).get("filename", "features.npz"), allow_pickle=False) as data:
+            for block in metadata.get("blocks", []):
+                if block["key"] in data.files:
+                    features[int(block["layer_index"])] = np.asarray(data[block["key"]], dtype=np.float32)
+        kinds = {item["token_index"]: item["kind"] for item in record.get("observations", [])}
+        points = [row["token_index"] for row in metadata.get("alignment", [])]
+        return {"folder": folder, "record": record, "metadata": metadata, "generation": generation,
+                "features": dict(sorted(features.items())), "points": points, "kinds": kinds}
+
+    def step_indexes(self, identifier: str) -> list[int]:
+        folder = self._folder(identifier)
+        rollout = json.loads((folder / "rollout.json").read_text(encoding="utf-8"))
+        return [step["step_index"] for step in rollout.get("steps", [])]
+
+
+    def transcript(self, identifier: str) -> str:
+        path = self._folder(identifier) / "transcript.md"
+        return path.read_text(encoding="utf-8") if path.is_file() else ""
+
+
 class CaptureIndex:
     """Read-only view of C-01 captures written by write_capture (e.g. scripts/run_m1_sandbox.py).
 
@@ -1517,9 +1794,12 @@ class CaptureIndex:
 
     SIDECARS = ("m1-result.json", "agent-generation.json", "c01-input.json", "m1-context.json", "run-summary.json")
 
-    def __init__(self, root: Path | None, tokenizer_path: Path | None = None):
+    def __init__(self, root: Path | None, tokenizer_path: Path | None = None, exclude: tuple[Path, ...] = ()):
         self.root = root.resolve() if root else None
         self.tokenizer_path = tokenizer_path
+        # Scenario rollouts have their own tab; listing thousands of step captures here would be slow.
+        # Excluded captures stay loadable by id (the rollout tab links to them).
+        self.exclude = tuple(path.resolve() for path in exclude)
 
     def _pieces(self) -> dict[int, str]:
         return load_tokenizer_pieces(self.tokenizer_path)
@@ -1536,7 +1816,8 @@ class CaptureIndex:
     def _capture_dirs(self) -> list[Path]:
         if self.root is None or not self.root.exists():
             return []
-        return sorted({path.parent.parent for path in self.root.rglob("capture/metadata.json")})
+        return sorted({path.parent.parent for path in self.root.rglob("capture/metadata.json")
+                       if not any(path.is_relative_to(excluded) for excluded in self.exclude)})
 
     def resolve(self, capture_id: str) -> Path:
         if self.root is None:
@@ -1751,8 +2032,95 @@ class DashboardHandler(BaseHTTPRequestHandler):
         except (OSError, ValueError, RuntimeError, subprocess.TimeoutExpired) as error:
             self._json({"status": "ERROR", "reason": str(error)}, 502)
 
+    # ---------- scenario rollout hidden states (C-01 captures saved by scenario_rollout.py) ----------
+    def _rollout_hidden_api(self, path: str, query: dict) -> None:
+        def arg(name, default=""):
+            return query.get(name, [default])[0]
+        identifier = arg("id")
+        if path == "/api/rollouts/trend":
+            detail = self.rollouts.detail(identifier)
+            steps, columns = [], {}
+            for step in detail["steps"]:
+                steps.append({key: step.get(key) for key in ("step_index", "kind", "command", "policy_label",
+                                                             "decision", "outcome")})
+                try:
+                    loaded = self.rollouts.load_step(identifier, step["step_index"])
+                except (OSError, ValueError):
+                    continue
+                for kind in ("pre_action", "pre_reasoning"):
+                    position = next((p for p, k in loaded["kinds"].items() if k == kind), None)
+                    if position in loaded["points"]:
+                        row = loaded["points"].index(position)
+                        for layer, matrix in loaded["features"].items():
+                            columns.setdefault(kind, {}).setdefault(layer, {})[step["step_index"]] = \
+                                float(np.linalg.norm(matrix[row].astype(np.float64)))
+            layers = sorted({layer for kind in columns.values() for layer in kind})
+            indexes = [step["step_index"] for step in steps]
+            self._json({"id": identifier, "scenario_key": detail["scenario_key"], "steps": steps, "layers": layers,
+                        **{f"{kind}_l2": [[columns.get(kind, {}).get(layer, {}).get(index) for index in indexes]
+                                          for layer in layers] for kind in ("pre_action", "pre_reasoning")}})
+            return
+        loaded = self.rollouts.load_step(identifier, int(arg("step", "0")))
+        generation, record = loaded["generation"], loaded["record"]
+        ids = generation.get("input_ids") or []
+        if path == "/api/rollouts/hidden":
+            pieces = generation.get("token_pieces") or []
+            prompt_length = generation.get("prompt_length") or 0
+            reasoning = generation.get("reasoning_span")
+            cutoff = generation.get("cutoff") or loaded["metadata"].get("observed_prefix_length", 0)
+            tokens = []
+            for index in range(min(cutoff, len(pieces))):
+                role = "prompt" if index < prompt_length else (
+                    "reasoning" if reasoning and reasoning[0] <= index < reasoning[1] else "generated")
+                tokens.append({"index": index, "role": role, **decode_token_piece(pieces[index])})
+            stats = {name: [] for name in ("l2", "mean", "std", "max_abs")}
+            for matrix in loaded["features"].values():
+                values = matrix.astype(np.float64)
+                stats["l2"].append(np.linalg.norm(values, axis=1).tolist())
+                stats["mean"].append(values.mean(axis=1).tolist())
+                stats["std"].append(values.std(axis=1).tolist())
+                stats["max_abs"].append(np.abs(values).max(axis=1).tolist())
+            points = [{"token_index": p, "kind": loaded["kinds"].get(p, "observation"),
+                       "token_id": ids[p] if p < len(ids) else None,
+                       **decode_token_piece(pieces[p] if p < len(pieces) else None)} for p in loaded["points"]]
+            summary = self.rollouts.detail(identifier)
+            self._json({"id": identifier, "scenario_key": summary["scenario_key"], "condition": summary["condition"],
+                        "seed": summary["seed"], "scenario_brief": summary.get("scenario_brief"),
+                        "step_index": record.get("step_index"), "steps": [s["step_index"] for s in summary["steps"]],
+                        "step": {key: record.get(key) for key in ("kind", "command", "policy_label", "decision",
+                                                                  "static_findings", "effect_findings", "observation",
+                                                                  "oracle_reason", "output")},
+                        "layers": list(loaded["features"]), "points": points, "stats": stats, "tokens": tokens,
+                        "prompt_length": prompt_length, "reasoning_span": reasoning, "action_start": cutoff,
+                        "capture_id": f"{self.rollouts.root.name}/{identifier}/steps/step_{record.get('step_index', 0):03d}"})
+            return
+        layer, point = int(arg("layer", "-1")), int(arg("point", "-1"))
+        if layer not in loaded["features"] or point not in loaded["points"]:
+            raise ValueError("레이어 또는 관찰 위치가 capture에 없습니다.")
+        vector = loaded["features"][layer][loaded["points"].index(point)]
+        if path == "/api/rollouts/vector":
+            self._json({"id": identifier, "layer": layer, "point": point,
+                        **self._vector_page(vector, int(arg("offset", "0")), int(arg("limit", "256")), arg("sort"))})
+            return
+        if path == "/api/rollouts/vocab":
+            if self.lens is None:
+                raise ValueError("출력 어휘 투영이 설정되지 않았습니다 (--model-dir).")
+            # h[p] predicts token p+1: mark the token that actually followed and the observed token itself.
+            marks = {"generated": ids[point + 1] if point + 1 < len(ids) else None,
+                     "source": ids[point] if point < len(ids) else None}
+            apply_norm = arg("norm", "1") != "0"
+            payload = self._vocab_payload(("rollout", identifier, record.get("step_index"), point, layer), vector,
+                                          apply_norm, arg("q").strip(), arg("sort"), int(arg("offset", "0")),
+                                          int(arg("limit", "100")), marks)
+            self._json({"id": identifier, "layer": layer, "point": point, "module": f"layer {layer} block output",
+                        "location": f"token #{point}",
+                        "is_model_output": apply_norm and layer == payload["layers"] - 1, **payload})
+            return
+        raise ValueError("Unknown rollout API.")
+
     # ---------- teammate C-01 captures ----------
     captures: CaptureIndex | None = None
+    rollouts: RolloutIndex | None = None
     lens: LogitLens | None = None
 
     def _capture_api(self, path: str, query: dict) -> None:
@@ -2050,60 +2418,64 @@ class DashboardHandler(BaseHTTPRequestHandler):
             vector = self._load_token_vector(session_dir, record, prompt_length)
             if vector is None:
                 raise ValueError("이 레코드에서 토큰 위치 값을 분리할 수 없습니다.")
-            info = self.lens.info()
-            apply_norm = arg("norm", "1") != "0"
-            projection = self.lens.project(key, vector, apply_norm)
-            texts, pieces, lowered = self.lens.vocab_text()
-            logits, rank, log_z = projection["logits"], projection["rank"], projection["log_z"]
-            search, sort = arg("q").strip(), arg("sort")
-            if search:
-                if search.isdigit():
-                    ids = np.asarray([int(search)] if int(search) < info["vocab"] else [], dtype=np.int64)
-                else:
-                    needle = search.casefold()
-                    ids = np.asarray([i for i, text in enumerate(lowered) if needle in text], dtype=np.int64)
-            else:
-                ids = None
-            if sort == "id":
-                ordered = ids if ids is not None else np.arange(info["vocab"])
-            elif sort == "logit_asc":
-                ordered = ids[np.argsort(-rank[ids], kind="stable")] if ids is not None else projection["order"][::-1]
-            else:
-                ordered = ids[np.argsort(rank[ids], kind="stable")] if ids is not None else projection["order"]
-            offset = max(0, int(arg("offset", "0")))
-            limit = min(500, max(1, int(arg("limit", "100"))))
-
-            def row(token_id):
-                token_id = int(token_id)
-                decoded = texts[token_id] or {"text": None, "partial": False}
-                return {"id": token_id, "rank": int(rank[token_id]) + 1, "text": decoded["text"],
-                        "partial": decoded["partial"], "piece": pieces[token_id],
-                        "logit": float(logits[token_id]), "prob": float(math.exp(float(logits[token_id]) - log_z))}
-
             forward = record.get("forward_call_index")
-            marks = {}
+            mark_ids = {}
             if isinstance(forward, int) and 0 <= forward < len(token_map):
-                for role, field in (("generated", "generated_token_id"), ("source", "source_token_id")):
-                    token_id = token_map[forward].get(field)
-                    if isinstance(token_id, int) and 0 <= token_id < info["vocab"]:
-                        marks[role] = row(token_id)
-            buckets = max(1, math.ceil(info["vocab"] / 600))
-            padded = np.pad(logits, (0, (-logits.size) % buckets), mode="edge").reshape(-1, buckets)
+                mark_ids = {"generated": token_map[forward].get("generated_token_id"),
+                            "source": token_map[forward].get("source_token_id")}
+            apply_norm = arg("norm", "1") != "0"
+            payload = self._vocab_payload(key, vector, apply_norm, arg("q").strip(), arg("sort"),
+                                          int(arg("offset", "0")), int(arg("limit", "100")), mark_ids)
             rel = self._relative_module(record.get("module", ""))
-            self._json({"key": key, "vocab_size": info["vocab"], "hidden_size": info["hidden"],
-                        "layer": record.get("layer_index"), "module": record.get("module"),
-                        "location": record.get("location"), "apply_norm": apply_norm,
+            self._json({"key": key, "layer": record.get("layer_index"), "module": record.get("module"),
+                        "location": record.get("location"),
                         "is_model_output": apply_norm and rel == "" and record.get("location") == "output"
-                                           and record.get("layer_index") == info["layers"] - 1,
-                        "total": int(ordered.size), "offset": offset, "sort": sort, "query": search,
-                        "rows": [row(token_id) for token_id in ordered[offset:offset + limit]],
-                        "marks": marks, "top": [row(token_id) for token_id in projection["order"][:5]],
-                        "stats": {"max": float(logits.max()), "min": float(logits.min()), "mean": float(logits.mean()),
-                                  "std": float(logits.std()), "entropy": projection["entropy"]},
-                        "envelope": {"bucket": buckets, "max": padded.max(axis=1).tolist(),
-                                     "min": padded.min(axis=1).tolist()}})
+                                           and record.get("layer_index") == payload["layers"] - 1, **payload})
             return
         raise ValueError("Unknown token API.")
+
+    def _vocab_payload(self, cache_key, vector: np.ndarray, apply_norm: bool, search: str, sort: str,
+                       offset: int, limit: int, mark_ids: dict) -> dict:
+        """Logit-lens table page over the whole output vocabulary for one hidden vector."""
+        info = self.lens.info()
+        projection = self.lens.project(cache_key, vector, apply_norm)
+        texts, pieces, lowered = self.lens.vocab_text()
+        logits, rank, log_z = projection["logits"], projection["rank"], projection["log_z"]
+        if search:
+            if search.isdigit():
+                ids = np.asarray([int(search)] if int(search) < info["vocab"] else [], dtype=np.int64)
+            else:
+                needle = search.casefold()
+                ids = np.asarray([i for i, text in enumerate(lowered) if needle in text], dtype=np.int64)
+        else:
+            ids = None
+        if sort == "id":
+            ordered = ids if ids is not None else np.arange(info["vocab"])
+        elif sort == "logit_asc":
+            ordered = ids[np.argsort(-rank[ids], kind="stable")] if ids is not None else projection["order"][::-1]
+        else:
+            ordered = ids[np.argsort(rank[ids], kind="stable")] if ids is not None else projection["order"]
+        offset = max(0, offset)
+        limit = min(500, max(1, limit))
+
+        def row(token_id):
+            token_id = int(token_id)
+            decoded = texts[token_id] or {"text": None, "partial": False}
+            return {"id": token_id, "rank": int(rank[token_id]) + 1, "text": decoded["text"],
+                    "partial": decoded["partial"], "piece": pieces[token_id],
+                    "logit": float(logits[token_id]), "prob": float(math.exp(float(logits[token_id]) - log_z))}
+
+        marks = {role: row(token_id) for role, token_id in mark_ids.items()
+                 if isinstance(token_id, int) and 0 <= token_id < info["vocab"]}
+        buckets = max(1, math.ceil(info["vocab"] / 600))
+        padded = np.pad(logits, (0, (-logits.size) % buckets), mode="edge").reshape(-1, buckets)
+        return {"vocab_size": info["vocab"], "hidden_size": info["hidden"], "layers": info["layers"],
+                "apply_norm": apply_norm, "total": int(ordered.size), "offset": offset, "sort": sort, "query": search,
+                "rows": [row(token_id) for token_id in ordered[offset:offset + limit]],
+                "marks": marks, "top": [row(token_id) for token_id in projection["order"][:5]],
+                "stats": {"max": float(logits.max()), "min": float(logits.min()), "mean": float(logits.mean()),
+                          "std": float(logits.std()), "entropy": projection["entropy"]},
+                "envelope": {"bucket": buckets, "max": padded.max(axis=1).tolist(), "min": padded.min(axis=1).tolist()}}
 
     def _token_trajectory(self, session_id, session_dir, meta, token_map, prompt_length, loc) -> dict:
         rel, _, location = loc.partition("|")
@@ -2163,6 +2535,26 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
+        if parsed.path.startswith("/api/rollouts/"):
+            query = parse_qs(parsed.query)
+            try:
+                if self.rollouts is None:
+                    raise ValueError("rollout 폴더가 설정되지 않았습니다.")
+                if parsed.path == "/api/rollouts/list":
+                    self._json({"root": str(self.rollouts.root), "rollouts": self.rollouts.entries()})
+                elif parsed.path == "/api/rollouts/detail":
+                    self._json(self.rollouts.detail(query.get("id", [""])[0]))
+                elif parsed.path in ("/api/rollouts/hidden", "/api/rollouts/trend", "/api/rollouts/vector",
+                                     "/api/rollouts/vocab"):
+                    self._rollout_hidden_api(parsed.path, query)
+                elif parsed.path == "/api/rollouts/transcript":
+                    self._send(self.rollouts.transcript(query.get("id", [""])[0]).encode("utf-8"),
+                               "text/markdown; charset=utf-8")
+                else:
+                    raise ValueError("Unknown rollout API.")
+            except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError) as error:
+                self._json({"error": str(error)}, 400)
+            return
         if parsed.path.startswith("/api/captures/"):
             try:
                 self._capture_api(parsed.path, parse_qs(parsed.query))
@@ -2214,7 +2606,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             except (OSError, ValueError, RuntimeError, subprocess.TimeoutExpired) as error:
                 self._json({"status": "ERROR", "reason": str(error)}, 502)
             return
-        if parsed.path in ("/", "/hooks", "/tokens", "/captures"):
+        if parsed.path in ("/", "/hooks", "/tokens", "/captures", "/rollouts", "/scenario-hidden"):
             self._send(PAGE.encode("utf-8"), "text/html; charset=utf-8")
             return
         query = parse_qs(parsed.query)
@@ -2562,6 +2954,8 @@ def main() -> None:
                         help="SQLite 인덱스 파일 경로")
     parser.add_argument("--detector-dir", type=Path, default=PROJECT_ROOT / "artifacts",
                         help="M1/M2/Probe 결과 JSON 루트 (기본값: 저장소/artifacts)")
+    parser.add_argument("--rollouts-dir", type=Path, default=PROJECT_ROOT / "artifacts" / "rollouts",
+                        help="scenario_rollout.py 출력 폴더 (시나리오 실행 기록 탭)")
     parser.add_argument("--tokenizer", type=Path, default=PROJECT_ROOT / "gpt-oss-20b" / "tokenizer.json",
                         help="팀원 capture의 token ID를 텍스트로 표시할 tokenizer.json (없으면 ID만 표시)")
     parser.add_argument("--model-dir", type=Path, default=PROJECT_ROOT / "gpt-oss-20b",
@@ -2572,26 +2966,30 @@ def main() -> None:
     data_dir = args.data_dir.expanduser().resolve()
     data_dir.mkdir(parents=True, exist_ok=True)
     store = ArtifactIndex(data_dir, args.db_path.expanduser().resolve())
-    store.sync_once()
     detector_dir = args.detector_dir.expanduser().resolve()
-    store.sync_detector_results(detector_dir)
     stop_sync = threading.Event()
 
     def sync_loop():
-        while not stop_sync.wait(1.5):
+        # The index can contain millions of hook records. Start serving the UI first,
+        # then ingest existing artifacts in the background so startup stays responsive.
+        while not stop_sync.is_set():
             store.sync_once()
             store.sync_detector_results(detector_dir)
+            if stop_sync.wait(1.5):
+                break
 
     sync_thread = threading.Thread(target=sync_loop, name="argus-artifact-indexer", daemon=True)
-    sync_thread.start()
     DashboardHandler.store = store
-    DashboardHandler.captures = CaptureIndex(detector_dir, args.tokenizer.expanduser())
+    DashboardHandler.captures = CaptureIndex(detector_dir, args.tokenizer.expanduser(),
+                                             exclude=(args.rollouts_dir.expanduser(),))
+    DashboardHandler.rollouts = RolloutIndex(args.rollouts_dir.expanduser())
     DashboardHandler.lens = LogitLens(args.model_dir.expanduser().resolve(), args.tokenizer.expanduser())
     server = ThreadingHTTPServer((args.host, args.port), DashboardHandler)
     print(f"Research dashboard: http://{args.host}:{args.port}/")
     print(f"Watching Hook artifacts under: {data_dir}")
     print(f"SQLite index: {store.db_path}")
     print("Stop with Ctrl+C.")
+    sync_thread.start()
     try:
         server.serve_forever(poll_interval=0.5)
     except KeyboardInterrupt:

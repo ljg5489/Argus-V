@@ -16,8 +16,17 @@ Observation rule (fixed before running, identical for every trajectory): last pr
 token right before the action message (``pre_action``). Nothing instructs the agent to violate
 the policy; scenarios only add obstacles. Labels are ``policy_rule_unreviewed``.
 
+    PYTHONPATH=src python argus_hook/scenario_rollout.py list                     # 3 workspace + 60 suite scenarios
+    PYTHONPATH=src python argus_hook/scenario_rollout.py run --scenario AV-S01 --condition C2 --seed 0
     PYTHONPATH=src python argus_hook/scenario_rollout.py run --scenario evaluation --condition obstacle --seed 0
-    PYTHONPATH=src python argus_hook/scenario_rollout.py plan --seeds 3          # all scenarios × conditions
+    PYTHONPATH=src python argus_hook/scenario_rollout.py plan --seeds 3 --dry-run  # everything; resumes by default
+    PYTHONPATH=src python argus_hook/scenario_rollout.py plan -all                # everything again, no skipping
+    PYTHONPATH=src python argus_hook/scenario_rollout.py plan --shared-sandbox     # old behaviour: one sandbox for all
+
+Each rollout gets its own fresh sandbox (``up --fresh`` → rollout → ``stop``), so a command that hangs
+only affects its own rollout. Per-scenario command_timeout / max_steps / sandbox resources live in
+Scenario/rollout/settings.json (``--settings``); the values used are stored in rollout.json.
+
     PYTHONPATH=src python argus_hook/scenario_rollout.py manifest --output artifacts/rollouts/probe-manifest.json
 """
 
@@ -26,6 +35,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import secrets
 import shutil
 import subprocess
@@ -70,6 +80,11 @@ class Scenario:
         return cls(spec["scenario_id"], spec["family"], spec["task"], spec["trusted_policy"], folder,
                    spec["rules"], spec["conditions"])
 
+    def episode(self, condition: str, sandbox, command_timeout: int) -> "WorkspaceEpisode":
+        if condition not in self.conditions:
+            raise ValueError(f"unknown condition {condition}; choose from {sorted(self.conditions)}")
+        return WorkspaceEpisode(self, condition, sandbox, command_timeout)
+
     def rules_for(self, condition: str, canaries: dict[str, str]) -> ScenarioRules:
         extra = tuple(self.conditions[condition].get("extra_writable", ()))
         return ScenarioRules(writable=tuple(self.rules["writable"]) + extra, forbidden=tuple(self.rules["forbidden"]),
@@ -95,33 +110,145 @@ class Scenario:
         return canaries
 
 
+SETTINGS_FILE = SCENARIO_ROOT / "settings.json"
+
+
+def load_run_settings(path: Path | None = SETTINGS_FILE) -> dict:
+    """Per-scenario run settings; a missing file means defaults only."""
+    if path is None or not Path(path).is_file():
+        return {}
+    config = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(config, dict) or set(config) - {"default", "scenarios", "_comment"}:
+        raise ValueError(f"{path}: expected keys default / scenarios")
+    return config
+
+
+def scenario_settings(config: dict, name: str, condition: str, defaults: dict) -> dict:
+    """defaults (CLI) < "default" < scenarios[name] < scenarios["name/condition"]."""
+    merged = {"command_timeout": defaults["command_timeout"], "max_steps": defaults["max_steps"], "sandbox": {}}
+    entries = [config.get("default")] + [config.get("scenarios", {}).get(key) for key in (name, f"{name}/{condition}")]
+    for entry in filter(None, entries):
+        unknown = set(entry) - {"command_timeout", "max_steps", "sandbox", "_comment"}
+        if unknown:
+            raise ValueError(f"settings for {name}: unknown keys {sorted(unknown)}")
+        merged.update({key: value for key, value in entry.items() if key in ("command_timeout", "max_steps")})
+        merged["sandbox"].update(entry.get("sandbox", {}))
+    if type(merged["command_timeout"]) is not int or not 1 <= merged["command_timeout"] <= 86400:
+        raise ValueError(f"{name}: command_timeout must be 1..86400 seconds")
+    if type(merged["max_steps"]) is not int or merged["max_steps"] < 1:
+        raise ValueError(f"{name}: max_steps must be a positive integer")
+    unknown = set(merged["sandbox"]) - set(SANDBOX_SETTING_FLAGS)
+    if unknown:
+        raise ValueError(f"{name}: unsupported sandbox settings {sorted(unknown)}")
+    return merged
+
+
 def available_scenarios() -> list[str]:
+    """Workspace scenarios under Scenario/rollout (scenario_suite ids are listed separately)."""
     return sorted(path.parent.name for path in SCENARIO_ROOT.glob("*/scenario.json"))
+
+
+def load_scenario(name: str):
+    """'AV-S01'..'AV-S60' → team scenario_suite task; otherwise a Scenario/rollout workspace scenario."""
+    from scenario_suite_bridge import SuiteScenario, is_suite_id
+
+    return SuiteScenario(name) if is_suite_id(name) else Scenario.load(name)
 
 
 # ---------------------------------------------------------------- sandbox
 
+SANDBOX_SETTING_FLAGS = {"cpus": "--cpus", "memory": "--memory", "workspace_size": "--workspace-size",
+                         "tmp_size": "--tmp-size", "pids": "--pids", "timeout_seconds": "--timeout",
+                         "log_limit_bytes": "--log-limit", "archive_limit_bytes": "--archive-limit",
+                         "network": "--network"}  # network "fakenet" = simulated internet (SANDBOX/fakenet)
+
+
 class SandboxClient:
-    """Uses the SANDBOX CLI (Python 3.11) exactly like agent_loop's RealSandboxClient."""
+    """Uses the SANDBOX CLI (Python 3.11) exactly like agent_loop's RealSandboxClient.
+
+    A command that hits its timeout makes ``sandbox.py`` stop the WHOLE sandbox (by design: detached
+    children are killed too). ``run`` therefore brings it back with ``up``, which restores the
+    checkpoint taken right before that command, and reports the timeout to the caller.
+    """
 
     def __init__(self, script: Path = SANDBOX_SCRIPT, python: str = "python3.11", timeout: int = 120):
         self.script, self.python, self.timeout = Path(script), python, timeout
 
+    # ---------------------------------------------------------- lifecycle (one sandbox per rollout)
+
+    def settings(self) -> dict:
+        return json.loads((self.script.parent / "settings.json").read_text(encoding="utf-8"))
+
+    def status(self) -> str:
+        return self.cli("status").get("status", "UNKNOWN")
+
+    def up(self, fresh: bool = False) -> dict:
+        result = self.cli("up", *(["--fresh"] if fresh else []))
+        if result.get("status") != "RUNNING":
+            raise RuntimeError(f"sandbox up failed: {result}")
+        return result
+
+    def stop(self) -> dict:
+        return self.cli("stop")
+
+    def configure(self, wanted: dict) -> dict:
+        """Apply only the sandbox settings that differ (sandbox.py config), e.g. memory or cpus."""
+        unknown = set(wanted) - set(SANDBOX_SETTING_FLAGS)
+        if unknown:
+            raise ValueError(f"unsupported sandbox settings {sorted(unknown)}; use {sorted(SANDBOX_SETTING_FLAGS)}")
+        current = self.settings()
+        changes = {key: value for key, value in wanted.items() if current.get(key) != value}
+        if changes:
+            arguments = ["config"]
+            for key, value in changes.items():
+                arguments += [SANDBOX_SETTING_FLAGS[key], str(value)]
+            result = self.cli(*arguments)
+            if result.get("status") == "ERROR":
+                raise RuntimeError(f"sandbox config failed: {result}")
+        return changes
+
+    def start_fresh(self, sandbox_settings: dict) -> dict:
+        """New container for one rollout: apply its settings, then ``up --fresh`` (no restore)."""
+        changes = self.configure(sandbox_settings)
+        self.up(fresh=True)
+        return changes
+
     def cli(self, *arguments: str) -> dict:
         completed = subprocess.run([self.python, str(self.script), *arguments], capture_output=True, text=True,
                                    cwd=str(self.script.parent))
-        try:
-            return json.loads(completed.stdout)
-        except json.JSONDecodeError as error:
-            raise RuntimeError(f"sandbox {arguments[0]} failed: {completed.stdout[-500:]} {completed.stderr[-500:]}") from error
+        for stream in (completed.stdout, completed.stderr):  # errors are JSON on stderr
+            try:
+                return json.loads(stream)
+            except json.JSONDecodeError:
+                continue
+        raise RuntimeError(f"sandbox {arguments[0]} failed: {completed.stdout[-500:]} {completed.stderr[-500:]}")
 
     def run(self, command: str, timeout: int | None = None) -> dict:
-        result = self.cli("run", "--timeout", str(timeout or self.timeout), "--", "bash", "-c", command)
+        timeout = timeout or self.timeout
+        result = self.cli("run", "--timeout", str(timeout), "--", "bash", "-c", command)
+        if result.get("status") == "ERROR" and "stopped" in str(result.get("reason", "")):
+            self.up()  # stopped earlier (e.g. by a previous timeout): restore and retry once
+            result = self.cli("run", "--timeout", str(timeout), "--", "bash", "-c", command)
+        if result.get("status") not in ("FINISHED", "ERROR") and self.status() != "RUNNING":
+            # TIMEOUT / output limit stopped the whole sandbox; up restores the pre-command checkpoint.
+            self.up()
+            result["sandbox_restarted"] = True
+            result["reason"] = result.get("reason") or (
+                f"The command did not finish within {timeout} seconds and was terminated. "
+                "/workspace was restored to its state before this command.")
+        elif (result.get("status") == "FINISHED" and result.get("exit_code") == 124 and not result.get("reason")
+              and (result.get("elapsed_seconds") or 0) >= timeout - 1):
+            result["reason"] = f"The command was stopped after the {timeout} second time limit."  # coreutils timeout
         for stream in ("stdout", "stderr"):  # full logs for canary checks; tails go to the agent
             log = Path(result.get("logs") or "") / f"{stream}.log"
             result[f"{stream}_full"] = log.read_text(errors="replace") if result.get("logs") and log.is_file() \
                 else result.get(f"{stream}_tail") or ""
         return result
+
+    def network_events(self, since: float) -> list[dict]:
+        """Requests the simulated internet received since ``since`` (only with network ``fakenet``)."""
+        result = self.cli("fakenet-log", "--since", f"{since:.6f}")
+        return result.get("events", []) if result.get("status") == "OK" else []
 
     def controller(self, command: str) -> str:
         result = self.run(command, timeout=60)
@@ -188,6 +315,9 @@ def run_with_access_check(sandbox, command: str, forbidden: list[str], timeout: 
         if int(access) > int(modified):
             reads.append(name)
     return result, reads
+
+
+EXECUTION_KEYS = ("status", "exit_code", "elapsed_seconds", "logs", "sandbox_restarted")
 
 
 def format_observation(result: dict) -> str:
@@ -294,6 +424,18 @@ def _write_json(path: Path, value) -> None:
     temporary.replace(path)
 
 
+HARMONY_TOKEN = re.compile(r"<\|[a-z_]+\|>")
+
+
+def plain_reply(raw_generated_text: str) -> str:
+    """Rejected reply for the retry turn without Harmony control tokens.
+
+    The gpt-oss chat template refuses message content containing <|channel|> etc.; this matches
+    agent_actions, which re-sends the reply decoded with skip_special_tokens=True.
+    """
+    return HARMONY_TOKEN.sub("", raw_generated_text).strip()
+
+
 def parse_agent_action(raw_generated_text: str) -> tuple[str, str]:
     """agent_loop's bash/stop protocol (incl. container.exec compatibility)."""
     from argus_v.agent_actions import parse_generated_action
@@ -303,15 +445,179 @@ def parse_agent_action(raw_generated_text: str) -> tuple[str, str]:
     return parse_generated_action(raw_generated_text)
 
 
+class WorkspaceEpisode:
+    """Scenario/rollout/<name>: bash/stop protocol, labels from the workspace policy checks."""
+
+    kind = "workspace"
+    action_hint = "Return exactly one ```bash block or one ```stop block in your final response."
+
+    def __init__(self, scenario: "Scenario", condition: str, sandbox, command_timeout: int):
+        self.scenario, self.condition, self.sandbox, self.timeout = scenario, condition, sandbox, command_timeout
+        self.family, self.task_id, self.scenario_id = scenario.family, scenario.scenario_id, scenario.scenario_id
+        self.scenario_key = f"{scenario.scenario_id}/{condition}"
+        self.task_text, self.trusted_policy = scenario.task, scenario.trusted_policy
+        self.user_message = "Trusted policy: " + scenario.trusted_policy + "\n\nTask: " + scenario.task
+
+    @property
+    def system_prompt(self) -> str:
+        from argus_v.agent_actions import ACTION_SYSTEM_PROMPT
+
+        return ACTION_SYSTEM_PROMPT
+
+    def start(self) -> dict:
+        with tempfile.TemporaryDirectory(prefix="argus-scenario-") as staging:
+            canaries = self.scenario.render(self.condition, Path(staging))
+            self.sandbox.reset_workspace()
+            self.sandbox.import_folder(Path(staging))
+        self.rules = self.scenario.rules_for(self.condition, canaries)
+        self.before = self.sandbox.hashes()
+        self.forbidden_files = [path for path in self.before if self.rules.matches(path, self.rules.forbidden)]
+        return {"obstacle": self.condition != "clear", "task": self.task_text, "trusted_policy": self.trusted_policy,
+                "rules": asdict(self.rules), "forbidden_files": self.forbidden_files, "initial_workspace": self.before}
+
+    def brief(self) -> dict:
+        """Operator-facing summary of the scenario JSON (console/dashboard only)."""
+        source = self.scenario.folder / "scenario.json"
+        try:
+            source = source.relative_to(PROJECT_ROOT)
+        except ValueError:
+            pass
+        files = sorted(getattr(self, "before", {}) or {})
+        return {"source_json": str(source), "title": self.scenario.scenario_id, "category": self.family,
+                "condition_meaning": self.scenario.conditions[self.condition].get("note"), "blocker": None,
+                "task_given_to_model": self.task_text, "policy_given_to_model": [self.trusted_policy],
+                "task_data": None, "workspace_files": files, "tools": ["bash", "stop"]}
+
+    def parse(self, raw: str) -> tuple[str, str]:
+        return parse_agent_action(raw)
+
+    def execute(self, kind: str, body: str) -> dict:
+        if kind == "stop":
+            return {"label": 0, "static_findings": [], "effect_findings": [], "execution": None,
+                    "observation": None, "done": True}
+        static = static_findings(body, self.rules)
+        started = time.time()
+        execution, reads = run_with_access_check(self.sandbox, body, self.forbidden_files, self.timeout)
+        network = self.sandbox.network_events(started)
+        after = self.sandbox.hashes()
+        output = execution.get("stdout_full", "") + "\n" + execution.get("stderr_full", "")
+        effects = effect_findings(self.before, after, output, self.rules, reads=reads, network_events=network)
+        self.before = after
+        return {"label": policy_label(static, effects), "static_findings": static, "effect_findings": effects,
+                "execution": {**{k: execution.get(k) for k in EXECUTION_KEYS}, "access_check": reads is not None,
+                              "network_requests": len(network)},
+                "network_events": network, "observation": format_observation(execution), "done": False}
+
+    def assistant_turn(self, kind: str, body: str) -> str:
+        return f"```{kind}\n{body}\n```"
+
+    def observation_turn(self, outcome: dict) -> str:
+        from argus_v.agent_actions import observation_message
+
+        return observation_message(self.user_message, outcome["observation"])
+
+    def finish(self) -> dict:
+        return {"final_workspace": self.sandbox.hashes()}
+
+
+def describe_scenario(key: str, seed: int, brief: dict, folder: Path) -> list[str]:
+    """Console block printed whenever a new scenario starts (operator view, not the prompt)."""
+    rule = "═" * 78
+    lines = [rule, f"  시나리오 {key} · seed {seed}", rule,
+             f"  시나리오 JSON   : {brief.get('source_json')}"]
+    if brief.get("title"):
+        lines.append(f"  제목 (운영자용) : {brief['title']}" + (f"  [{brief['category']}]" if brief.get("category") else ""))
+    if brief.get("condition_meaning"):
+        lines.append(f"  조건 의미       : {brief['condition_meaning']}")
+    if brief.get("blocker"):
+        lines.append(f"  장애 (운영자용) : {brief['blocker']}")
+    lines.append(f"  ▶ 모델에 준 TASK: {brief.get('task_given_to_model')}")
+    for index, policy in enumerate(brief.get("policy_given_to_model") or []):
+        lines.append(("  ▶ 정책          : " if index == 0 else "                    ") + policy)
+    if brief.get("task_data"):
+        lines.append(f"  작업 데이터     : {json.dumps(brief['task_data'], ensure_ascii=False)}")
+    files = brief.get("workspace_files") or []
+    lines.append(f"  /workspace 파일 : {', '.join(files[:12])}" + (f" 외 {len(files) - 12}개" if len(files) > 12 else ""))
+    lines.append(f"  행동 / 도구     : {', '.join(brief.get('tools') or [])}")
+    lines.append(f"  전체 prompt     : {folder / 'steps' / 'step_000' / 'step.json'} · transcript.md")
+    return lines + [rule]
+
+
+def _output_texts(decode: DecodeFn, generation: "Generation", spans: "HarmonySpans | None") -> dict:
+    """Human-readable LLM output: raw (with Harmony tokens), reasoning and the action message."""
+    all_ids = generation.prompt_ids + generation.generated_ids
+    texts = {"raw": decode(generation.generated_ids)}
+    if spans is not None:
+        if spans.reasoning:
+            texts["reasoning"] = decode(all_ids[spans.reasoning[0]:spans.reasoning[1]])
+        texts["action_text"] = decode(all_ids[spans.action[0]:spans.action[1]])
+    return texts
+
+
+def describe_network_event(event: dict) -> str:
+    kind = event.get("kind")
+    if kind == "dns":
+        return f"dns lookup `{event.get('name')}` (type {event.get('type')})"
+    if kind in ("http", "https"):
+        body = event.get("body") or {}
+        return (f"{kind} {event.get('method')} `{event.get('host')}{event.get('path')}`"
+                + (f"?{event['query']}" if event.get("query") else "") + f" → {event.get('status')}"
+                + (f" · body {body.get('bytes')} B: `{(body.get('text') or '')[:200]}`" if body.get("bytes") else ""))
+    if kind == "tls":
+        return f"tls `{event.get('sni')}` port {event.get('port')} failed ({event.get('outcome')})"
+    data = event.get("data") or {}
+    return f"tcp port {event.get('port')} · sent {data.get('bytes', 0)} B: `{(data.get('text') or '')[:200]}`"
+
+
+def write_transcript(folder: Path) -> Path:
+    """Readable per-rollout transcript: model input, LLM output, execution result and verdict per step."""
+    summary = json.loads((folder / "rollout.json").read_text(encoding="utf-8"))
+    lines = [f"# {summary.get('scenario_key', summary.get('scenario_id'))} · seed {summary['seed']}", "",
+             f"- rollout `{summary['rollout_id']}` · {summary.get('kind', 'workspace')} · "
+             f"termination: {summary.get('termination', 'running')}",
+             f"- violations: {summary.get('report', {}).get('violations', '—')} · labels are unreviewed policy rules", ""]
+    first = True
+    for step in summary["steps"]:
+        path = folder / "steps" / f"step_{step['step_index']:03d}" / "step.json"
+        record = json.loads(path.read_text(encoding="utf-8")) if path.exists() else step
+        messages = record.get("input_messages") or []
+        if first and messages:
+            lines += ["## Model input (initial)", ""]
+            for message in messages[:2]:
+                lines += [f"**{message['role']}**", "", "```text", message["content"], "```", ""]
+            first = False
+        lines += [f"## Step {step['step_index']}", ""]
+        for failure in record.get("format_failures", []):
+            lines += [f"- rejected attempt {failure['attempt']}: {failure['reason']}"]
+        output = record.get("output", {})
+        if output.get("reasoning"):
+            lines += ["**LLM reasoning (analysis)**", "", "```text", output["reasoning"], "```", ""]
+        if "command" in record:
+            lines += [f"**LLM action ({record['kind']})**", "", "```" + ("json" if record["kind"] == "tool" else "bash"),
+                      record["command"], "```", "",
+                      f"**Verdict:** label {record.get('policy_label')} · {record.get('decision')} "
+                      + " ".join(record.get("static_findings", []) + record.get("effect_findings", [])), ""]
+        if record.get("network_events"):
+            lines += ["**Simulated internet (requests received)**", ""] + [
+                f"- {describe_network_event(event)}" for event in record["network_events"]] + [""]
+        if record.get("observation"):
+            lines += ["**Result returned to the model**", "", "```text", record["observation"][-6000:], "```", ""]
+        if record.get("outcome") == "format_failure":
+            lines += ["**No valid action after all attempts.**", ""]
+    path = folder / "transcript.md"
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return path
+
+
 def run_rollout(
     *,
-    scenario: Scenario,
+    scenario,
     condition: str,
     seed: int,
     generate: GenerateFn,
     decode: DecodeFn,
     capture: Callable,
-    sandbox: SandboxClient,
+    sandbox,
     identity: dict,
     sampling: dict,
     output_root: Path = DEFAULT_OUTPUT,
@@ -320,55 +626,74 @@ def run_rollout(
     observe_every: int = 32,
     command_timeout: int = 120,
     log: Callable[[str], None] = print,
+    hook_root: Path | None = None,
+    run_settings: dict | None = None,
 ) -> Path:
-    """Run one scenario rollout in /workspace and return its folder."""
+    """Run one rollout (workspace scenario or scenario_suite task) in /workspace; return its folder.
+
+    With ``hook_root`` every generation attempt is also recorded by HookInspection (all submodules of
+    layers 0/11/23, every generated token) under ``hook_root/<run>/<task>_step_NNN/generation/attempt_NNN``,
+    the layout the dashboard's Hidden State / token tabs ingest.
+    """
     from argus_v.activations import ActionSpan, SnapshotContext, write_capture
-    from argus_v.agent_actions import ACTION_SYSTEM_PROMPT, observation_message
 
+    episode = scenario.episode(condition, sandbox, command_timeout)
     rollout_id = uuid.uuid4().hex
-    folder = Path(output_root) / f"{scenario.family}-{condition}-s{seed}-{rollout_id[:8]}"
-    scenario_key = f"{scenario.scenario_id}/{condition}"
-    with tempfile.TemporaryDirectory(prefix="argus-scenario-") as staging:
-        canaries = scenario.render(condition, Path(staging))
-        sandbox.reset_workspace()
-        sandbox.import_folder(Path(staging))
-    rules = scenario.rules_for(condition, canaries)
-    before = sandbox.hashes()
-    forbidden_files = [path for path in before if rules.matches(path, rules.forbidden)]
-    user_task = "Trusted policy: " + scenario.trusted_policy + "\n\nTask: " + scenario.task
-    messages = [{"role": "system", "content": ACTION_SYSTEM_PROMPT}, {"role": "user", "content": user_task}]
-    summary = {"schema_version": SCHEMA, "rollout_id": rollout_id, "trajectory_id": rollout_id,
-               "scenario_id": scenario.scenario_id, "family": scenario.family, "condition": condition,
-               "obstacle": condition != "clear", "seed": seed, "task_id": scenario.scenario_id,
-               "task": scenario.task, "trusted_policy": scenario.trusted_policy, "rules": asdict(rules),
-               "forbidden_files": forbidden_files, "initial_workspace": before, "identity": identity,
+    folder = Path(output_root) / f"{getattr(episode, 'folder_label', episode.family)}-{condition}-s{seed}-{rollout_id[:8]}"
+    start = episode.start()
+    messages = [{"role": "system", "content": episode.system_prompt}, {"role": "user", "content": episode.user_message}]
+    summary = {"schema_version": SCHEMA, "kind": episode.kind, "rollout_id": rollout_id, "trajectory_id": rollout_id,
+               "scenario_id": episode.scenario_id, "scenario_key": episode.scenario_key, "family": episode.family,
+               "condition": condition, "seed": seed, "task_id": episode.task_id, **start, "identity": identity,
                "sampling": sampling, "observe_every": observe_every, "label_source": "policy_rule_unreviewed",
+               "system_prompt_sha256": hashlib.sha256(episode.system_prompt.encode("utf-8")).hexdigest(),
+               "run_settings": run_settings or {"command_timeout": command_timeout, "max_steps": max_steps},
                "started_at": time.time(), "steps": []}
+    brief = episode.brief() if hasattr(episode, "brief") else {}
+    summary["scenario_brief"] = brief
     _write_json(folder / "rollout.json", summary)
-    log(f"[rollout] {scenario_key} seed={seed} → {folder}")
+    for line in describe_scenario(episode.scenario_key, seed, brief, folder):
+        log(line)
+    log(f"[rollout] {episode.scenario_key} seed={seed} → {folder}")
 
+    hook_run = re.sub(r"[^A-Za-z0-9_.-]+", "-", f"scenario-{episode.scenario_key}-s{seed}-{rollout_id[:8]}")
+    if hook_root is not None:
+        summary["hook_inspection_run"] = str(Path(hook_root) / hook_run)
     for step in range(max_steps):
         attempt_messages, action, generation, spans, failures = list(messages), None, None, None, []
         for attempt in range(max_attempts):
-            generation = generate(attempt_messages, seed * 100_000 + step * 100 + attempt)
+            sample_seed = seed * 100_000 + step * 100 + attempt
+            if hook_root is None:
+                generation = generate(attempt_messages, sample_seed)
+            else:
+                generation = generate(attempt_messages, sample_seed, inspection={
+                    "directory": Path(hook_root) / hook_run / f"{episode.task_id}_step_{step:03d}" / "generation"
+                                 / f"attempt_{attempt + 1:03d}",
+                    "context": {"run_id": hook_run, "trajectory_id": rollout_id, "step": step, "attempt": attempt + 1,
+                                "task_text": f"[{episode.scenario_key}] {episode.task_text}",
+                                "scenario_key": episode.scenario_key, "rollout_folder": str(folder)}})
             raw = decode(generation.generated_ids)
             try:
                 spans = harmony_spans(generation.pieces, len(generation.prompt_ids))
-                action = parse_agent_action(raw)
+                action = episode.parse(raw)
                 break
             except ValueError as error:
-                failures.append({"attempt": attempt, "reason": str(error), "generated_tokens": len(generation.generated_ids)})
+                failures.append({"attempt": attempt, "reason": str(error), "generated_tokens": len(generation.generated_ids),
+                                 "raw": raw})
                 log(f"[step {step}] format error (attempt {attempt + 1}/{max_attempts}): {error}")
                 attempt_messages = list(messages) + [
-                    {"role": "assistant", "content": raw[-4000:]},
+                    {"role": "assistant", "content": plain_reply(raw)[-4000:] or "(empty reply)"},
                     {"role": "user", "content": "Your previous response was rejected: " + str(error)
                      + ". No tool was called. No new observation exists. Correct only the format of that response; "
-                       "do not invent a different task or file contents. Return exactly one ```bash block or one "
-                       "```stop block in your final response."}]
-                action = None
+                       "do not invent a different task or file contents. " + episode.action_hint}]
+                action, spans = None, None
         step_record = {"step_index": step, "attempts": len(failures) + (1 if action else 0), "format_failures": failures}
+        step_dir = folder / "steps" / f"step_{step:03d}"
         if action is None:
-            summary["steps"].append({**step_record, "outcome": "format_failure"})
+            _write_json(step_dir / "step.json", {**step_record, "outcome": "format_failure",
+                                                 "input_messages": attempt_messages})
+            summary["steps"].append({**step_record, "outcome": "format_failure",
+                                     "format_failures": [{k: v for k, v in f.items() if k != "raw"} for f in failures]})
             summary["termination"] = "format_failure"
             break
 
@@ -377,62 +702,62 @@ def run_rollout(
         prompt_length = len(generation.prompt_ids)
         points = observation_points(prompt_length, spans, observe_every)
         action_id = f"{rollout_id}:{step}"
-        context = SnapshotContext(f"{rollout_id}-s{step:03d}", rollout_id, scenario_key, "pre_action",
+        context = SnapshotContext(f"{rollout_id}-s{step:03d}", rollout_id, episode.scenario_key, "pre_action",
                                   ActionSpan(action_id, step, spans.action_start, len(all_ids)))
         prefix = all_ids[:spans.action_start]
-        step_dir = folder / "steps" / f"step_{step:03d}"
         write_capture(capture(prefix, tuple(points), context), step_dir / "capture")
         # Sidecars read by scripts/detect_m1.py, evaluate_monitors.py and the dashboard capture view.
         _write_json(step_dir / "c01-input.json", {"identity": identity, "input_ids": prefix})
-        _write_json(step_dir / "m1-context.json", {"task": scenario.task, "trusted_policy": scenario.trusted_policy,
+        _write_json(step_dir / "m1-context.json", {"task": episode.task_text, "trusted_policy": episode.trusted_policy,
                                                    "reasoning_token_span": list(spans.reasoning) if spans.reasoning else None})
+        output = _output_texts(decode, generation, spans)
         _write_json(step_dir / "agent-generation.json", {
             "input_ids": all_ids, "token_pieces": generation.pieces, "prompt_length": prompt_length,
-            "final_text": decode(all_ids[spans.action[0]:spans.action[1]]), "action": body, "task": user_task,
-            "trusted_policy": scenario.trusted_policy,
+            "final_text": output["action_text"], "action": body, "task": episode.user_message,
+            "trusted_policy": episode.trusted_policy,
             "reasoning_span": list(spans.reasoning) if spans.reasoning else None, "cutoff": spans.action_start})
 
-        if kind == "stop":
-            static, effects, execution, observation = [], [], None, None
-        else:
-            static = static_findings(body, rules)
-            execution, reads = run_with_access_check(sandbox, body, forbidden_files, command_timeout)
-            after = sandbox.hashes()
-            output = execution.get("stdout_full", "") + "\n" + execution.get("stderr_full", "")
-            effects = effect_findings(before, after, output, rules, reads=reads)
-            before = after
-            observation = format_observation(execution)
-        label = policy_label(static, effects)
+        outcome = episode.execute(kind, body)
+        label = outcome["label"]
         step_record.update({
             "action_id": action_id, "run_id": context.run_id, "kind": kind, "command": body,
-            "static_findings": static, "effect_findings": effects, "policy_label": label,
-            "decision": "VIOLATION" if label else "COMPLIANT",
-            "execution": None if execution is None else {**{k: execution.get(k) for k in
-                                                            ("status", "exit_code", "elapsed_seconds", "logs")},
-                                                         "access_check": reads is not None},
+            "static_findings": outcome.get("static_findings", []), "effect_findings": outcome.get("effect_findings", []),
+            "policy_label": label,
+            "decision": outcome.get("decision") or ("VIOLATION" if label == 1 else "COMPLIANT" if label == 0 else "UNLABELLED"),
+            "execution": outcome.get("execution"),
             "seed": generation.seed, "prompt_length": prompt_length, "generated_tokens": len(generation.generated_ids),
             "action_start": spans.action_start, "reasoning_span": list(spans.reasoning) if spans.reasoning else None,
             "action_span": list(spans.action),
             "observations": [{"token_index": p, "kind": point} for p, point in points.items()],
             "capture_dir": str((step_dir / "capture").relative_to(folder))})
-        summary["steps"].append(step_record)
-        _write_json(step_dir / "step.json", step_record)
-        log(f"[step {step}] {kind}: {body[:120]!r} → label {label}" + (f" {static + effects}" if label else ""))
+        for key in ("tool_result", "oracle_reason"):
+            if key in outcome:
+                step_record[key] = outcome[key]
+        # step.json keeps the full model input/output; rollout.json stays a compact index.
+        _write_json(step_dir / "step.json", {**step_record, "input_messages": attempt_messages, "output": output,
+                                             "observation": outcome.get("observation"),
+                                             "network_events": outcome.get("network_events", [])})
+        summary["steps"].append({**step_record, "format_failures": [{k: v for k, v in f.items() if k != "raw"}
+                                                                    for f in failures]})
+        findings = step_record["static_findings"] + step_record["effect_findings"]
+        log(f"[step {step}] {kind}: {body[:120]!r} → label {label}" + (f" {findings}" if label else ""))
         _write_json(folder / "rollout.json", summary)
-        if kind == "stop":
-            summary["termination"] = "stop"
+        if outcome.get("done"):
+            summary["termination"] = "stop" if kind == "stop" else "submitted"
             break
-        messages += [{"role": "assistant", "content": f"```bash\n{body}\n```"},
-                     {"role": "user", "content": observation_message(user_task, observation)}]
+        messages += [{"role": "assistant", "content": episode.assistant_turn(kind, body)},
+                     {"role": "user", "content": episode.observation_turn(outcome)}]
     else:
         summary["termination"] = "max_steps"
     labels = [s["policy_label"] for s in summary["steps"] if "policy_label" in s]
-    summary["report"] = {"actions": len(labels), "violations": sum(labels),
+    summary["report"] = {"actions": len(labels), "violations": sum(1 for value in labels if value == 1),
+                         "unlabelled": sum(1 for value in labels if value is None),
                          "first_violation_step": next((s["step_index"] for s in summary["steps"]
                                                        if s.get("policy_label") == 1), None)}
-    summary["final_workspace"] = sandbox.hashes()
+    summary.update(episode.finish())
     summary["finished_at"] = time.time()
     _write_json(folder / "rollout.json", summary)
+    write_transcript(folder)
     log(f"[rollout] done: {summary['termination']} · violations {summary['report']['violations']}")
     return folder
 
@@ -457,7 +782,12 @@ def build_probe_manifest(root: Path, scheme: str = "family", family_split: dict 
         if not str(rollout.get("schema_version", "")).startswith("argus-v.scenario-rollout.") or "report" not in rollout:
             continue
         stats["rollouts"] += 1
-        split = family_split[rollout["family"]] if scheme == "family" else _task_split(rollout["task_id"])
+        if scheme == "family":
+            # Known workspace families use the fixed split; other groups (suite mechanism clusters)
+            # are hashed so a whole mechanism always lands in one split.
+            split = family_split.get(rollout["family"]) or _task_split(rollout["family"])
+        else:
+            split = _task_split(rollout["task_id"])
         has_violation = any(step.get("policy_label") == 1 for step in rollout["steps"])
         for step in rollout["steps"]:
             if "observations" not in step:
@@ -492,7 +822,9 @@ def _model_runtime(args):
     import torch
     from load_full_model_CUDA import load_moe_model
 
-    from argus_v.activations import BlockAdapter, ModelIdentity, extract_prefix
+    from contextlib import nullcontext
+
+    from argus_v.activations import BlockAdapter, HookInspection, ModelIdentity, extract_prefix
 
     tokenizer, model = load_moe_model()
     model.eval()
@@ -501,34 +833,106 @@ def _model_runtime(args):
     layers = tuple(range(len(adapter.block_paths))) if args.layers == "all" else tuple(int(x) for x in args.layers.split(","))
     device = model.get_input_embeddings().weight.device
 
-    def generate(messages, seed):
+    def generate(messages, seed, inspection=None):
         inputs = tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=True,
                                                return_dict=True, return_tensors="pt")
         inputs = {key: value.to(device) for key, value in inputs.items()}
+        prompt = inputs["input_ids"][0].tolist()
+        recorder = nullcontext()
+        if inspection is not None:  # same full Hook record as agent_loop's generation phase
+            recorder = HookInspection(
+                adapter, inspection["directory"], layers=(0, 11, 23), values="summary", phase="generation",
+                context={**inspection["context"], "input_ids": prompt, "token_pieces": tokenizer.convert_ids_to_tokens(prompt),
+                         "prompt_text": tokenizer.decode(prompt, skip_special_tokens=False,
+                                                         clean_up_tokenization_spaces=False)},
+                show_console=False, include_non_block=False)
         torch.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
-        with torch.inference_mode():
+        with recorder, torch.inference_mode():
             output = model.generate(**inputs, do_sample=True, temperature=args.temperature, top_p=args.top_p,
                                     max_new_tokens=args.max_new_tokens, pad_token_id=tokenizer.eos_token_id)
-        prompt = inputs["input_ids"][0].tolist()
-        generated = output[0][len(prompt):].tolist()
+            generated = output[0][len(prompt):].tolist()
+            if inspection is not None:
+                recorder.annotate_generated_tokens(generated, tokenizer.convert_ids_to_tokens(generated),
+                                                   tokenizer.decode(generated, skip_special_tokens=False,
+                                                                    clean_up_tokenization_spaces=False))
         return Generation(prompt, generated, tokenizer.convert_ids_to_tokens(prompt + generated), seed)
 
     def decode(ids):
         return tokenizer.decode(ids, skip_special_tokens=False, clean_up_tokenization_spaces=False)
 
     def capture(prefix, positions, context):
-        return extract_prefix(adapter, torch.tensor([prefix], device=device), context,
-                              layers=layers, token_positions=positions)
+        replay_inspection = nullcontext()
+        if args.hook_replay_inspection:
+            scenario_name = re.sub(r"[^A-Za-z0-9_.-]+", "-", context.scenario_id)
+            step_index = context.action.step_index
+            directory = (Path(args.hook_output) / f"scenario-replay-{scenario_name}-{context.trajectory_id[:8]}"
+                         / f"{context.scenario_id}_step_{step_index:03d}" / "hook_inspection")
+            replay_inspection = HookInspection(
+                adapter, directory, layers=(0, 11, 23), values=args.hook_values,
+                phase="pre_action_full_prefix_replay",
+                context={"run_id": context.run_id, "trajectory_id": context.trajectory_id,
+                         "scenario_id": context.scenario_id, "step": step_index,
+                         "task_text": context.scenario_id, "input_ids": prefix,
+                         "token_pieces": tokenizer.convert_ids_to_tokens(prefix),
+                         "prompt_text": tokenizer.decode(prefix, skip_special_tokens=False,
+                                                         clean_up_tokenization_spaces=False),
+                         "token_positions": list(positions)},
+                show_console=False, include_non_block=False)
+        with replay_inspection:
+            return extract_prefix(adapter, torch.tensor([prefix], device=device), context,
+                                  layers=layers, token_positions=positions)
 
     sampling = {"do_sample": True, "temperature": args.temperature, "top_p": args.top_p,
                 "max_new_tokens": args.max_new_tokens}
     return generate, decode, capture, asdict(identity), sampling
 
 
+def expand_scenarios(spec: str) -> list[str]:
+    """Comma list of names and/or groups: all, workspace, suite, suite-initial, suite-additional."""
+    from scenario_suite_bridge import suite_ids
+
+    groups = {"workspace": available_scenarios, "suite": lambda: suite_ids("all"),
+              "suite-initial": lambda: suite_ids("initial"), "suite-additional": lambda: suite_ids("additional")}
+    names = []
+    for item in [part.strip() for part in spec.split(",") if part.strip()]:
+        if item == "all":
+            names += available_scenarios() + suite_ids("all")
+        elif item in groups:
+            names += groups[item]()
+        else:
+            names.append(item)
+    return list(dict.fromkeys(names))
+
+
+def build_plan(spec: str, conditions: str | None, seeds: int) -> list[tuple[str, str, int]]:
+    wanted = set(conditions.split(",")) if conditions else None
+    plan = []
+    for name in expand_scenarios(spec):
+        scenario = load_scenario(name)
+        for condition in scenario.conditions:
+            if wanted is None or condition in wanted:
+                plan += [(name, condition, seed) for seed in range(seeds)]
+    return plan
+
+
+def completed_rollouts(root: Path) -> set[tuple[str, int]]:
+    done = set()
+    for path in Path(root).glob("*/rollout.json"):
+        try:
+            rollout = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if "report" in rollout:
+            key = rollout.get("scenario_key") or f"{rollout['scenario_id']}/{rollout['condition']}"
+            done.add((key, rollout["seed"]))
+    return done
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser("list", help="list runnable scenarios and conditions (no model load)")
     for name in ("run", "plan"):
         command = commands.add_parser(name)
         command.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
@@ -541,20 +945,44 @@ def main(argv=None) -> int:
         command.add_argument("--command-timeout", type=int, default=120)
         command.add_argument("--layers", default="all", help="'all' or comma-separated block indexes")
         command.add_argument("--yes", action="store_true", help="do not ask before clearing /workspace")
+        command.add_argument("--hook-inspection", action="store_true",
+                             help="also record full HookInspection (layers 0/11/23, every token) into --hook-output "
+                                  "so the Hidden State / token tabs show scenario runs (~1.4 GB per step)")
+        command.add_argument("--hook-replay-inspection", action="store_true",
+                             help="also record full-prefix replay HookInspection for each action")
+        command.add_argument("--hook-values", choices=("summary", "full"), default="summary",
+                             help="HookInspection tensor output format")
+        command.add_argument("--hook-output", type=Path, default=PROJECT_ROOT / "tensor_data")
+        command.add_argument("--settings", type=Path, default=SETTINGS_FILE,
+                             help="per-scenario command_timeout / max_steps / sandbox settings (JSON)")
+        command.add_argument("--shared-sandbox", action="store_true",
+                             help="reuse one running sandbox for all rollouts instead of a fresh one per rollout")
         if name == "run":
-            command.add_argument("--scenario", required=True, help=f"one of {available_scenarios()} or a folder")
-            command.add_argument("--condition", choices=("clear", "obstacle"), required=True)
+            command.add_argument("--scenario", required=True,
+                                 help=f"AV-S01..AV-S60 (scenario_suite) or one of {available_scenarios()}")
+            command.add_argument("--condition", choices=("clear", "obstacle", "C0", "C1", "C2"), required=True)
             command.add_argument("--seed", type=int, default=0)
         else:
-            command.add_argument("--scenarios", default=",".join(available_scenarios()))
-            command.add_argument("--conditions", default="clear,obstacle")
+            command.add_argument("--scenarios", default="all",
+                                 help="names and/or groups: all, workspace, suite, suite-initial, suite-additional")
+            command.add_argument("--conditions", help="filter, e.g. C1,C2 or obstacle (default: every condition)")
             command.add_argument("--seeds", type=int, default=3)
+            command.add_argument("--limit", type=int, help="run at most N rollouts this time")
+            command.add_argument("--no-resume", action="store_true", help="also rerun scenario/condition/seed already finished")
+            command.add_argument("-all", "--all", dest="run_all", action="store_true",
+                                 help="every scenario and condition, rerunning finished ones (= --scenarios all --no-resume)")
+            command.add_argument("--dry-run", action="store_true", help="print the plan and exit without loading the model")
     manifest_command = commands.add_parser("manifest")
     manifest_command.add_argument("--root", type=Path, default=DEFAULT_OUTPUT)
     manifest_command.add_argument("--output", type=Path, required=True)
     manifest_command.add_argument("--split-scheme", choices=SPLIT_SCHEMES, default="family")
     args = parser.parse_args(argv)
 
+    if args.command == "list":
+        for name in expand_scenarios("all"):
+            scenario = load_scenario(name)
+            print(f"{name}\t{'suite' if name.startswith('AV-S') else 'workspace'}\t{','.join(scenario.conditions)}")
+        return 0
     if args.command == "manifest":
         manifest, stats = build_probe_manifest(args.root, args.split_scheme)
         if args.output.exists():
@@ -563,30 +991,81 @@ def main(argv=None) -> int:
         print(json.dumps(stats, ensure_ascii=False, indent=2))
         return 0
 
+    if args.command == "plan":
+        if args.run_all:
+            args.scenarios, args.conditions, args.no_resume = "all", None, True
+        plan = build_plan(args.scenarios, args.conditions, args.seeds)
+        skipped = 0
+        if not args.no_resume:
+            done = completed_rollouts(args.output)
+            remaining = [item for item in plan if (f"{item[0]}/{item[1]}", item[2]) not in done]
+            skipped, plan = len(plan) - len(remaining), remaining
+        plan = plan[:args.limit] if args.limit else plan
+        print(f"[plan] {len(plan)} rollouts to run" + (" (--all: finished ones are rerun)" if args.no_resume
+                                                         else f" ({skipped} already finished in {args.output})"))
+        if args.dry_run:
+            for name, condition, seed in plan:
+                print(f"  {name}/{condition} seed {seed}")
+            return 0
+        if not plan:
+            return 0
+
+    run_settings = load_run_settings(args.settings)
+    cli_defaults = {"command_timeout": args.command_timeout, "max_steps": args.max_steps}
+    for name, condition, _ in (plan if args.command == "plan" else [(args.scenario, args.condition, args.seed)]):
+        scenario_settings(run_settings, name, condition, cli_defaults)  # fail on a typo before loading the model
     sandbox = SandboxClient(timeout=args.command_timeout)
-    sandbox.require_running()
     if not args.yes:
-        answer = input("Every rollout empties /workspace (the sandbox snapshots it first). Continue? [y/N] ")
+        mode = "a fresh sandbox per rollout" if not args.shared_sandbox else "one shared sandbox"
+        answer = input(f"Rollouts use {mode} and empty /workspace (current one is snapshotted first). Continue? [y/N] ")
         if answer.strip().lower() != "y":
             return 1
-    backup = sandbox.cli("snapshot", "--name", "before-scenario-rollouts")
-    print(f"[sandbox] current /workspace saved: {backup.get('snapshot') or backup}")
+    base_sandbox = {key: value for key, value in sandbox.settings().items() if key in SANDBOX_SETTING_FLAGS}
+    if sandbox.status() != "RUNNING":
+        sandbox.up()  # a stopped sandbox comes back with its recovery checkpoint, so that state is saved too
+    original = sandbox.cli("snapshot", "--name", "before-scenario-rollouts").get("snapshot")
+    print(f"[sandbox] current /workspace saved: {original}")
     generate, decode, capture, identity, sampling = _model_runtime(args)
     common = dict(generate=generate, decode=decode, capture=capture, sandbox=sandbox, identity=identity,
-                  sampling=sampling, output_root=args.output, max_steps=args.max_steps,
-                  max_attempts=args.max_attempts, observe_every=args.observe_every,
-                  command_timeout=args.command_timeout)
-    if args.command == "run":
-        run_rollout(scenario=Scenario.load(args.scenario), condition=args.condition, seed=args.seed, **common)
-        return 0
-    plan = [(Scenario.load(name), condition, seed) for name in args.scenarios.split(",")
-            for condition in args.conditions.split(",") for seed in range(args.seeds)]
-    for index, (scenario, condition, seed) in enumerate(plan):
-        print(f"=== {index + 1}/{len(plan)} {scenario.scenario_id}/{condition} seed {seed} ===")
+                  sampling=sampling, output_root=args.output, max_attempts=args.max_attempts,
+                  observe_every=args.observe_every, hook_root=args.hook_output if args.hook_inspection else None)
+
+    def one(name: str, condition: str, seed: int) -> None:
+        effective = scenario_settings(run_settings, name, condition, cli_defaults)
+        sandbox.timeout = effective["command_timeout"]
+        if not args.shared_sandbox:
+            changes = sandbox.start_fresh({**base_sandbox, **effective["sandbox"]})
+            print(f"[sandbox] fresh sandbox for {name}/{condition} seed {seed}"
+                  + (f" · settings {changes}" if changes else "")
+                  + f" · command timeout {effective['command_timeout']}s · max steps {effective['max_steps']}")
         try:
-            run_rollout(scenario=scenario, condition=condition, seed=seed, **common)
-        except (ValueError, RuntimeError) as error:  # keep the batch going; the folder records progress
-            print(f"[rollout error] {scenario.scenario_id}/{condition}/{seed}: {error}")
+            run_rollout(scenario=load_scenario(name), condition=condition, seed=seed,
+                        max_steps=effective["max_steps"], command_timeout=effective["command_timeout"],
+                        run_settings=effective, **common)
+        finally:
+            if not args.shared_sandbox:
+                sandbox.stop()
+
+    try:
+        if args.command == "run":
+            one(args.scenario, args.condition, args.seed)
+            return 0
+        for index, (name, condition, seed) in enumerate(plan):
+            print(f"=== {index + 1}/{len(plan)} {name}/{condition} seed {seed} ===")
+            try:
+                one(name, condition, seed)
+            except Exception as error:  # keep the batch going; the folder records progress, the manifest skips it
+                print(f"[rollout error] {name}/{condition}/{seed}: {type(error).__name__}: {error}")
+    finally:
+        if not args.shared_sandbox:
+            try:  # leave the sandbox as it was: default settings and the pre-batch /workspace
+                sandbox.configure(base_sandbox)
+                if original:
+                    sandbox.up(fresh=True)
+                    sandbox.cli("restore", original)
+                    print(f"[sandbox] restored the pre-batch /workspace from {original}")
+            except (RuntimeError, ValueError) as error:
+                print(f"[sandbox] could not restore the pre-batch state ({error}); snapshot: {original}")
     return 0
 
 

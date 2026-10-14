@@ -26,6 +26,13 @@ OWNER = "org.generic-sandbox.owner"
 CONFIG = "org.generic-sandbox.config"
 EXCLUDED = {".git", ".venv", "node_modules", "__pycache__", ".env", ".aws", ".ssh", ".codex", ".agents", ".state"}
 SIZES = re.compile(r"([1-9][0-9]*)([mg])\Z")
+# network "fakenet": a simulated internet in its own container ("gateway") on an internal network
+FAKENET_SUBNET, FAKENET_IP = "10.254.77.0/24", "10.254.77.53"
+FAKENET_ENTRYPOINT = ["python", "-I", "/opt/fakenet/server.py"]
+# system bundle (curl, git, Python ssl) and pip's vendored copy; both are replaced by fakenet/ca/bundle.pem
+CA_BUNDLES = ("/etc/ssl/certs/ca-certificates.crt",
+              "/usr/local/lib/python3.11/site-packages/pip/_vendor/certifi/cacert.pem")
+NETWORKS = {"internal": "internal", "allowlist": "internal", "fakenet": "lan"}
 
 
 def sha256_stream(stream):
@@ -62,7 +69,7 @@ def validate_settings(value):
                                ("archive_limit_bytes", 4096, 16 * 1024**3)):
         if type(value[name]) is not int or not lower <= value[name] <= upper:
             raise ValueError(name + " is outside the supported range")
-    if value["network"] not in ("none", "internal", "allowlist") or value["runtime"] not in ("runc", "runsc"):
+    if value["network"] not in ("none", "internal", "allowlist", "fakenet") or value["runtime"] not in ("runc", "runsc"):
         raise ValueError("unsupported network/runtime")
     if any(type(value[name]) is not bool for name in ("gpu", "llm_packages")):
         raise ValueError("gpu and llm_packages must be booleans")
@@ -116,6 +123,27 @@ def compose_spec(settings, owner, root=ROOT):
             {"driver": "nvidia", "device_ids": settings["gpu_ids"], "capabilities": ["gpu"]}]}}}
     if settings["network"] == "none":
         service["network_mode"] = "none"
+    elif settings["network"] == "fakenet":
+        result["networks"] = {"lan": {"internal": True, "labels": {OWNER: owner},
+                                      "ipam": {"config": [{"subnet": FAKENET_SUBNET}]}}}
+        service.update(networks=["lan"], dns=[FAKENET_IP], dns_search=["."], depends_on=["gateway"])
+        service["volumes"] += [{"type": "bind", "source": str(root / "fakenet" / "ca" / "bundle.pem"),
+                                "target": target, "read_only": True, "bind": {"create_host_path": False}}
+                               for target in CA_BUNDLES]
+        result["services"]["gateway"] = {
+            "image": image, "user": "10001:10001", "read_only": True,
+            "entrypoint": FAKENET_ENTRYPOINT, "command": [],
+            "networks": {"lan": {"ipv4_address": FAKENET_IP}}, "cap_drop": ["ALL"],
+            "security_opt": ["no-new-privileges:true"], "sysctls": {"net.ipv4.ip_unprivileged_port_start": "0"},
+            "mem_limit": "256m", "memswap_limit": "256m", "cpus": 0.5, "pids_limit": 128, "init": True,
+            "ulimits": {"core": {"soft": 0, "hard": 0}, "nofile": {"soft": 1024, "hard": 1024}},
+            "tmpfs": ["/tmp:rw,noexec,nosuid,nodev,size=32m"],
+            "volumes": [{"type": "bind", "source": str(root / "fakenet"), "target": "/opt/fakenet",
+                         "read_only": True, "bind": {"create_host_path": False}}],
+            "environment": {"FAKENET_IP": FAKENET_IP, "PYTHONDONTWRITEBYTECODE": "1"},
+            "labels": {OWNER: owner, CONFIG: fingerprint(settings)},
+            "logging": {"driver": "json-file", "options": {"max-size": "20m", "max-file": "5"}}, "restart": "no",
+        }
     else:
         result["networks"] = {"internal": {"internal": True, "labels": {OWNER: owner}}}
         service["networks"] = ["internal"]
@@ -138,6 +166,27 @@ def compose_spec(settings, owner, root=ROOT):
             "logging": {"driver": "json-file", "options": {"max-size": "1m", "max-file": "3"}}, "restart": "no",
         }
     return result
+
+
+def ensure_fakenet_ca(root=ROOT):
+    """CA for the simulated internet: the gateway signs per-host certificates with it and the sandbox
+    trusts it (bundle.pem = the host's CA bundle + this CA, mounted over the sandbox's bundle)."""
+    folder = root / "fakenet" / "ca"
+    if (folder / "bundle.pem").is_file() and (folder / "ca.key").is_file():
+        return folder
+    folder.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["openssl", "ecparam", "-name", "prime256v1", "-genkey", "-noout", "-out", str(folder / "ca.key")],
+                   check=True, capture_output=True)
+    subprocess.run(["openssl", "req", "-x509", "-new", "-key", str(folder / "ca.key"), "-sha256", "-days", "3650",
+                    "-subj", "/O=Internal/CN=Internal Root CA", "-addext", "basicConstraints=critical,CA:TRUE",
+                    "-addext", "keyUsage=critical,keyCertSign,cRLSign", "-out", str(folder / "ca.pem")],
+                   check=True, capture_output=True)
+    system = Path("/etc/ssl/certs/ca-certificates.crt")
+    bundle = (system.read_text() if system.is_file() else "") + (folder / "ca.pem").read_text()
+    (folder / "bundle.pem").write_text(bundle)
+    for name in ("ca.key", "ca.pem", "bundle.pem"):  # read by uid 10001 inside the containers
+        (folder / name).chmod(0o644)
+    return folder
 
 
 def archive_members(path, limit):
@@ -420,7 +469,7 @@ print(json.dumps({'path': sys.argv[1], 'size': info.st_size,
                 or host.get("PublishAllPorts") or host.get("VolumesFrom")
                 or host.get("PidMode") or host.get("IpcMode") != "private"
                 or host.get("UTSMode") or host.get("ExtraHosts")
-                or host.get("Dns") != ["127.0.0.1"]
+                or host.get("Dns") not in (["127.0.0.1"], [FAKENET_IP])
                 or {v.upper() for v in host.get("CapDrop", [])} != {"ALL"}
                 or not any(v in ("no-new-privileges", "no-new-privileges:true", "no-new-privileges=true")
                            for v in host.get("SecurityOpt", []))
@@ -434,6 +483,9 @@ print(json.dumps({'path': sys.argv[1], 'size': info.st_size,
                     and mount.get("Source") == str(self.root / "models") and mount.get("RW") is False):
                 model_mounts += 1
                 continue
+            if (mount.get("Type") == "bind" and mount.get("Destination") in CA_BUNDLES and mount.get("RW") is False
+                    and mount.get("Source") == str(self.root / "fakenet" / "ca" / "bundle.pem")):
+                continue
             raise RuntimeError("unexpected mount in sandbox")
         if model_mounts != 1:
             raise RuntimeError("expected read-only model mount is missing")
@@ -445,18 +497,24 @@ print(json.dumps({'path': sys.argv[1], 'size': info.st_size,
                     or host.get("PidsLimit") != self.settings["pids"]
                     or host.get("Tmpfs") != expected_tmpfs or host.get("Init") is not True
                     or host.get("ShmSize") != 256 * 1024**2
-                    or host.get("Runtime") != self.settings["runtime"]):
+                    or host.get("Runtime") != self.settings["runtime"]
+                    or host.get("Dns") != ([FAKENET_IP] if self.settings["network"] == "fakenet" else ["127.0.0.1"])
+                    or {m.get("Destination") for m in container.get("Mounts", [])} & set(CA_BUNDLES)
+                    != (set(CA_BUNDLES) if self.settings["network"] == "fakenet" else set())):
                 raise RuntimeError("actual resource limits do not match settings")
             networks = container.get("NetworkSettings", {}).get("Networks", {})
+            network = self.project + "_" + NETWORKS.get(self.settings["network"], "")
             if ((self.settings["network"] == "none" and host.get("NetworkMode") != "none")
-                    or (self.settings["network"] != "none" and set(networks) != {self.project + "_internal"})):
+                    or (self.settings["network"] != "none" and set(networks) != {network})):
                 raise RuntimeError("actual network differs from selected policy")
             if self.settings["network"] != "none":
-                internal = json.loads(self.control(["network", "inspect", self.project + "_internal"]))[0]
+                internal = json.loads(self.control(["network", "inspect", network]))[0]
                 if internal.get("Internal") is not True:
                     raise RuntimeError("internal network unexpectedly permits external routing")
             if self.settings["network"] == "allowlist":
                 self.check_proxy()
+            if self.settings["network"] == "fakenet":
+                self.check_gateway()
         if not container.get("State", {}).get("Running"):
             if required:
                 raise RuntimeError("sandbox is stopped; run up first")
@@ -485,6 +543,47 @@ print(json.dumps({'path': sys.argv[1], 'size': info.st_size,
                    {self.project + "_internal", self.project + "_egress"}):
             raise RuntimeError("allowlist proxy configuration does not match")
 
+    def gateway_id(self):
+        identity = self.control(self.compose(["ps", "--all", "--quiet", "gateway"])).decode().strip()
+        if not re.fullmatch(r"[0-9a-f]{12,64}", identity):
+            raise RuntimeError("fakenet gateway is unavailable")
+        return identity
+
+    def check_gateway(self):
+        gateway = json.loads(self.control(["container", "inspect", self.gateway_id()]))[0]
+        host, config = gateway["HostConfig"], gateway["Config"]
+        labels = config.get("Labels", {})
+        mounts = [(v.get("Type"), v.get("Destination"), v.get("Source"), v.get("RW")) for v in gateway.get("Mounts", [])]
+        if (labels.get(OWNER) != self.owner or labels.get(CONFIG) != fingerprint(self.settings)
+                or gateway["State"].get("Running") is not True or config.get("User") != "10001:10001"
+                or config.get("Entrypoint") != FAKENET_ENTRYPOINT
+                or host.get("ReadonlyRootfs") is not True or host.get("Privileged")
+                or host.get("CapAdd") or {v.upper() for v in host.get("CapDrop", [])} != {"ALL"}
+                or host.get("PortBindings") or host.get("Devices")
+                or ("bind", "/opt/fakenet", str(self.root / "fakenet"), False) not in mounts
+                or any(m[0] != "tmpfs" and m[1] != "/opt/fakenet" for m in mounts)
+                or host.get("Memory") != 256 * 1024**2 or host.get("PidsLimit") != 128
+                or set(gateway["NetworkSettings"]["Networks"]) != {self.project + "_lan"}):
+            raise RuntimeError("fakenet gateway configuration does not match")
+
+    def fakenet_log(self, since=0.0):
+        """Requests the gateway received (DNS, HTTP(S), TLS, TCP) at or after ``since`` (epoch seconds)."""
+        since = max(0.0, float(since))
+        result = subprocess.run(self.command(["logs", "--since", f"{max(0.0, since - 1):.6f}", self.gateway_id()]),
+                                capture_output=True, env=self.environment, timeout=60)
+        if result.returncode:
+            raise RuntimeError(result.stderr.decode(errors="replace")[:2000] or "docker logs failed")
+        raw = result.stdout[-256 * 1024 * 1024:].decode(errors="replace")
+        events = []
+        for line in raw.splitlines():
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if type(event) is dict and event.get("kind") != "ready" and event.get("time", 0) >= since:
+                events.append(event)
+        return events
+
     def save_session(self, snapshot=None):
         atomic_json(self.state / "session.json", {"restore_on_up": str(snapshot) if snapshot else None})
 
@@ -500,7 +599,7 @@ print(json.dumps({'path': sys.argv[1], 'size': info.st_size,
             labels, name = network.get("Labels") or {}, network.get("Name")
             if (labels.get("com.docker.compose.project") != self.project
                     or labels.get(OWNER) not in (None, self.owner)
-                    or name not in {self.project + "_internal", self.project + "_egress"}
+                    or name not in {self.project + "_internal", self.project + "_egress", self.project + "_lan"}
                     or name in keep or network.get("Containers")):
                 continue
             self.control(["network", "rm", identity])
@@ -588,6 +687,8 @@ print(json.dumps({'path': sys.argv[1], 'size': info.st_size,
             restore = json.loads((self.state / "session.json").read_text()).get("restore_on_up")
         if restore:
             self.save_session(restore)
+        if self.settings["network"] == "fakenet":
+            ensure_fakenet_ca(self.root)
         args = ["up", "--detach", "--no-build", "--pull", "never", "--remove-orphans"]
         if old or fresh:
             args.append("--force-recreate")
@@ -599,7 +700,7 @@ print(json.dumps({'path': sys.argv[1], 'size': info.st_size,
             except BaseException:
                 self.control(["container", "kill", cid], timeout=15)
                 raise
-        keep = {self.project + "_internal"} if self.settings["network"] != "none" else set()
+        keep = {self.project + "_" + NETWORKS[self.settings["network"]]} if self.settings["network"] != "none" else set()
         if self.settings["network"] == "allowlist":
             keep.add(self.project + "_egress")
         removed_networks = self.cleanup_networks(keep)
@@ -774,6 +875,8 @@ def main(argv=None):
     commands.add_parser("agent", help="Offline agent tools, scenarios, approvals and audit (agent --help)")
     for name in ("doctor", "render", "build", "status", "files", "shell", "kill", "network-log", "validate"):
         commands.add_parser(name)
+    fakenet_log = commands.add_parser("fakenet-log", help="Requests the simulated internet received (network fakenet)")
+    fakenet_log.add_argument("--since", type=float, default=0.0, help="Only events at or after this epoch time")
     start = commands.add_parser("up")
     start.add_argument("--fresh", action="store_true")
     run = commands.add_parser("run")
@@ -803,7 +906,7 @@ def main(argv=None):
     config.add_argument("--timeout", type=int)
     config.add_argument("--log-limit", type=int, help="Combined stdout/stderr byte limit")
     config.add_argument("--archive-limit", type=int, help="Import/export/snapshot byte limit")
-    config.add_argument("--network", choices=("none", "internal", "allowlist"))
+    config.add_argument("--network", choices=("none", "internal", "allowlist", "fakenet"))
     config.add_argument("--allow-host", action="append")
     config.add_argument("--runtime", choices=("runc", "runsc"))
     config.add_argument("--gpu", action=argparse.BooleanOptionalAction, default=None)
@@ -870,6 +973,11 @@ def main(argv=None):
             if cid:
                 result["resources"] = json.loads(runtime.control(["stats", "--no-stream", "--format", "{{json .}}", cid]))
                 result["disk"] = runtime.control(["exec", cid, "df", "-h", "/workspace", "/tmp"]).decode()
+        elif args.action == "fakenet-log":
+            if runtime.settings["network"] != "fakenet":
+                result = {"status": "NOT_ENABLED", "events": []}
+            else:
+                result = {"status": "OK", "events": runtime.fakenet_log(args.since)}
         elif args.action == "network-log":
             if runtime.settings["network"] != "allowlist":
                 result = {"status": "NOT_ENABLED"}

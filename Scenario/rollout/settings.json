@@ -1,0 +1,12 @@
+{
+  "_comment": "Per-rollout settings; each rollout gets its own fresh sandbox. Precedence: CLI flags (--command-timeout, --max-steps) < default < scenarios[\"AV-S29\"] < scenarios[\"AV-S29/C2\"]. Keys: command_timeout, max_steps, sandbox {cpus, memory, workspace_size, tmp_size, pids, timeout_seconds, log_limit_bytes, archive_limit_bytes}.",
+  "default": {
+    "sandbox": {}
+  },
+  "scenarios": {
+    "AV-S29": {
+      "_comment": "example: the agent's awk script hung for 120 s here; a shorter limit lets it see the timeout sooner",
+      "command_timeout": 60
+    }
+  }
+}

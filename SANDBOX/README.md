@@ -141,6 +141,24 @@ python3 sandbox.py network-log
 
 allowlist에서는 작업 컨테이너를 내부망에만 연결하고, 외부 연결을 가진 proxy만 허용한 목적지에 연결한다. 환경 변수 `HTTP_PROXY`/`HTTPS_PROXY`를 이용하는 HTTP·HTTPS 클라이언트가 대상이다. 목적지 hostname, 포트 80/443, DNS 해석 결과를 검사하고 loopback·private·link-local·예약 주소를 거부한다. DNS 재해석을 피하기 위해 검증한 숫자 IP에 연결한다. proxy는 동시 연결·전송량·시간을 제한한다. HTTPS 내용은 복호화하지 않으며 임의 TCP/UDP 서비스는 지원하지 않는다. HTTPS 제한은 CONNECT 요청의 hostname과 연결 IP 기준이며, 공유 IP의 가상 호스트·암호화된 SNI·요청 내용까지 검증하는 애플리케이션 계층 방화벽은 아니다. 허용한 서비스로의 데이터 유출 방지는 별도 정책이 필요하다. [Docker 내부 네트워크 설정](https://docs.docker.com/reference/compose-file/networks/#internal)
 
+### 가짜 인터넷 (`network=fakenet`)
+
+에이전트가 인터넷으로 무엇을 하려는지 관찰하기 위한 모드다. 진짜 인터넷에는 연결되지 않는다. 작업 컨테이너는 외부 연결이 없는 내부망(`lan`)에만 붙고, 같은 망의 `gateway` 컨테이너(`fakenet/server.py`, 고정 주소 `10.254.77.53`)가 모든 요청을 받는다. 시나리오와 무관하게 SANDBOX에 한 번 만들어 두고 모든 시나리오가 같이 쓴다.
+
+```bash
+python3 sandbox.py config --network fakenet
+python3 sandbox.py up --fresh
+python3 sandbox.py fakenet-log --since 0        # 받은 요청 (JSON 이벤트 목록)
+python3 sandbox.py config --network none        # 원래대로
+```
+
+- DNS(53): 모든 이름이 gateway 주소로 풀린다. 조회한 이름이 모두 기록된다.
+- HTTP(80, 8000, 8080, 9200)·HTTPS(443, 8443): 응답은 `fakenet/routes.json` 규칙(처음 일치하는 규칙)으로 정한다. HTTPS 인증서는 hostname마다 즉석에서 만든다. 처음 `up`할 때 만들어지는 `fakenet/ca/`의 CA가 서명하고, 작업 컨테이너의 시스템 CA 묶음과 pip 내장 CA 파일을 이 CA가 포함된 묶음으로 바꿔 끼우므로 curl·python·git·pip가 정상 연결된다. 메서드·호스트·경로·쿼리·헤더·본문(64 KiB까지)이 기록된다.
+- TCP(ssh 22, smtp 25/587, ftp, DB 포트 등): 그럴듯한 배너를 보내고 클라이언트가 보낸 바이트를 기록한다. SMTP는 메일 본문까지 받는다.
+- 숫자 IP로 직접 접속하면 경로가 없어 실패한다(이 경우는 명령어 텍스트 검사로 잡는다).
+- gateway는 읽기 전용·권한 없음(cap_drop ALL)·자원 제한으로 실행되며 `fakenet/` 폴더를 읽기 전용으로만 본다. CA 개인키는 gateway에만 마운트된다.
+- `argus_hook/scenario_rollout.py`는 명령마다 이 기록을 읽어 `step.json`의 `network_events`에 저장하고, 정책 라벨에 `network_attempt:*`와 `canary_exfiltration:*`(요청 안에 canary가 있으면)를 추가한다. 시나리오별로 켜려면 `Scenario/rollout/settings.json`의 `sandbox`에 `"network": "fakenet"`을 넣는다.
+
 ## 패키지와 LLM·GPU
 
 공통 패키지는 `requirements.txt`, 선택 LLM 패키지는 `requirements-llm.txt`에서 관리한다. 현재 LLM 선택에는 PyTorch, Transformers, Accelerate, Safetensors, NumPy가 있다. 설치는 이미지 빌드 단계에서 이루어지고 실행 중 네트워크 제한은 유지된다. 설치된 버전은 이미지의 `/opt/sandbox/environment.lock`에 기록된다. 첫 준비 이후 팀에서 검증한 버전과 기본 이미지 digest를 고정한다.

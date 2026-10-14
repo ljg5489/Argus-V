@@ -142,6 +142,18 @@ def main():
     parser = argparse.ArgumentParser(description="Sandbox Agent + full module Hook inspection")
     parser.add_argument("--tensor-output", type=Path, default=Path("tensor_data"))
     parser.add_argument("--task", help="Task text; omit for interactive entry")
+    parser.add_argument("--scenario", help="run one scenario from scenario_rollout.py; use 'list' to show choices")
+    parser.add_argument("--condition", choices=("clear", "obstacle", "C0", "C1", "C2"),
+                        help="scenario condition; prompted when --scenario is selected")
+    parser.add_argument("--seed", type=int, default=0, help="scenario data and generation seed")
+    parser.add_argument("--rollout-output", type=Path, default=Path("artifacts/rollouts"),
+                        help="scenario rollout records directory")
+    parser.add_argument("--command-timeout", type=int, default=120)
+    parser.add_argument("--observe-every", type=int, default=32)
+    parser.add_argument("--layers", default="all", help="scenario C-01 layers: 'all' or comma-separated indexes")
+    parser.add_argument("--temperature", type=float, default=1.0)
+    parser.add_argument("--top-p", type=float, default=1.0)
+    parser.add_argument("--yes", action="store_true", help="skip scenario runner's workspace confirmation")
     parser.add_argument("--max-steps", type=int, default=10)
     parser.add_argument("--max-new-tokens", type=int, default=1024)
     parser.add_argument("--max-action-retries", type=int, default=10,
@@ -151,6 +163,55 @@ def main():
     args = parser.parse_args()
     if args.max_steps < 1 or args.max_new_tokens < 1 or args.max_action_retries < 1:
         parser.error("max-steps, max-new-tokens and max-action-retries must be positive")
+    if args.scenario is not None:
+        if args.task:
+            parser.error("--task is for manual runs; scenario runs take their task from the selected scenario")
+        if args.scenario == "list":
+            sys.path.insert(0, str(Path(__file__).resolve().parent))
+            from scenario_rollout import main as scenario_main
+
+            return scenario_main(["list"])
+        if args.condition is None:
+            sys.path.insert(0, str(Path(__file__).resolve().parent))
+            from scenario_rollout import expand_scenarios, load_scenario
+
+            names = expand_scenarios(args.scenario)
+            if len(names) != 1:
+                parser.error("--scenario must name exactly one scenario (use --scenario list to see choices)")
+            selected = load_scenario(names[0])
+            choices = list(selected.conditions)
+            print(f"{selected.scenario_id}: 사용 가능한 조건 {', '.join(choices)}")
+            try:
+                args.condition = input("조건을 입력하세요 > ").strip()
+            except EOFError:
+                parser.error("non-interactive scenario runs require --condition")
+            if args.condition not in choices:
+                parser.error(f"{selected.scenario_id}의 조건은 {', '.join(choices)}입니다")
+        if args.hook_phase is None:
+            hook_phase, hook_values = choose_hook_options()
+        else:
+            hook_phase, hook_values = args.hook_phase, args.hook_values
+
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from scenario_rollout import main as scenario_main
+
+        command = ["run", "--scenario", args.scenario, "--condition", args.condition,
+                   "--seed", str(args.seed), "--output", str(args.rollout_output),
+                   "--max-steps", str(args.max_steps), "--max-attempts", str(args.max_action_retries),
+                   "--max-new-tokens", str(args.max_new_tokens), "--command-timeout", str(args.command_timeout),
+                   "--observe-every", str(args.observe_every), "--layers", args.layers,
+                   "--temperature", str(args.temperature), "--top-p", str(args.top_p),
+                   "--hook-output", str(args.tensor_output), "--hook-values", hook_values]
+        if hook_phase in ("generation", "both"):
+            command.append("--hook-inspection")
+        if hook_phase in ("replay", "both"):
+            command.append("--hook-replay-inspection")
+        if args.yes:
+            command.append("--yes")
+        return scenario_main(command)
+
+    if args.condition is not None:
+        parser.error("--condition requires --scenario")
     if args.hook_phase is None:
         args.hook_phase, args.hook_values = choose_hook_options()
     layers = (0, 11, 23)

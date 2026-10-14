@@ -6,7 +6,14 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock
 
-from Research.hidden_state_dashboard import PAGE, ArtifactIndex, CaptureIndex, DashboardHandler, LogitLens
+from Research.hidden_state_dashboard import (
+    PAGE,
+    ArtifactIndex,
+    CaptureIndex,
+    DashboardHandler,
+    LogitLens,
+    RolloutIndex,
+)
 
 
 class HookMapTests(unittest.TestCase):
@@ -102,6 +109,62 @@ class HookMapTests(unittest.TestCase):
         for name in ("view-analysis", "view-compare", "view-sandbox", "view-hooks",
                      "sandbox-import", "sandbox-preview", "sandbox-image", "theme-toggle"):
             self.assertIn(f'id="{name}"', PAGE)
+
+
+class RolloutViewTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name) / "rollouts"
+        folder = self.root / "AV-S01-C2-s0-abcd1234"
+        (folder / "steps" / "step_000").mkdir(parents=True)
+        (folder / "rollout.json").write_text(json.dumps({
+            "kind": "suite", "scenario_key": "AV-S01/C2", "scenario_id": "AV-S01", "condition": "C2", "seed": 0,
+            "task": "goal", "started_at": 1791800000.0, "termination": "submitted",
+            "report": {"actions": 1, "violations": 1, "unlabelled": 0, "first_violation_step": 0},
+            "operator_report": {"business_completed": False, "violation_attempts": 1, "violation_executed": 0},
+            "steps": [{"step_index": 0, "kind": "tool", "command": "{}", "policy_label": 1}]}))
+        (folder / "steps" / "step_000" / "step.json").write_text(json.dumps({
+            "step_index": 0, "kind": "tool", "command": "{}", "policy_label": 1,
+            "input_messages": [{"role": "system", "content": "rules"}, {"role": "user", "content": "goal"}],
+            "output": {"reasoning": "think", "action_text": "```tool\n{}\n```"}, "observation": "{}"}))
+        (folder / "transcript.md").write_text("# AV-S01/C2")
+        (self.root / "partial").mkdir()
+        self.handler = object.__new__(DashboardHandler)
+        self.handler.rollouts = RolloutIndex(self.root)
+        self.handler._json = Mock()
+        self.handler._send = Mock()
+
+    def get(self, path):
+        self.handler.path = path
+        self.handler.do_GET()
+        return self.handler._json.call_args.args if self.handler._json.called else None
+
+    def test_list_detail_transcript_and_escape(self):
+        (entry,) = self.get("/api/rollouts/list")[0]["rollouts"]
+        self.assertEqual((entry["scenario_key"], entry["violations"], entry["business_completed"]), ("AV-S01/C2", 1, False))
+        detail = self.get("/api/rollouts/detail?id=AV-S01-C2-s0-abcd1234")[0]
+        step = detail["steps"][0]
+        self.assertEqual(step["input_messages"][1]["content"], "goal")
+        self.assertEqual(step["output"]["reasoning"], "think")
+        self.assertIsNone(step["capture_id"])  # no capture folder in this fixture
+        self.handler.path = "/api/rollouts/transcript?id=AV-S01-C2-s0-abcd1234"
+        self.handler.do_GET()
+        self.assertEqual(self.handler._send.call_args.args[0], "# AV-S01/C2".encode())
+        for bad in ("../rollouts", "partial", "AV-S01-C2-s0-abcd1234/steps"):
+            self.handler._json.reset_mock()
+            self.assertEqual(self.get(f"/api/rollouts/detail?id={bad}")[1], 400)
+        self.assertIn('id="view-rollouts"', PAGE)
+
+    def test_scenario_hidden_endpoints_without_capture(self):
+        trend = self.get("/api/rollouts/trend?id=AV-S01-C2-s0-abcd1234")[0]
+        self.assertEqual([step["step_index"] for step in trend["steps"]], [0])
+        self.assertEqual(trend["layers"], [])  # this fixture step has no capture folder
+        self.handler._json.reset_mock()
+        self.assertEqual(self.get("/api/rollouts/hidden?id=AV-S01-C2-s0-abcd1234&step=0")[1], 400)
+        self.handler._json.reset_mock()
+        self.assertEqual(self.get("/api/rollouts/vector?id=../x&step=0&point=0&layer=0")[1], 400)
+        self.assertIn('id="view-scenario-hidden"', PAGE)
 
 
 class CaptureViewTests(unittest.TestCase):

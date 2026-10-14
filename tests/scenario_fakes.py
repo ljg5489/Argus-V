@@ -31,13 +31,14 @@ class ScriptedModel:
     """Maps pieces to small vocabulary IDs; each final block is one opaque piece."""
 
     def __init__(self, replies=()):
-        self.replies, self.vocab, self.calls = list(replies), {}, []
+        self.replies, self.vocab, self.calls, self.messages = list(replies), {}, [], []
 
     def ids(self, pieces):
         return [self.vocab.setdefault(piece, len(self.vocab) % 60) for piece in pieces]
 
     def generate(self, messages, seed):
         self.calls.append((len(messages), seed))
+        self.messages.append([dict(message) for message in messages])
         pieces = PROMPT + self.replies.pop(0)
         ids = self.ids(pieces)
         return Generation(ids[:len(PROMPT)], ids[len(PROMPT):], pieces, seed)
@@ -54,6 +55,7 @@ class FakeSandbox:
         self.root = Path(root)
         self.root.mkdir(parents=True, exist_ok=True)
         self.commands = []
+        self.internet = []  # scripted fake-internet requests: (command substring, event)
 
     def reset_workspace(self):
         for child in self.root.iterdir():
@@ -66,6 +68,10 @@ class FakeSandbox:
     def hashes(self):
         return {str(p.relative_to(self.root)): hashlib.sha256(p.read_bytes()).hexdigest()
                 for p in sorted(self.root.rglob("*")) if p.is_file()}
+
+    def network_events(self, since):
+        recent, self.seen = "\n".join(self.commands[getattr(self, "seen", 0):]), len(self.commands)
+        return [dict(event, time=since) for needle, event in self.internet if needle in recent]
 
     def controller(self, command):
         result = self.run(command)

@@ -47,3 +47,30 @@ python3.11 SANDBOX/sandbox.py run -- cat manual_demo/result.txt
 
 이 경로는 에이전트·샌드박스 작업 실행이다. M1 자동 판정은 아직 `agent_loop`에
 연결되지 않았다. `scripts/run_m1_sandbox.py`는 별도의 고정 과제 M1 연결 확인용이다.
+
+## 저장된 시나리오를 Agent로 실행하기
+
+`agent_loop.py`는 기존 수동 Task 실행을 유지하면서 저장된 workspace 시나리오 3종과
+`AV-S01`~`AV-S60` 중 하나를 골라 처음부터 실행할 수 있다. 목록을 보려면:
+
+```bash
+PYTHONPATH=src python3 argus_hook/agent_loop.py --scenario list
+```
+
+workspace 시나리오는 `clear` 또는 `obstacle`, AV 시나리오는 `C0`, `C1`, `C2`를 고른다.
+시나리오별 초기 파일을 신뢰된 runner가 기존 `/workspace`에 반입하고 해당 조건의 공개
+목표·정책·도구를 Agent에 전달한다. 기존 작업 공간은 실행 전 백업되며, 계속 진행할지
+확인한다.
+
+```bash
+PYTHONPATH=src python3 argus_hook/agent_loop.py --scenario report --condition obstacle
+PYTHONPATH=src python3 argus_hook/agent_loop.py --scenario AV-S31 --condition C2 --seed 0
+```
+
+조건을 생략하면 해당 시나리오의 조건을 보여 주고 입력을 받는다. 실행 결과는 기본적으로
+`artifacts/rollouts/`에, 생성·replay Hook은 선택한 수집 범위에 따라 `tensor_data/`에
+저장된다. `--rollout-output`, `--tensor-output`, `--max-steps`, `--max-new-tokens`로
+경로와 실행 한도를 바꿀 수 있다. `--yes`는 작업 공간 초기화 확인을 생략한다.
+
+`--scenario`를 지정하지 않으면 기존처럼 `--task` 또는 `Task >`로 직접 입력하는 Agent
+실행이 유지된다.

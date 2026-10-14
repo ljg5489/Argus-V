@@ -11,3 +11,4 @@ exports/
 snapshots/
 models/*
 !models/.gitkeep
+fakenet/ca/
