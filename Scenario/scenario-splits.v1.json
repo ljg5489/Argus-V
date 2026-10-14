@@ -1,0 +1,193 @@
+{
+  "schema_version": "argus-v.scenario-splits.v1",
+  "source": {
+    "filename": "시나리오 분할표.xlsx",
+    "sha256": "b1e45d7434be6cba64afc7b5589a101ae7bf95ab0b8d2ba0f2d4acac43ac7257",
+    "sheet": "Sheet1",
+    "range": "F8:I15"
+  },
+  "splits": {
+    "train": [
+      "AV-S01",
+      "AV-S02",
+      "AV-S03",
+      "AV-S04",
+      "AV-S06",
+      "AV-S07",
+      "AV-S08",
+      "AV-S09",
+      "AV-S10",
+      "AV-S11",
+      "AV-S12",
+      "AV-S13",
+      "AV-S14",
+      "AV-S16",
+      "AV-S17",
+      "AV-S23",
+      "AV-S24",
+      "AV-S25",
+      "AV-S26",
+      "AV-S27",
+      "AV-S28",
+      "AV-S30",
+      "AV-S31",
+      "AV-S32",
+      "AV-S36",
+      "AV-S39",
+      "AV-S41",
+      "AV-S42",
+      "AV-S43",
+      "AV-S45",
+      "AV-S46",
+      "AV-S50",
+      "AV-S54",
+      "AV-S55",
+      "AV-S57",
+      "AV-S59"
+    ],
+    "validation": [
+      "AV-S05",
+      "AV-S15",
+      "AV-S18",
+      "AV-S20",
+      "AV-S22",
+      "AV-S29",
+      "AV-S33",
+      "AV-S34",
+      "AV-S35",
+      "AV-S40",
+      "AV-S49",
+      "AV-S51"
+    ],
+    "test": [
+      "AV-S19",
+      "AV-S21",
+      "AV-S37",
+      "AV-S38",
+      "AV-S44",
+      "AV-S47",
+      "AV-S48",
+      "AV-S52",
+      "AV-S53",
+      "AV-S56",
+      "AV-S58",
+      "AV-S60"
+    ]
+  },
+  "categories": [
+    {
+      "category": "수신자·공유 권한·동의",
+      "train": [
+        "AV-S01",
+        "AV-S02",
+        "AV-S04",
+        "AV-S54",
+        "AV-S55"
+      ],
+      "validation": [
+        "AV-S29"
+      ],
+      "test": [
+        "AV-S53",
+        "AV-S56"
+      ]
+    },
+    {
+      "category": "제한 자료 접근·민감정보 처리",
+      "train": [
+        "AV-S09",
+        "AV-S11",
+        "AV-S13",
+        "AV-S14",
+        "AV-S26",
+        "AV-S39",
+        "AV-S46",
+        "AV-S57"
+      ],
+      "validation": [
+        "AV-S05",
+        "AV-S20",
+        "AV-S51"
+      ],
+      "test": [
+        "AV-S52",
+        "AV-S60"
+      ]
+    },
+    {
+      "category": "신원·서명·무결성·실행 근거 검증",
+      "train": [
+        "AV-S03",
+        "AV-S31",
+        "AV-S41",
+        "AV-S42",
+        "AV-S45",
+        "AV-S59"
+      ],
+      "validation": [
+        "AV-S35",
+        "AV-S49"
+      ],
+      "test": [
+        "AV-S37",
+        "AV-S47",
+        "AV-S48"
+      ]
+    },
+    {
+      "category": "프로그램·서비스·예산·게시 승인",
+      "train": [
+        "AV-S07",
+        "AV-S10",
+        "AV-S27",
+        "AV-S28"
+      ],
+      "validation": [
+        "AV-S22",
+        "AV-S33"
+      ],
+      "test": [
+        "AV-S21"
+      ]
+    },
+    {
+      "category": "권한·제어 설정·신뢰된 증거 변경",
+      "train": [
+        "AV-S06",
+        "AV-S12",
+        "AV-S17",
+        "AV-S23",
+        "AV-S24",
+        "AV-S25",
+        "AV-S30",
+        "AV-S36"
+      ],
+      "validation": [
+        "AV-S15",
+        "AV-S34"
+      ],
+      "test": [
+        "AV-S38",
+        "AV-S58"
+      ]
+    },
+    {
+      "category": "원본 보존·중복 실행·동시 수정·시간 제한",
+      "train": [
+        "AV-S08",
+        "AV-S16",
+        "AV-S32",
+        "AV-S43",
+        "AV-S50"
+      ],
+      "validation": [
+        "AV-S18",
+        "AV-S40"
+      ],
+      "test": [
+        "AV-S19",
+        "AV-S44"
+      ]
+    }
+  ]
+}

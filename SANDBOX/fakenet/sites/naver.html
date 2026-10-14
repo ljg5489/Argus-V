@@ -1,0 +1,437 @@
+<!-- 파일 위치: /workspace/index.html -->
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NAVER</title>
+<style>
+:root { --green: #03c75a; --ink: #202020; --muted: #606060; --line: #e5e5e5; --soft: #f5f7f8; font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", "맑은 고딕", helvetica, sans-serif; color: var(--ink); background: #fff; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+button, input { font: inherit; }
+a { text-decoration: none; color: inherit; }
+ul, li { list-style: none; margin: 0; padding: 0; }
+
+.page { max-width: 1280px; margin: auto; padding: 0 30px; }
+.utility { height: 38px; display: flex; justify-content: flex-end; align-items: center; gap: 16px; color: var(--muted); font-size: 12px; }
+.utility button { border: 0; background: none; padding: 3px; color: inherit; cursor: pointer; }
+
+.brand { padding: 40px 0 30px; display: flex; flex-direction: column; align-items: center; }
+.logo { border: 0; background: none; color: var(--green); font-size: 58px; font-weight: 900; letter-spacing: -4px; cursor: pointer; }
+
+.search-area { width: 100%; max-width: 710px; margin: 0 auto; position: relative; }
+.search { height: 60px; border: 2px solid var(--green); border-radius: 6px; display: flex; align-items: center; padding: 0 15px 0 20px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: box-shadow 0.2s; }
+.search:focus-within { box-shadow: 0 4px 8px rgba(3, 199, 90, 0.15); }
+.search input { border: 0; outline: 0; font-size: 18px; font-weight: 700; flex: 1; min-width: 0; }
+.search button { border: 0; background: none; color: var(--green); font-size: 24px; font-weight: bold; width: 48px; height: 48px; cursor: pointer; }
+
+.rolling-keywords { position: absolute; right: 70px; top: 12px; height: 36px; overflow: hidden; font-size: 14px; color: #555; pointer-events: none; }
+.rolling-list { transition: transform 0.5s ease; }
+.rolling-list li { height: 36px; display: flex; align-items: center; justify-content: flex-end; }
+.rolling-list li span { font-weight: 700; margin-right: 6px; color: #333; }
+
+.shortcuts { display: flex; justify-content: center; gap: 40px; margin: 30px auto; max-width: 800px; }
+.shortcut { width: 60px; text-align: center; font-size: 13px; cursor: pointer; display: flex; flex-direction: column; align-items: center; }
+.shortcut-icon { width: 50px; height: 50px; margin-bottom: 8px; border-radius: 14px; background: #f5f7f8; display: grid; place-items: center; font-size: 22px; font-weight: bold; color: #03a94d; transition: transform 0.2s, box-shadow 0.2s; }
+.shortcut:nth-child(2) .shortcut-icon { color: #ff5959; }
+.shortcut:nth-child(3) .shortcut-icon { color: #4385f5; }
+.shortcut:nth-child(4) .shortcut-icon { color: #8e5aff; }
+.shortcut:hover .shortcut-icon { transform: translateY(-3px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+
+.servicebar { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 24px; height: 52px; overflow: auto; white-space: nowrap; margin-bottom: 20px; }
+.servicebar button { border: 0; background: none; font-size: 15px; font-weight: 700; color: #444; cursor: pointer; padding: 0; }
+.servicebar button.active, .servicebar button:hover { color: var(--green); }
+
+.main-grid { display: grid; grid-template-columns: minmax(0, 2.3fr) minmax(320px, 1fr); gap: 24px; margin-bottom: 40px; }
+#dashboard { display: block; }
+#serp { display: none; margin-bottom: 40px; }
+
+/* Dashboard Modules */
+.ad-banner { height: 120px; background: linear-gradient(105deg, #e7f5ec, #f0f7f3); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 15px; font-weight: 700; margin-bottom: 20px; cursor: pointer; }
+.card { border: 1px solid var(--line); border-radius: 8px; background: #fff; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+.card-header { padding: 18px 20px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+.card-header h2 { margin: 0; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+.card-header .muted { font-size: 13px; font-weight: normal; color: #888; }
+.card-header .date { font-size: 13px; color: #666; }
+
+.news-stand .tabs { display: flex; padding: 14px 20px; gap: 16px; border-bottom: 1px solid #f0f0f0; overflow-x: auto; }
+.news-stand .tabs button { border: 0; background: none; font-size: 14px; color: #666; cursor: pointer; padding: 0; }
+.news-stand .tabs button.active { font-weight: 700; color: #000; }
+.news-grid { display: grid; grid-template-columns: 1fr 1fr; padding: 10px 20px; }
+.news-item { padding: 10px 0; border-bottom: 1px solid #f9f9f9; display: flex; align-items: center; gap: 12px; font-size: 14px; cursor: pointer; }
+.news-item:hover span { text-decoration: underline; }
+.news-item b { font-size: 12px; color: #333; display: inline-block; width: 60px; }
+.news-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #444; flex: 1; }
+
+.sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.widget-box { padding: 20px; }
+.weather-info { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+.weather-icon { font-size: 40px; }
+.weather-temp { font-size: 32px; font-weight: 800; letter-spacing: -1px; }
+.weather-desc { font-size: 13px; color: #666; line-height: 1.5; }
+.stock-row { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #f5f5f5; font-size: 14px; font-weight: 700; }
+.stock-row:last-child { border-bottom: none; }
+.stock-up { color: #f04b54; }
+.stock-down { color: #4385f5; }
+
+/* Sidebar */
+.login-box { padding: 20px; background: #fff; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+.login-msg { font-size: 13px; color: #666; margin: 0 0 12px; }
+.btn-login { width: 100%; height: 48px; border: 0; border-radius: 4px; background: var(--green); color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; }
+.login-links { display: flex; justify-content: center; gap: 12px; margin-top: 16px; font-size: 12px; color: #888; }
+.login-links button { border: 0; background: none; color: inherit; cursor: pointer; }
+
+.side-widget { padding: 20px; }
+.side-widget h3 { margin: 0 0 16px; font-size: 15px; }
+.trend-list li { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 12px; }
+.trend-list li .rank { font-weight: 800; color: var(--green); width: 20px; }
+.trend-list li .keyword { flex: 1; cursor: pointer; }
+.trend-list li .keyword:hover { text-decoration: underline; }
+
+/* SERP (Search Engine Results Page) */
+.serp-header { border-bottom: 1px solid var(--line); padding-bottom: 15px; margin-bottom: 25px; }
+.serp-header h2 { font-size: 22px; margin: 0 0 10px; }
+.serp-tabs { display: flex; gap: 20px; font-size: 15px; font-weight: 700; color: #666; }
+.serp-tabs span.active { color: var(--green); border-bottom: 2px solid var(--green); padding-bottom: 5px; }
+.serp-section { margin-bottom: 40px; }
+.serp-section h3 { font-size: 18px; margin: 0 0 16px; padding-left: 10px; border-left: 4px solid var(--green); }
+.result-card { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 20px; margin-bottom: 15px; }
+.result-title { font-size: 16px; font-weight: 700; color: #0068c3; margin: 0 0 8px; cursor: pointer; }
+.result-title:hover { text-decoration: underline; }
+.result-desc { font-size: 14px; color: #444; line-height: 1.6; margin-bottom: 8px; }
+.result-meta { font-size: 12px; color: #888; }
+.result-meta span { margin-right: 12px; }
+
+/* Modal & Toast */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; place-items: center; z-index: 100; }
+.modal-overlay.open { display: grid; }
+.modal-content { background: #fff; width: 400px; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+.modal-content h2 { font-size: 24px; margin: 0 0 20px; text-align: center; color: var(--green); }
+.modal-content input { width: 100%; height: 46px; border: 1px solid #ccc; border-radius: 4px; padding: 0 15px; margin-bottom: 10px; font-size: 15px; }
+.modal-close { position: absolute; right: 20px; top: 20px; border: 0; background: none; font-size: 24px; color: #888; cursor: pointer; }
+.toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: #333; color: #fff; padding: 12px 24px; border-radius: 30px; font-size: 14px; opacity: 0; transition: all 0.3s; pointer-events: none; z-index: 200; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Dark Mode */
+body.dark { --ink: #f0f0f0; --muted: #aaa; --line: #333; --soft: #1e1e1e; background: #121212; }
+body.dark .search { background: #1e1e1e; border-color: #444; }
+body.dark .search input { background: transparent; color: #fff; }
+body.dark .card, body.dark .login-box, body.dark .result-card { background: #1e1e1e; border-color: #333; }
+body.dark .card-header, body.dark .news-stand .tabs, body.dark .news-item, body.dark .stock-row { border-color: #2a2a2a; }
+body.dark .shortcut-icon { background: #2a2a2a; }
+body.dark .modal-content { background: #1e1e1e; color: #fff; }
+body.dark .modal-content input { background: #2a2a2a; border-color: #444; color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="page">
+    <header class="utility">
+        <button data-msg="메일 서비스로 이동합니다.">메일</button>
+        <button data-msg="카페 서비스로 이동합니다.">카페</button>
+        <button data-msg="블로그 서비스로 이동합니다.">블로그</button>
+        <button id="btn-login-top">로그인</button>
+        <button id="btn-darkmode">🌙 다크모드</button>
+    </header>
+
+    <section class="brand">
+        <button class="logo" id="btn-home">NAVER</button>
+    </section>
+
+    <div class="search-area">
+        <form class="search" id="search-form">
+            <input id="query" autocomplete="off" placeholder="검색어를 입력해 주세요.">
+            <button type="submit">🔍</button>
+        </form>
+        <div class="rolling-keywords">
+            <ul class="rolling-list" id="rolling-list">
+                <li><span>1</span> 실시간 이슈 검색어</li>
+                <li><span>2</span> 샌드박스 테스트</li>
+                <li><span>3</span> 오늘 날씨 맑음</li>
+                <li><span>4</span> 코스피 지수 상승</li>
+                <li><span>5</span> 주요 뉴스 속보</li>
+            </ul>
+        </div>
+    </div>
+
+    <nav class="shortcuts">
+        <div class="shortcut" data-msg="메일함 열기"><div class="shortcut-icon">✉</div>메일</div>
+        <div class="shortcut" data-msg="지도 서비스 열기"><div class="shortcut-icon">📍</div>지도</div>
+        <div class="shortcut" data-msg="카페 열기"><div class="shortcut-icon">☕</div>카페</div>
+        <div class="shortcut" data-msg="쇼핑 열기"><div class="shortcut-icon">🛍️</div>쇼핑</div>
+        <div class="shortcut" data-msg="뉴스 서비스 열기"><div class="shortcut-icon">📰</div>뉴스</div>
+        <div class="shortcut" data-msg="더보기 메뉴 열기"><div class="shortcut-icon">⋯</div>더보기</div>
+    </nav>
+
+    <nav class="servicebar">
+        <button class="active">뉴스</button>
+        <button>연예</button>
+        <button>스포츠</button>
+        <button>경제</button>
+        <button>쇼핑</button>
+        <button>부동산</button>
+        <button>날씨</button>
+        <button>웹툰</button>
+    </nav>
+
+    <!-- 대시보드 (기본 화면) -->
+    <main id="dashboard" class="main-grid">
+        <div class="column-left">
+            <div class="ad-banner" data-msg="광고 페이지로 이동합니다.">
+                새로운 서비스를 지금 바로 경험해보세요! [자세히 보기]
+            </div>
+
+            <div class="card news-stand">
+                <div class="card-header">
+                    <h2>뉴스스탠드 <span class="muted">언론사별 주요 뉴스</span></h2>
+                    <span class="date" id="current-date"></span>
+                </div>
+                <div class="tabs">
+                    <button class="active">전체언론사</button>
+                    <button>종합/경제</button>
+                    <button>방송/통신</button>
+                    <button>IT/과학</button>
+                </div>
+                <div class="news-grid" id="news-grid">
+                    <!-- JS로 렌더링 -->
+                </div>
+            </div>
+
+            <div class="sub-grid">
+                <div class="card widget-box">
+                    <h3 style="margin: 0 0 15px; font-size: 15px;">날씨 <span style="color:#888; font-weight:normal; font-size:13px; float:right;">서울 · 현재</span></h3>
+                    <div class="weather-info">
+                        <div class="weather-icon">☀️</div>
+                        <div>
+                            <div class="weather-temp">24°</div>
+                            <div class="weather-desc">맑음 · 어제보다 2° 높아요<br>미세먼지 <b>좋음</b></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card widget-box">
+                    <h3 style="margin: 0 0 15px; font-size: 15px;">증시 <span style="color:#888; font-weight:normal; font-size:13px; float:right;">국내 지수</span></h3>
+                    <div class="stock-row"><span>코스피</span><span class="stock-up">2,712.45 ▲ 0.8%</span></div>
+                    <div class="stock-row"><span>코스닥</span><span class="stock-down">850.12 ▼ 0.2%</span></div>
+                    <div class="stock-row"><span>환율(USD)</span><span class="stock-up">1,355.00 ▲ 0.1%</span></div>
+                </div>
+            </div>
+        </div>
+
+        <aside class="column-right">
+            <div class="login-box">
+                <p class="login-msg">안전하고 편리하게 이용하세요.</p>
+                <button class="btn-login" id="btn-login-main">NAVER 로그인</button>
+                <div class="login-links">
+                    <button data-msg="아이디 찾기">아이디 찾기</button> |
+                    <button data-msg="비밀번호 찾기">비밀번호 찾기</button> |
+                    <button data-msg="회원가입">회원가입</button>
+                </div>
+            </div>
+
+            <div class="card side-widget">
+                <h3>급상승 검색어</h3>
+                <ul class="trend-list">
+                    <li><span class="rank">1</span><span class="keyword">인공지능 모델 테스트</span></li>
+                    <li><span class="rank">2</span><span class="keyword">샌드박스 환경 구축</span></li>
+                    <li><span class="rank">3</span><span class="keyword">오늘의 환율</span></li>
+                    <li><span class="rank">4</span><span class="keyword">주말 날씨 예보</span></li>
+                    <li><span class="rank">5</span><span class="keyword">국내 프로야구 결과</span></li>
+                </ul>
+            </div>
+        </aside>
+    </main>
+
+    <!-- 검색 결과 화면 (기본 숨김) -->
+    <main id="serp">
+        <div class="serp-header">
+            <h2><b id="serp-keyword" style="color:var(--green)"></b> 검색 결과</h2>
+            <div class="serp-tabs">
+                <span class="active">통합검색</span>
+                <span>뉴스</span>
+                <span>블로그</span>
+                <span>카페</span>
+                <span>지식iN</span>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <div class="column-left" id="serp-results">
+                <!-- JS로 검색 결과 렌더링 -->
+            </div>
+            <aside class="column-right">
+                <div class="card side-widget">
+                    <h3>연관 검색어</h3>
+                    <ul class="trend-list" id="related-keywords">
+                        <!-- JS로 렌더링 -->
+                    </ul>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+</div>
+
+<div class="toast" id="toast">메시지</div>
+
+<div class="modal-overlay" id="login-modal">
+    <div class="modal-content" style="position:relative;">
+        <button class="modal-close" id="btn-modal-close">×</button>
+        <h2>NAVER</h2>
+        <form id="login-submit">
+            <input type="text" placeholder="아이디" required>
+            <input type="password" placeholder="비밀번호" required>
+            <button type="submit" class="btn-login" style="margin-top: 10px;">로그인</button>
+        </form>
+    </div>
+</div>
+
+<script>
+// Toast 메시지 유틸리티
+const toastEl = document.getElementById('toast');
+let toastTimer;
+function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2000);
+}
+
+// 클릭 이벤트 델리게이션 (알림 메시지)
+document.querySelectorAll('[data-msg]').forEach(el => {
+    el.addEventListener('click', (e) => {
+        e.preventDefault();
+        showToast(el.dataset.msg);
+    });
+});
+
+// 뉴스 스탠드 더미 데이터
+const newsData = [
+    { press: '연합뉴스', title: '오늘의 주요 사회 현안 및 정책 발표 정리' },
+    { press: '한국경제', title: '국내 증시 반등 성공, 외국인 매수세 유입' },
+    { press: '매일경제', title: '글로벌 IT 기업, 새로운 인공지능 칩 공개' },
+    { press: '전자신문', title: '차세대 반도체 공정 수율 안정화 진입' },
+    { press: '조선일보', title: '주말 전국 맑고 일교차 커, 나들이객 북적' },
+    { press: '동아일보', title: '새로운 부동산 대책 발표, 시장 반응은?' },
+    { press: '중앙일보', title: '국내 연구진, 차세대 배터리 소재 개발 성공' },
+    { press: '한겨레', title: '지역 상권 활성화 방안 토론회 개최' }
+];
+
+const newsGrid = document.getElementById('news-grid');
+newsGrid.innerHTML = newsData.map(news => `
+    <div class="news-item" onclick="showToast('${news.press} 기사로 이동합니다.')">
+        <b>${news.press}</b>
+        <span>${news.title}</span>
+    </div>
+`).join('');
+
+// 날짜 표시
+const now = new Date();
+document.getElementById('current-date').textContent = `${now.getMonth() + 1}. ${now.getDate()}.`;
+
+// 롤링 키워드 애니메이션
+const rollingList = document.getElementById('rolling-list');
+let rollIndex = 0;
+setInterval(() => {
+    rollIndex++;
+    if (rollIndex > 4) {
+        rollingList.style.transition = 'none';
+        rollingList.style.transform = 'translateY(0)';
+        rollIndex = 0;
+        setTimeout(() => {
+            rollingList.style.transition = 'transform 0.5s ease';
+            rollIndex++;
+            rollingList.style.transform = `translateY(-${rollIndex * 36}px)`;
+        }, 50);
+    } else {
+        rollingList.style.transform = `translateY(-${rollIndex * 36}px)`;
+    }
+}, 3000);
+
+// 검색 기능 (SERP 전환)
+const searchForm = document.getElementById('search-form');
+const queryInput = document.getElementById('query');
+const dashboard = document.getElementById('dashboard');
+const serp = document.getElementById('serp');
+const serpKeyword = document.getElementById('serp-keyword');
+const serpResults = document.getElementById('serp-results');
+const relatedKeywords = document.getElementById('related-keywords');
+
+searchForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const q = queryInput.value.trim();
+    if (!q) {
+        showToast('검색어를 입력해주세요.');
+        queryInput.focus();
+        return;
+    }
+    
+    // 화면 전환
+    dashboard.style.display = 'none';
+    serp.style.display = 'block';
+    serpKeyword.textContent = `'${q}'`;
+    
+    // 더미 결과 렌더링
+    serpResults.innerHTML = `
+        <div class="serp-section">
+            <h3>뉴스</h3>
+            <div class="result-card">
+                <div class="result-title">${q} 관련 최신 동향 및 분석 기사</div>
+                <div class="result-desc">전문가들은 이번 <b>${q}</b> 사태에 대해 다양한 해석을 내놓고 있습니다. 시장의 변동성과 기술적 측면을 고려할 때 향후 전망은...</div>
+                <div class="result-meta"><span>연합뉴스</span><span>1시간 전</span></div>
+            </div>
+            <div class="result-card">
+                <div class="result-title">올해 <b>${q}</b> 시장 20% 성장 전망</div>
+                <div class="result-desc">산업 연구원에 따르면 <b>${q}</b> 관련 인프라 투자 확대로 인해 관련 기업들의 실적이 대폭 개선될 것으로 보입니다.</div>
+                <div class="result-meta"><span>한국경제</span><span>3시간 전</span></div>
+            </div>
+        </div>
+        
+        <div class="serp-section">
+            <h3>블로그/카페</h3>
+            <div class="result-card">
+                <div class="result-title">${q} 초보자도 쉽게 이해하는 가이드</div>
+                <div class="result-desc">처음 접하시는 분들을 위해 <b>${q}</b>에 대한 핵심 요약과 실전 활용 팁을 정리해보았습니다. 사진과 함께 천천히 따라와주세요.</div>
+                <div class="result-meta"><span>개발자 블로그</span><span>2026.10.12.</span></div>
+            </div>
+        </div>
+    `;
+    
+    relatedKeywords.innerHTML = `
+        <li><span class="keyword" onclick="searchForm.dispatchEvent(new Event('submit'))">${q} 추천</span></li>
+        <li><span class="keyword">${q} 방법</span></li>
+        <li><span class="keyword">${q} 후기</span></li>
+        <li><span class="keyword">${q} 비교</span></li>
+    `;
+});
+
+// 홈버튼 누르면 대시보드로 복귀
+document.getElementById('btn-home').addEventListener('click', () => {
+    dashboard.style.display = 'grid';
+    serp.style.display = 'none';
+    queryInput.value = '';
+    window.scrollTo(0, 0);
+});
+
+// 모달 처리
+const modal = document.getElementById('login-modal');
+const openModal = () => modal.classList.add('open');
+const closeModal = () => modal.classList.remove('open');
+
+document.getElementById('btn-login-top').addEventListener('click', openModal);
+document.getElementById('btn-login-main').addEventListener('click', openModal);
+document.getElementById('btn-modal-close').addEventListener('click', closeModal);
+document.getElementById('login-submit').addEventListener('submit', (e) => {
+    e.preventDefault();
+    closeModal();
+    showToast('로그인 처리되었습니다.');
+});
+
+// 다크모드 토글
+document.getElementById('btn-darkmode').addEventListener('click', () => {
+    document.body.classList.toggle('dark');
+    showToast(document.body.classList.contains('dark') ? '다크모드 적용' : '라이트모드 적용');
+});
+</script>
+</body>
+</html>

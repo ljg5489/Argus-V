@@ -38,6 +38,33 @@ class RealSandboxClient:
     def __init__(self, sandbox_script="~/Desktop/Argus-V/SANDBOX/sandbox.py"):
         self.sandbox_script = os.path.expanduser(sandbox_script)
 
+    def _cli(self, *arguments: str) -> dict:
+        """sandbox.py 관리 명령(status/up 등). 오류 JSON은 stderr로 나오므로 둘 다 확인한다."""
+        result = subprocess.run(["python3.11", self.sandbox_script, *arguments], capture_output=True, text=True)
+        for stream in (result.stdout, result.stderr):
+            try:
+                return json.loads(stream)
+            except json.JSONDecodeError:
+                continue
+        return {"status": "ERROR", "reason": (result.stdout + result.stderr)[-500:]}
+
+    def ensure_running(self) -> dict:
+        """샌드박스가 꺼져 있으면 켠다(sandbox.py up: 마지막 복구 지점의 /workspace가 돌아온다)."""
+        status = self._cli("status")
+        if status.get("status") != "RUNNING":
+            print("[Sandbox API] 샌드박스가 꺼져 있어 켜는 중 (sandbox.py up)...")
+            status = self._cli("up")
+            if status.get("status") != "RUNNING":
+                raise RuntimeError(f"샌드박스를 켜지 못했습니다: {status}")
+        try:
+            settings = json.loads((Path(self.sandbox_script).parent / "settings.json").read_text())
+            network = settings.get("network")
+        except (OSError, json.JSONDecodeError):
+            network = "unknown"
+        print(f"[Sandbox API] 샌드박스 실행 중 · network={network}"
+              + (" (가짜 인터넷 연결: sandbox.py fakenet-log 로 요청 기록 확인)" if network == "fakenet" else ""))
+        return status
+
     def execute(self, command: str) -> str:
         print("[Sandbox API] 샌드박스(sandbox.py)로 명령 전송 중...")
 
@@ -59,13 +86,20 @@ class RealSandboxClient:
             )
 
             try:
-                data = json.loads(result.stdout)
+                data = json.loads(result.stdout or result.stderr)
             except json.JSONDecodeError:
                 return (
                     f"[Sandbox Error] 결과 파싱 실패\n"
                     f"RAW STDOUT: {result.stdout}\n"
                     f"RAW STDERR: {result.stderr}"
                 )
+
+            reason = str(data.get("reason", ""))
+            if data.get("status") == "ERROR" and ("stopped" in reason or "not running" in reason):
+                # 꺼져 있음(예: 이전 명령의 시간 초과로 정지) → 켜고 한 번 다시 실행
+                self.ensure_running()
+                result = subprocess.run(cmd, capture_output=True, text=True)
+                data = json.loads(result.stdout or result.stderr)
 
             status = data.get("status", "UNKNOWN")
             observation = f"Status: {status}\n"
@@ -233,6 +267,7 @@ def main():
             adapter.block(layer)
 
     sandbox = RealSandboxClient()
+    sandbox.ensure_running()
 
     trajectory_id = "task_001_seed_42"
     max_steps = args.max_steps

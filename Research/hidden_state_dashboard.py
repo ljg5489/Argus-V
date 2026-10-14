@@ -14,6 +14,7 @@ read the existing full-value NPY artifacts without modifying them.
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import json
 import math
 import re
@@ -331,6 +332,7 @@ canvas{display:block;width:100%}
   <button class="tab" type="button" role="tab" data-view="view-compare" aria-selected="false">A/B 비교 <span id="ab-count" class="status"></span></button>
   <button class="tab" type="button" role="tab" data-view="view-hooks" aria-selected="false">Hook 위치</button>
   <button class="tab" type="button" role="tab" data-view="view-sandbox" aria-selected="false">Sandbox 파일</button>
+  <button class="tab" type="button" role="tab" data-view="view-sandbox-web" aria-selected="false">SANDBOX WEB</button>
  </nav>
 </header>
 <main>
@@ -599,6 +601,15 @@ canvas{display:block;width:100%}
   </div></section>
  </div>
 </div>
+<div id="view-sandbox-web" class="view" hidden>
+ <section class="panel"><div class="panel-head"><h2>FakeNet 웹 응답</h2><button id="sw-refresh" class="primary">새로고침</button><span id="sw-status" class="status hint">SANDBOX/fakenet/routes.json 설정과 FakeNet 요청 기록</span></div>
+  <div class="sandbox-grid panel-body">
+   <div><label class="field">라우트 설정 · JSON<textarea id="sw-routes" spellcheck="false" style="width:100%;height:300px;font:12px/1.5 var(--mono);margin-top:6px"></textarea></label><button id="sw-save-routes" class="primary" style="margin-top:8px">라우트 저장</button><div class="toolbar" style="margin-top:12px"><label class="field">Host<input id="sw-host" value="example.test"></label><label class="field">Path<input id="sw-path" value="/" /></label><button id="sw-preview-route">가상 URL 미리보기</button><span id="sw-preview-status" class="status"></span></div><pre id="sw-response-preview" style="max-height:280px"></pre></div>
+   <div><div class="toolbar"><label class="field" style="flex:1">사이트 파일<select id="sw-file"><option value="">파일 선택</option></select></label><button id="sw-new-file">새 파일</button></div><textarea id="sw-content" spellcheck="false" placeholder="사이트 파일 내용을 편집합니다." style="width:100%;height:360px;font:12px/1.5 var(--mono);margin-top:6px"></textarea><div class="toolbar" style="margin-top:8px"><button id="sw-save-file" class="primary">파일 저장</button><span id="sw-file-status" class="status"></span></div><iframe id="sw-preview" title="FakeNet 웹 미리보기" sandbox="" style="width:100%;height:300px;border:1px solid var(--line);border-radius:8px;margin-top:12px;background:white"></iframe></div>
+  </div>
+ </section>
+ <section class="panel" style="margin-top:16px"><div class="panel-head"><h2>FakeNet 요청 기록</h2><span class="status">실행 중 Sandbox에서 FakeNet으로 들어온 최근 요청</span></div><div class="tablewrap"><table><thead><tr><th>시각</th><th>종류</th><th>요청</th><th class="num">상태</th></tr></thead><tbody id="sw-events"><tr><td colspan="4">새로고침을 눌러 조회하세요.</td></tr></tbody></table></div></section>
+</div>
 </main>
 <div id="tip"></div>
 <script>
@@ -629,7 +640,7 @@ function histTip(ev,g,p,hist,range){const i=Math.floor((p.x-g.left)/g.bw);if(i<0
 /* ---------- tabs / theme / redraw ---------- */
 let lastPlot=null,lastHeat=null,lastHeatPos=-1,lastEmbed=null,lastCompare=null,histA=null,histB=null,promptPieces=[];
 function redrawAll(){tvRedraw();capRedraw();shRedraw();if(lastPlot)renderPlot(lastPlot);if(lastHeat)renderHeatmap(lastHeat,lastHeatPos);if(lastEmbed)renderEmbedding(lastEmbed);if(histA)drawHist('chart-a',histA,'A 분포');if(histB)drawHist('chart-b',histB,'B 분포');if(lastCompare)renderDelta(lastCompare)}
-function showView(id){document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.view===id)));document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!==id);hideTip();requestAnimationFrame(redrawAll);if(id==='view-tokens')tvEnsureLoaded();if(id==='view-captures')capEnsureLoaded();if(id==='view-rollouts')roEnsureLoaded();if(id==='view-scenario-hidden')shEnsureLoaded();if(id==='view-hooks'&&!hookLoaded)loadHookSessions()}
+function showView(id){document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.view===id)));document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!==id);hideTip();requestAnimationFrame(redrawAll);if(id==='view-tokens')tvEnsureLoaded();if(id==='view-captures')capEnsureLoaded();if(id==='view-rollouts')roEnsureLoaded();if(id==='view-scenario-hidden')shEnsureLoaded();if(id==='view-hooks'&&!hookLoaded)loadHookSessions();if(id==='view-sandbox-web')swLoad()}
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>showView(t.dataset.view));$('open-compare').onclick=()=>showView('view-compare');
 $('theme-toggle').onclick=()=>{const next=document.documentElement.dataset.theme==='light'?'dark':'light';document.documentElement.dataset.theme=next;try{localStorage.setItem('argus-theme',next)}catch(e){}redrawAll()};
 document.querySelectorAll('details.section').forEach(d=>d.addEventListener('toggle',()=>{if(d.open)redrawAll()}));
@@ -725,6 +736,14 @@ $('sandbox-files').onclick=async event=>{
   }
  }catch(error){if(current===sandboxPreviewRequest)status.textContent=`${path} · 조회 실패: ${error.message}`}
 };
+/* ---------- SANDBOX WEB / FakeNet routes and site files ---------- */
+let swFiles=[];
+async function swLoad(){const status=$('sw-status');status.textContent='FakeNet 설정과 요청 기록을 불러오는 중…';try{const r=await fetch('/api/sandbox/web',{cache:'no-store'}),d=await r.json();if(!r.ok)throw Error(d.error||d.reason||`HTTP ${r.status}`);$('sw-routes').value=JSON.stringify(d.config,null,2);swFiles=d.files||[];const select=$('sw-file'),previous=select.value;select.innerHTML='<option value="">파일 선택</option>'+swFiles.map(f=>`<option value="${esc(f)}">${esc(f)}</option>`).join('');if(swFiles.includes(previous))select.value=previous;else if(swFiles.length)select.value=swFiles[0];if(select.value)await swReadFile();$('sw-events').innerHTML=(d.events||[]).slice(-300).reverse().map(e=>`<tr><td>${esc(e.time?new Date(e.time*1000).toLocaleString():'—')}</td><td>${esc(e.kind)}</td><td class="mono">${esc([e.method,e.host,e.path].filter(Boolean).join(' '))}</td><td class="num">${esc(e.status??'—')}</td></tr>`).join('')||'<tr><td colspan="4"><div class="empty">요청 기록이 없습니다.</div></td></tr>';status.textContent=`${d.config_path} · ${swFiles.length}개 사이트 파일 · 요청 ${d.events?.length||0}건${d.log_status&&d.log_status!=='OK'?' · '+d.log_status:''}`}catch(e){status.textContent='FakeNet 조회 실패: '+e.message}}
+async function swReadFile(){const name=$('sw-file').value;if(!name)return;$('sw-file-status').textContent='파일 불러오는 중…';try{const r=await fetch('/api/sandbox/web/file?name='+encodeURIComponent(name),{cache:'no-store'}),d=await r.json();if(!r.ok)throw Error(d.error||`HTTP ${r.status}`);$('sw-content').value=d.content;$('sw-file-status').textContent=`${name} · ${d.size.toLocaleString()} bytes`;$('sw-preview').srcdoc=d.content}catch(e){$('sw-file-status').textContent='파일 조회 실패: '+e.message}}
+$('sw-refresh').onclick=swLoad;$('sw-file').onchange=swReadFile;$('sw-save-routes').onclick=async()=>{const status=$('sw-status');try{const config=JSON.parse($('sw-routes').value),r=await fetch('/api/sandbox/web/routes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(config)}),d=await r.json();if(!r.ok)throw Error(d.error||`HTTP ${r.status}`);status.textContent='라우트 저장 완료 · 실행 중 FakeNet에 즉시 반영됩니다.';await swLoad()}catch(e){status.textContent='라우트 저장 실패: '+e.message}};
+$('sw-preview-route').onclick=async()=>{const status=$('sw-preview-status');try{const p=new URLSearchParams({host:$('sw-host').value,path:$('sw-path').value}),r=await fetch('/api/sandbox/web/preview?'+p,{cache:'no-store'}),d=await r.json();if(!r.ok)throw Error(d.error||`HTTP ${r.status}`);status.textContent=`${d.status} · ${d.content_type} · route ${d.route_index}`;$('sw-response-preview').textContent=d.body;$('sw-preview').srcdoc=d.content_type.includes('html')?d.body:''}catch(e){status.textContent='미리보기 실패: '+e.message}};
+$('sw-new-file').onclick=()=>{const name=prompt('새 파일 경로 (예: example/index.html)');if(!name)return;const option=document.createElement('option');option.value=name;option.textContent=name;$('sw-file').append(option);$('sw-file').value=name;$('sw-content').value='<!doctype html>\n<html><head><meta charset="utf-8"><title>FakeNet</title></head><body><h1>FakeNet page</h1></body></html>\n';$('sw-file-status').textContent='새 파일 · 저장하면 Sandbox/fakenet/sites/에 생성됩니다.';$('sw-preview').srcdoc=$('sw-content').value};
+$('sw-save-file').onclick=async()=>{const name=$('sw-file').value;if(!name){$('sw-file-status').textContent='저장할 파일을 선택하거나 새로 만드세요.';return}try{const r=await fetch('/api/sandbox/web/file',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,content:$('sw-content').value})}),d=await r.json();if(!r.ok)throw Error(d.error||`HTTP ${r.status}`);$('sw-preview').srcdoc=$('sw-content').value;$('sw-file-status').textContent=`저장 완료 · ${name} · ${d.size.toLocaleString()} bytes`;if(!swFiles.includes(name))swFiles.push(name)}catch(e){$('sw-file-status').textContent='파일 저장 실패: '+e.message}};
 /* ---------- recorded Hook registration map ---------- */
 let hookLoaded=false,hookOffset=0,hookSessionRequest=0,hookMapRequest=0,hookData=null,hookLayer='*',hookSelected=null;
 const hookPageSize=50;
@@ -1937,6 +1956,114 @@ class DashboardHandler(BaseHTTPRequestHandler):
         body = json.dumps(value, ensure_ascii=False, allow_nan=False).encode("utf-8")
         self._send(body, "application/json; charset=utf-8", status)
 
+    @staticmethod
+    def _sandbox_web_root() -> Path:
+        return PROJECT_ROOT / "SANDBOX" / "fakenet"
+
+    @staticmethod
+    def _sandbox_site_name(name: str) -> Path:
+        candidate = Path(name)
+        if (not name or "\\" in name or "\x00" in name or candidate.is_absolute()
+                or any(part in {"", ".", ".."} for part in candidate.parts)):
+            raise ValueError("사이트 파일은 sites/ 내부의 상대 경로여야 합니다.")
+        target = (PROJECT_ROOT / "SANDBOX" / "fakenet" / "sites" / candidate).resolve()
+        if not target.is_relative_to((PROJECT_ROOT / "SANDBOX" / "fakenet" / "sites").resolve()):
+            raise ValueError("사이트 파일 경로가 허용 범위를 벗어났습니다.")
+        return target
+
+    def _sandbox_web_api(self, path: str, query: dict | None = None) -> None:
+        root = self._sandbox_web_root()
+        if path == "/api/sandbox/web":
+            config_path = root / "routes.json"
+            config = json.loads(config_path.read_text(encoding="utf-8"))
+            sites = root / "sites"
+            files = sorted(p.relative_to(sites).as_posix() for p in sites.rglob("*")
+                           if p.is_file() and not p.is_symlink()) if sites.is_dir() else []
+            completed = subprocess.run([sys.executable, str(PROJECT_ROOT / "SANDBOX" / "sandbox.py"),
+                                        "fakenet-log", "--since", str(max(0, datetime.now().timestamp()-86400))],
+                                       capture_output=True, text=True, timeout=60, check=False,
+                                       cwd=str(PROJECT_ROOT / "SANDBOX"))
+            events, log_status = [], "OK"
+            if completed.returncode == 0:
+                try:
+                    data = json.loads(completed.stdout)
+                    events, log_status = data.get("events", []), data.get("status", "OK")
+                except (json.JSONDecodeError, AttributeError):
+                    log_status = "요청 기록 형식 오류"
+            else:
+                log_status = completed.stderr.strip()[:300] or "Sandbox가 실행 중이 아닙니다"
+            self._json({"config_path": str(config_path), "config": config, "files": files,
+                        "events": events[-1000:], "log_status": log_status})
+            return
+        if path == "/api/sandbox/web/file":
+            name = (query or {}).get("name", [""])[0]
+            target = self._sandbox_site_name(name)
+            content = target.read_text(encoding="utf-8") if target.is_file() else ""
+            if len(content.encode("utf-8")) > 2 * 1024 * 1024:
+                raise ValueError("편집 가능한 사이트 파일은 2 MiB 이하입니다.")
+            self._json({"name": name, "content": content, "size": len(content.encode("utf-8"))})
+            return
+        if path == "/api/sandbox/web/preview":
+            args = query or {}
+            host = args.get("host", ["example.test"])[0].lower().split(":", 1)[0]
+            request_path = args.get("path", ["/"])[0].split("?", 1)[0] or "/"
+            config = json.loads((root / "routes.json").read_text(encoding="utf-8"))
+            route_index, route = -1, {"status": 404, "content_type": "text/plain", "body": "Not Found\n"}
+            for index, candidate in enumerate(config.get("routes", [])):
+                methods = candidate.get("methods", ["*"])
+                if (fnmatch.fnmatchcase(host, candidate.get("host", "*"))
+                        and fnmatch.fnmatchcase(request_path, candidate.get("path", "*"))
+                        and ("GET" in methods or "*" in methods)):
+                    route_index, route = index, candidate
+                    break
+            if route.get("file"):
+                target = self._sandbox_site_name(str(route["file"]))
+                body = target.read_text(encoding="utf-8", errors="replace") if target.is_file() else ""
+            else:
+                body = str(route.get("body", "")).replace("{host}", host).replace("{path}", request_path)
+            self._json({"route_index": route_index, "status": route.get("status", 200),
+                        "content_type": route.get("content_type", "text/html; charset=utf-8"), "body": body})
+            return
+        raise ValueError("Unknown FakeNet API.")
+
+    def _sandbox_web_save(self, path: str) -> None:
+        try:
+            length = int(self.headers.get("Content-Length", ""))
+        except ValueError:
+            self._json({"error": "Content-Length가 필요합니다."}, 400)
+            return
+        if length < 0 or length > 4 * 1024 * 1024:
+            self._json({"error": "요청 본문은 4 MiB 이하여야 합니다."}, 413)
+            return
+        try:
+            data = json.loads(self.rfile.read(length))
+            if path.endswith("/routes"):
+                if not isinstance(data, dict) or not isinstance(data.get("routes"), list):
+                    raise ValueError("최상위 JSON 객체에 routes 배열이 필요합니다.")
+                for route in data["routes"]:
+                    if not isinstance(route, dict):
+                        raise ValueError("각 route는 JSON 객체여야 합니다.")
+                    if "file" in route:
+                        self._sandbox_site_name(str(route["file"]))
+                target, raw = self._sandbox_web_root() / "routes.json", json.dumps(data, ensure_ascii=False, indent=2, allow_nan=False)+"\n"
+            else:
+                if not isinstance(data, dict) or not isinstance(data.get("content"), str):
+                    raise ValueError("content 문자열이 필요합니다.")
+                target = self._sandbox_site_name(str(data.get("name", "")))
+                raw = data["content"]
+            encoded = raw.encode("utf-8")
+            if len(encoded) > 2 * 1024 * 1024:
+                raise ValueError("저장할 파일은 2 MiB 이하여야 합니다.")
+            if target.name == "routes.json":
+                json.loads(raw)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            temporary = target.with_name(target.name + ".tmp")
+            temporary.write_bytes(encoded)
+            temporary.replace(target)
+            self._json({"status": "SAVED", "size": len(encoded)})
+        except (OSError, ValueError, TypeError, json.JSONDecodeError) as error:
+            self._json({"error": str(error)}, 400)
+
     def _sandbox_image(self, path: str) -> None:
         if not path:
             self._json({"error": "파일 경로가 필요합니다."}, 400)
@@ -1979,7 +2106,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self._json({"status": "ERROR", "reason": str(error)}, 502)
 
     def do_POST(self) -> None:
-        if urlparse(self.path).path != "/api/sandbox/import":
+        request_path = urlparse(self.path).path
+        if request_path in ("/api/sandbox/web/routes", "/api/sandbox/web/file"):
+            if self.headers.get_content_type() != "application/json":
+                self._json({"error": "Content-Type must be application/json."}, 415)
+                return
+            self._sandbox_web_save(request_path)
+            return
+        if request_path != "/api/sandbox/import":
             self._json({"error": "Not found"}, 404)
             return
         if self.headers.get_content_type() != "application/octet-stream":
@@ -2535,6 +2669,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
+        if parsed.path in ("/api/sandbox/web", "/api/sandbox/web/file", "/api/sandbox/web/preview"):
+            try:
+                self._sandbox_web_api(parsed.path, parse_qs(parsed.query))
+            except (OSError, ValueError, TypeError, json.JSONDecodeError, subprocess.TimeoutExpired) as error:
+                self._json({"error": str(error)}, 400)
+            return
         if parsed.path.startswith("/api/rollouts/"):
             query = parse_qs(parsed.query)
             try:

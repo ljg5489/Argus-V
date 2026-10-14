@@ -149,6 +149,24 @@ class Web(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
     server_version, sys_version = "nginx", ""
     routes: list[dict] = []
+    routes_stamp: int | None = None
+    routes_lock = threading.Lock()
+
+    @classmethod
+    def current_routes(cls) -> list[dict]:
+        try:
+            stamp = ROUTES_FILE.stat().st_mtime_ns
+        except OSError:
+            return cls.routes
+        if stamp != cls.routes_stamp:
+            with cls.routes_lock:
+                if stamp != cls.routes_stamp:
+                    try:
+                        cls.routes = load_routes()
+                        cls.routes_stamp = stamp
+                    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError) as error:
+                        log("routes_reload_error", error=str(error))
+        return cls.routes
 
     def log_message(self, format, *args):  # the JSON event below is the log
         pass
@@ -167,7 +185,7 @@ class Web(BaseHTTPRequestHandler):
         path, _, query = self.path.partition("?")
         if path.startswith(("http://", "https://")):  # absolute-form (proxy-style) request
             path = "/" + path.split("/", 3)[3] if path.count("/") >= 3 else "/"
-        route = match_route(self.routes, host, self.command, path)
+        route = match_route(self.current_routes(), host, self.command, path)
         status, headers, content = render(route, host, path)
         log("https" if isinstance(self.connection, ssl.SSLSocket) else "http", client=self.client_address[0],
             port=self.server.server_address[1], method=self.command, host=host, path=path, query=query,
@@ -329,6 +347,7 @@ def serve(server):
 
 def main() -> int:
     Web.routes = load_routes()
+    Web.routes_stamp = ROUTES_FILE.stat().st_mtime_ns
     certificates = Certificates()
     tls = certificates.server_context()
 
