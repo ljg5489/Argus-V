@@ -1,0 +1,65 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Argus probe source inventory (read-only)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "/home/user/Desktop/Argus-V/scripts/assemble_probe_dataset.py",
+      "python": "/home/user/Desktop/Argus-V/.venv/bin/python",
+      "cwd": "/home/user/Desktop/Argus-V",
+      "console": "internalConsole",
+      "redirectOutput": true,
+      "justMyCode": true,
+      "args": [
+        "--repo-root", "/home/user/Desktop/Argus-V",
+        "--rollouts",
+        "/home/user/Desktop/Argus-V/argus_hook/artifacts/rollouts",
+        "/home/user/Desktop/Argus-V/artifacts/rollouts",
+        "--tensor-data",
+        "/home/user/Desktop/Argus-V/tensor_data",
+        "/home/user/Desktop/Argus-V/argus_hook/tensor_data",
+        "--db", "/home/user/Desktop/Argus-V/Research/hook_research.sqlite3",
+        "--split-file", "/home/user/Desktop/Argus-V/Scenario/scenario-splits.v1.json"
+      ],
+      "env": {
+        "PYTHONPATH": "/home/user/Desktop/Argus-V/src",
+        "HF_HUB_OFFLINE": "1",
+        "TRANSFORMERS_OFFLINE": "1"
+      }
+    },
+    {
+      "name": "Argus linear probe (reviewed manifest required)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "/home/user/Desktop/Argus-V/scripts/train_probe.py",
+      "python": "/home/user/Desktop/Argus-V/.venv/bin/python",
+      "cwd": "/home/user/Desktop/Argus-V",
+      "console": "internalConsole",
+      "redirectOutput": true,
+      "justMyCode": true,
+      "args": [
+        "--manifest", "${input:probeReviewedManifest}",
+        "--layers", "23",
+        "--output", "${input:probeModelOutput}"
+      ],
+      "env": {
+        "PYTHONPATH": "/home/user/Desktop/Argus-V/src",
+        "HF_HUB_OFFLINE": "1",
+        "TRANSFORMERS_OFFLINE": "1"
+      }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "probeReviewedManifest",
+      "type": "promptString",
+      "description": "검수 완료 후 생성된 manifest.json의 원격 절대 경로"
+    },
+    {
+      "id": "probeModelOutput",
+      "type": "promptString",
+      "description": "학습 모델을 저장할 새 폴더의 원격 절대 경로 (기존 폴더는 덮어쓰지 않음)"
+    }
+  ]
+}

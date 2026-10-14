@@ -1,5 +1,6 @@
 """Hook map metadata tests; no model, container, or tensor arrays are needed."""
 
+import gc
 import json
 import tempfile
 import unittest
@@ -20,6 +21,8 @@ class HookMapTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
+        # SQLite connection cycles must close before Windows removes the DB.
+        self.addCleanup(gc.collect)
         root = Path(self.temp.name)
         self.data = root / "data"
         self.folder = self.data / "run-one" / "step_001" / "hook_inspection"
@@ -54,6 +57,35 @@ class HookMapTests(unittest.TestCase):
 
     def write_manifest(self):
         (self.folder / "manifest.json").write_text(json.dumps(self.manifest))
+
+    def test_detector_index_skips_unrelated_json_and_keeps_valid_results(self):
+        artifacts = Path(self.temp.name) / "artifacts"
+        artifacts.mkdir()
+        valid = {"snapshot": {"run_id": "run-one", "token_index": 3},
+                 "configuration": {"monitor": "M1"}, "status": "ok",
+                 "risk_score": 0.25, "alarm": False}
+        documents = {
+            "sources.json": [{"snapshot_id": "joined-example"}],
+            "null.json": None,
+            "text.json": "unrelated output",
+            "snapshot-list.json": {**valid, "snapshot": ["not an object"]},
+            "configuration-list.json": {**valid, "configuration": ["M1"]},
+            "m1-result.json": valid,
+        }
+        for name, document in documents.items():
+            (artifacts / name).write_text(json.dumps(document), encoding="utf-8")
+        original = {path: path.read_bytes() for path in artifacts.iterdir()}
+
+        self.store.sync_detector_results(artifacts)
+        self.store.sync_detector_results(artifacts)
+
+        with self.store.connect() as db:
+            rows = db.execute(
+                "SELECT result_path, run_id, monitor, risk_score, alarm FROM detector_results"
+            ).fetchall()
+        self.assertEqual([tuple(row) for row in rows],
+                         [("m1-result.json", "run-one", "M1", 0.25, 0)])
+        self.assertEqual({path: path.read_bytes() for path in artifacts.iterdir()}, original)
 
     def test_registered_uncalled_modules_and_hierarchy_are_preserved(self):
         result = self.store.hook_map(self.session_id)
@@ -177,6 +209,7 @@ class CaptureViewTests(unittest.TestCase):
 
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
+        self.addCleanup(gc.collect)
         root = Path(self.temp.name)
         session = root / "data" / "run-x" / "task_001_seed_42_step_001" / "generation" / "attempt_001"
         (session / "tensors").mkdir(parents=True)
@@ -221,6 +254,8 @@ class CaptureViewTests(unittest.TestCase):
         self.handler = object.__new__(DashboardHandler)
         self.handler.store = self.store
         self.handler.captures = CaptureIndex(self.artifacts)
+        # Release any memory-mapped model weights before temporary-file cleanup.
+        self.addCleanup(setattr, self.handler, "lens", None)
         self.handler._json = Mock()
 
     def get(self, path):

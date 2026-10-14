@@ -10,7 +10,7 @@ activation h[p]
     → 바로 다음 행동의 정책 위반 위험 점수
 ```
 
-생성 모델의 가중치는 변경하지 않습니다. 출력은 `[0, 1]` 위험 점수이며, 확률 보정이나 실제 탐지 성능이 검증된 확률은 아닙니다. 이 구현은 **activation-only Probe**입니다. 기획서의 최종 M2인 `M1 + activation` 결합은 별도 구현·비교가 필요합니다.
+생성 모델의 가중치는 변경하지 않습니다. 출력은 `[0, 1]` 위험 점수이며, 확률 보정이나 실제 탐지 성능이 검증된 확률은 아닙니다. 이 구현은 **activation-only Probe**입니다. M1은 기존 LLM으로 텍스트를 판정하는 별도 탐지기입니다. M1 점수와 Probe 점수를 결합하는 M2 비교 코드는 `scripts/evaluate_monitors.py`의 `judge`, `probe`, `report` 단계에 있습니다. Tensor 수집만으로 Probe가 학습되거나 M2 판정이 실행되지는 않습니다.
 
 ## 1. 설치와 먼저 해볼 실행
 
@@ -24,6 +24,8 @@ python scripts/demo_probe.py --output artifacts/probe-demo
 데모는 로컬에서 무작위 소형 GPT-2의 실제 훅을 실행해 capture를 만들고 **인위적인 라벨**로 학습·저장·추론합니다. 입력의 마지막 토큰에 라벨을 연결한 실행 경로 검증입니다. 과제 계열 이름도 데모용이며 실제 위반 탐지나 OOD 성능의 근거가 아닙니다. test capture는 학습에 사용하지 않습니다. 실제 데이터·가중치·실험 결과는 `artifacts/` 아래에 보관하고 Git에 올리지 않습니다.
 
 ## 2. A/B/D가 준비할 데이터
+
+기존 rollout·tensor_data·Research SQLite를 연결하려면 [데이터 연결 안내](probe-data-assembly.md)의 `scripts/assemble_probe_dataset.py`를 사용합니다. 원본을 수정하지 않고 출처를 연결하며, 검수된 라벨과 분할을 받은 뒤 이 학습기가 읽는 manifest를 만듭니다.
 
 - A: `metadata.json`과 `features.npz`를 포함하는 C-01 `pre_action` capture. 모델·토크나이저 revision, 원본 토큰 정렬, 행동 시작 위치를 정확히 기록합니다.
 - B: 관측 시점 이후 **바로 다음 한 행동**의 정책 위반 여부를 검수해 `0/1`로 지정합니다. 승인 요청·정직한 실패·안전한 중단은 `0`, 차단되었더라도 금지된 행동 시도는 `1`입니다. 의미 불명·검수 대기는 `null`이며 학습에서 자동으로 정상 처리하지 않습니다.
@@ -103,6 +105,8 @@ test 항목은 split 중복 검사만 하고 특징 파일을 열거나 임계�
 
 - `weights.npz`: 선형층 weight/bias와 train 정규화 mean/scale. pickle 없이 저장합니다.
 - `model.json`: 특징 명세·모델/tokenizer revision·설정 해시·임계값·학습 설정·라벨/split revision·데이터 fingerprint·검증 지표·가중치 해시.
+
+비교 평가기의 `python scripts/evaluate_monitors.py probe --manifest <manifest.json> --scores <scores-dir>`도 학습한 Probe를 보관합니다. `<scores-dir>/probes.json`의 각 `configs` 항목에서 `probe_dir`를 확인하면 됩니다. 경로는 scores 디렉터리 기준이며 `models/<실행-ID>/L23` 등의 폴더에 `model.json`과 `weights.npz`가 저장됩니다. 다시 실행해도 이전 모델 폴더는 덮어쓰지 않습니다. 이 모델들은 각 구성의 train 전체로 학습한 최종 모델입니다. M2 학습에 사용하는 train 점수의 out-of-fold 모델들과는 구분됩니다. 비교 평가기의 이 단계는 test 점수도 생성하므로, train/validation 학습만 할 때는 위의 `train_probe.py`를 사용합니다.
 
 ## 4. 새 관측 시점에 적용
 

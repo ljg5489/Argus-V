@@ -1237,8 +1237,14 @@ class ArtifactIndex:
                 if previous and previous[0] == stat.st_mtime:
                     continue
                 result = json.loads(result_path.read_text(encoding="utf-8"))
+                # This tree also contains dataset inventories and other JSON
+                # artifacts. Only detector-result objects belong in this index.
+                if not isinstance(result, dict):
+                    continue
                 snapshot = result.get("snapshot") or {}
                 configuration = result.get("configuration") or {}
+                if not isinstance(snapshot, dict) or not isinstance(configuration, dict):
+                    continue
                 monitor = configuration.get("monitor")
                 run_id = snapshot.get("run_id")
                 if not monitor or not run_id or "alarm" not in result:

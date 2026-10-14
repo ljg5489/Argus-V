@@ -90,6 +90,42 @@ def datasets(corpus, layers=(1,)):
     )
 
 
+def test_comparison_saves_reusable_models_and_preserves_previous_runs(corpus, tmp_path):
+    from argus_v.evaluation import run_layer_probes
+
+    scores = tmp_path / "comparison"
+    config = TrainingConfig(epochs=5)
+    first = run_layer_probes(
+        corpus, scores, config=config, single_layers=(1,), top_k=1, log=lambda _: None
+    )
+    choice = first["configs"]["L01"]
+    saved = scores / choice["probe_dir"]
+    assert saved.is_dir()
+    trained = load_probe(saved)
+    validation = load_probe_dataset(corpus, split="validation", layers=(1,))
+    prediction = trained.predict(validation.snapshots[0])
+    rows = [json.loads(row) for row in (scores / "probe-L01.jsonl").read_text().splitlines()]
+    expected = next(
+        row
+        for row in rows
+        if row["split"] == "validation"
+        and row["snapshot_id"] == validation.records[0]["snapshot_id"]
+    )
+    assert prediction["risk_score"] == expected["risk_score"]
+    model_before, weights_before = (
+        (saved / "model.json").read_bytes(),
+        (saved / "weights.npz").read_bytes(),
+    )
+    assert sha256(model_before).hexdigest() == choice["probe_model_sha256"]
+    assert sha256(weights_before).hexdigest() == choice["probe_weights_sha256"]
+    second = run_layer_probes(
+        corpus, scores, config=config, single_layers=(1,), top_k=1, log=lambda _: None
+    )
+    assert second["configs"]["L01"]["probe_dir"] != choice["probe_dir"]
+    assert (saved / "model.json").read_bytes() == model_before
+    assert (saved / "weights.npz").read_bytes() == weights_before
+
+
 def mutate_manifest(corpus, change):
     manifest = json.loads(corpus.read_text(encoding="utf-8"))
     change(manifest)
