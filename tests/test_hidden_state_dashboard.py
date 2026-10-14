@@ -138,9 +138,53 @@ class HookMapTests(unittest.TestCase):
         handler.path = "/hooks"
         handler.do_GET()
         self.assertEqual(handler._send.call_args.args[0], PAGE.encode())
+        handler.path = "/simsimi.html"
+        handler.do_GET()
+        body, content_type = handler._send.call_args.args[:2]
+        self.assertIn('id="chat-form"', body.decode("utf-8"))
+        self.assertEqual(content_type, "text/html; charset=utf-8")
         for name in ("view-analysis", "view-compare", "view-sandbox", "view-hooks",
                      "sandbox-import", "sandbox-preview", "sandbox-image", "theme-toggle"):
             self.assertIn(f'id="{name}"', PAGE)
+
+    def test_fakenet_page_navigation_and_route_preview(self):
+        handler = object.__new__(DashboardHandler)
+        handler._send = Mock()
+        handler._json = Mock()
+        for path, marker in (
+            ("/naver.html", 'href="/simsimi.html"'),
+            ("/simsimi.html", 'id="chat-form"'),
+            ("/simsimi.html?from=naver", 'href="/naver.html"'),
+            ("/search.naver?query=test", 'id="serp"'),
+        ):
+            with self.subTest(path=path):
+                handler.path = path
+                handler.do_GET()
+                body, content_type = handler._send.call_args.args
+                self.assertIn(marker, body.decode())
+                self.assertEqual(content_type, "text/html; charset=utf-8")
+        handler._json.assert_not_called()
+        for path, filename in (("/", "naver.html"), ("/naver.html", "naver.html"),
+                               ("/simsimi.html", "simsimi.html")):
+            with self.subTest(preview=path):
+                handler.path = "/api/sandbox/web/preview?host=www.naver.com&path=" + path
+                handler.do_GET()
+                response = handler._json.call_args.args[0]
+                self.assertEqual(response["status"], 200)
+                self.assertEqual(response["file"], filename)
+                self.assertIn("<html", response["body"])
+
+    def test_detector_index_skips_unrelated_json(self):
+        folder = Path(self.temp.name) / "detector-results"
+        folder.mkdir()
+        for i, value in enumerate(([], None, {"snapshot": [1]}, {"configuration": "text"},
+                                   {"snapshot": {"run_id": "test-run", "token_index": 1},
+                                    "configuration": {"monitor": "m1"}, "alarm": False})):
+            (folder / f"result-{i}.json").write_text(json.dumps(value))
+        self.store.sync_detector_results(folder)
+        with self.store.connect() as db:
+            rows = db.execute("SELECT run_id, monitor FROM detector_results").fetchall()
+        self.assertEqual([(r[0], r[1]) for r in rows], [("test-run", "m1")])
 
 
 class RolloutViewTests(unittest.TestCase):
@@ -344,3 +388,51 @@ class CaptureViewTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PageScriptTests(unittest.TestCase):
+    """One JavaScript syntax error disables every tab, so the page script must parse."""
+
+    def test_page_scripts_parse(self):
+        import re
+        import shutil
+        import subprocess
+
+        engine = shutil.which("node") or shutil.which("deno") or str(Path.home() / ".deno" / "bin" / "deno")
+        if not Path(engine).exists():
+            self.skipTest("no JavaScript engine (node or deno)")
+        for index, script in enumerate(re.findall(r"<script[^>]*>(.*?)</script>", PAGE, re.S)):
+            with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False) as handle:
+                handle.write(script)
+            check = (f"try{{new Function(require('fs').readFileSync('{handle.name}','utf8'))}}catch(e){{console.log('SYNTAX '+e.message)}}"
+                     if "node" in Path(engine).name else
+                     f"try{{new Function(Deno.readTextFileSync('{handle.name}'))}}catch(e){{console.log('SYNTAX '+e.message)}}")
+            result = subprocess.run([engine, "-e" if "node" in Path(engine).name else "eval", check],
+                                    capture_output=True, text=True, timeout=60)
+            Path(handle.name).unlink()
+            self.assertNotIn("SYNTAX", result.stdout, f"script {index}: {result.stdout}")
+
+
+class SimsimiApiTests(unittest.TestCase):
+    def test_dashboard_serves_the_same_chat_api_as_the_gateway(self):
+        handler = object.__new__(DashboardHandler)
+        handler._send = Mock()
+        handler.path = "/simsimi/api/chat?text=%EC%95%88%EB%85%95"
+        handler.do_GET()
+        body, content_type, status = handler._send.call_args.args
+        self.assertEqual((status, content_type), (200, "application/json; charset=utf-8"))
+        self.assertTrue(json.loads(body)["reply"])
+        handler.path = "/simsimi/api/chat"
+        handler.headers = {"Content-Length": "2"}
+        handler.rfile = Mock(read=Mock(return_value=b"{}"))
+        handler.do_POST()
+        self.assertEqual(handler._send.call_args.args[2], 400)  # text is required
+
+    def test_route_preview_runs_the_handler(self):
+        handler = object.__new__(DashboardHandler)
+        handler._json = Mock()
+        handler.path = "/api/sandbox/web/preview?host=www.naver.com&path=/simsimi/api/chat"
+        handler.do_GET()
+        response = handler._json.call_args.args[0]
+        self.assertEqual((response["status"], response["handler"]), (200, "simsimi"))
+        self.assertIn("reply", json.loads(response["body"]))

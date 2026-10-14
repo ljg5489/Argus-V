@@ -739,11 +739,12 @@ $('sandbox-files').onclick=async event=>{
 /* ---------- SANDBOX WEB / FakeNet routes and site files ---------- */
 let swFiles=[];
 async function swLoad(){const status=$('sw-status');status.textContent='FakeNet 설정과 요청 기록을 불러오는 중…';try{const r=await fetch('/api/sandbox/web',{cache:'no-store'}),d=await r.json();if(!r.ok)throw Error(d.error||d.reason||`HTTP ${r.status}`);$('sw-routes').value=JSON.stringify(d.config,null,2);swFiles=d.files||[];const select=$('sw-file'),previous=select.value;select.innerHTML='<option value="">파일 선택</option>'+swFiles.map(f=>`<option value="${esc(f)}">${esc(f)}</option>`).join('');if(swFiles.includes(previous))select.value=previous;else if(swFiles.length)select.value=swFiles[0];if(select.value)await swReadFile();$('sw-events').innerHTML=(d.events||[]).slice(-300).reverse().map(e=>`<tr><td>${esc(e.time?new Date(e.time*1000).toLocaleString():'—')}</td><td>${esc(e.kind)}</td><td class="mono">${esc([e.method,e.host,e.path].filter(Boolean).join(' '))}</td><td class="num">${esc(e.status??'—')}</td></tr>`).join('')||'<tr><td colspan="4"><div class="empty">요청 기록이 없습니다.</div></td></tr>';status.textContent=`${d.config_path} · ${swFiles.length}개 사이트 파일 · 요청 ${d.events?.length||0}건${d.log_status&&d.log_status!=='OK'?' · '+d.log_status:''}`}catch(e){status.textContent='FakeNet 조회 실패: '+e.message}}
-async function swReadFile(){const name=$('sw-file').value;if(!name)return;$('sw-file-status').textContent='파일 불러오는 중…';try{const r=await fetch('/api/sandbox/web/file?name='+encodeURIComponent(name),{cache:'no-store'}),d=await r.json();if(!r.ok)throw Error(d.error||`HTTP ${r.status}`);$('sw-content').value=d.content;$('sw-file-status').textContent=`${name} · ${d.size.toLocaleString()} bytes`;$('sw-preview').srcdoc=d.content}catch(e){$('sw-file-status').textContent='파일 조회 실패: '+e.message}}
+function swShowPreview(content,name=''){const frame=$('sw-preview');frame.setAttribute('sandbox',['naver.html','simsimi.html'].includes(name)?'allow-scripts allow-same-origin allow-forms allow-modals':'');frame.srcdoc=content}
+async function swReadFile(){const name=$('sw-file').value;if(!name)return;$('sw-file-status').textContent='파일 불러오는 중…';try{const r=await fetch('/api/sandbox/web/file?name='+encodeURIComponent(name),{cache:'no-store'}),d=await r.json();if(!r.ok)throw Error(d.error||`HTTP ${r.status}`);$('sw-content').value=d.content;$('sw-file-status').textContent=`${name} · ${d.size.toLocaleString()} bytes`;swShowPreview(d.content,name)}catch(e){$('sw-file-status').textContent='파일 조회 실패: '+e.message}}
 $('sw-refresh').onclick=swLoad;$('sw-file').onchange=swReadFile;$('sw-save-routes').onclick=async()=>{const status=$('sw-status');try{const config=JSON.parse($('sw-routes').value),r=await fetch('/api/sandbox/web/routes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(config)}),d=await r.json();if(!r.ok)throw Error(d.error||`HTTP ${r.status}`);status.textContent='라우트 저장 완료 · 실행 중 FakeNet에 즉시 반영됩니다.';await swLoad()}catch(e){status.textContent='라우트 저장 실패: '+e.message}};
-$('sw-preview-route').onclick=async()=>{const status=$('sw-preview-status');try{const p=new URLSearchParams({host:$('sw-host').value,path:$('sw-path').value}),r=await fetch('/api/sandbox/web/preview?'+p,{cache:'no-store'}),d=await r.json();if(!r.ok)throw Error(d.error||`HTTP ${r.status}`);status.textContent=`${d.status} · ${d.content_type} · route ${d.route_index}`;$('sw-response-preview').textContent=d.body;$('sw-preview').srcdoc=d.content_type.includes('html')?d.body:''}catch(e){status.textContent='미리보기 실패: '+e.message}};
-$('sw-new-file').onclick=()=>{const name=prompt('새 파일 경로 (예: example/index.html)');if(!name)return;const option=document.createElement('option');option.value=name;option.textContent=name;$('sw-file').append(option);$('sw-file').value=name;$('sw-content').value='<!doctype html>\n<html><head><meta charset="utf-8"><title>FakeNet</title></head><body><h1>FakeNet page</h1></body></html>\n';$('sw-file-status').textContent='새 파일 · 저장하면 Sandbox/fakenet/sites/에 생성됩니다.';$('sw-preview').srcdoc=$('sw-content').value};
-$('sw-save-file').onclick=async()=>{const name=$('sw-file').value;if(!name){$('sw-file-status').textContent='저장할 파일을 선택하거나 새로 만드세요.';return}try{const r=await fetch('/api/sandbox/web/file',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,content:$('sw-content').value})}),d=await r.json();if(!r.ok)throw Error(d.error||`HTTP ${r.status}`);$('sw-preview').srcdoc=$('sw-content').value;$('sw-file-status').textContent=`저장 완료 · ${name} · ${d.size.toLocaleString()} bytes`;if(!swFiles.includes(name))swFiles.push(name)}catch(e){$('sw-file-status').textContent='파일 저장 실패: '+e.message}};
+$('sw-preview-route').onclick=async()=>{const status=$('sw-preview-status');try{const p=new URLSearchParams({host:$('sw-host').value,path:$('sw-path').value}),r=await fetch('/api/sandbox/web/preview?'+p,{cache:'no-store'}),d=await r.json();if(!r.ok)throw Error(d.error||`HTTP ${r.status}`);status.textContent=`${d.status} · ${d.content_type} · route ${d.route_index}`;$('sw-response-preview').textContent=d.body;swShowPreview(d.content_type.includes('html')?d.body:'',d.file||'')}catch(e){status.textContent='미리보기 실패: '+e.message}};
+$('sw-new-file').onclick=()=>{const name=prompt('새 파일 경로 (예: example/index.html)');if(!name)return;const option=document.createElement('option');option.value=name;option.textContent=name;$('sw-file').append(option);$('sw-file').value=name;$('sw-content').value='<!doctype html>\n<html><head><meta charset="utf-8"><title>FakeNet</title></head><body><h1>FakeNet page</h1></body></html>\n';$('sw-file-status').textContent='새 파일 · 저장하면 Sandbox/fakenet/sites/에 생성됩니다.';swShowPreview($('sw-content').value,name)};
+$('sw-save-file').onclick=async()=>{const name=$('sw-file').value;if(!name){$('sw-file-status').textContent='저장할 파일을 선택하거나 새로 만드세요.';return}try{const r=await fetch('/api/sandbox/web/file',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,content:$('sw-content').value})}),d=await r.json();if(!r.ok)throw Error(d.error||`HTTP ${r.status}`);swShowPreview($('sw-content').value,name);$('sw-file-status').textContent=`저장 완료 · ${name} · ${d.size.toLocaleString()} bytes`;if(!swFiles.includes(name))swFiles.push(name)}catch(e){$('sw-file-status').textContent='파일 저장 실패: '+e.message}};
 /* ---------- recorded Hook registration map ---------- */
 let hookLoaded=false,hookOffset=0,hookSessionRequest=0,hookMapRequest=0,hookData=null,hookLayer='*',hookSelected=null;
 const hookPageSize=50;
@@ -1927,6 +1928,23 @@ class CaptureIndex:
         return sorted(items, key=lambda item: item.get("started_at") or "", reverse=True)
 
 
+_FAKENET_SERVER = None
+
+
+def fakenet_server_module():
+    """SANDBOX/fakenet/server.py loaded once (its simsimi chat API is reused by the dashboard)."""
+    global _FAKENET_SERVER
+    if _FAKENET_SERVER is None:
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location("argus_fakenet_server",
+                                                      PROJECT_ROOT / "SANDBOX" / "fakenet" / "server.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        _FAKENET_SERVER = module
+    return _FAKENET_SERVER
+
+
 class DashboardHandler(BaseHTTPRequestHandler):
     store: ArtifactIndex
     plot_bins = 64
@@ -2022,15 +2040,32 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         and ("GET" in methods or "*" in methods)):
                     route_index, route = index, candidate
                     break
-            if route.get("file"):
+            status, content_type = route.get("status", 200), route.get("content_type", "text/html; charset=utf-8")
+            if route.get("handler"):  # built-in API of the gateway, e.g. simsimi chat; sample request text=안녕
+                status, content_type, body = self._fakenet_handler(route, request_path, "text=%EC%95%88%EB%85%95", b"")
+            elif route.get("file"):
                 target = self._sandbox_site_name(str(route["file"]))
                 body = target.read_text(encoding="utf-8", errors="replace") if target.is_file() else ""
             else:
                 body = str(route.get("body", "")).replace("{host}", host).replace("{path}", request_path)
-            self._json({"route_index": route_index, "status": route.get("status", 200),
-                        "content_type": route.get("content_type", "text/html; charset=utf-8"), "body": body})
+            self._json({"route_index": route_index, "status": status, "content_type": content_type,
+                        "file": route.get("file"), "handler": route.get("handler"), "body": body})
             return
         raise ValueError("Unknown FakeNet API.")
+
+    @staticmethod
+    def _fakenet_handler(route: dict, path: str, query: str, body: bytes) -> tuple[int, str, str]:
+        """Same built-in API code the FakeNet gateway runs (SANDBOX/fakenet/server.py)."""
+        handlers = fakenet_server_module().HANDLERS
+        if route.get("handler") not in handlers:
+            return 404, "application/json; charset=utf-8", json.dumps({"error": "unknown handler"})
+        status, data = handlers[route["handler"]](path, query, body)
+        return status, "application/json; charset=utf-8", json.dumps(data, ensure_ascii=False)
+
+    def _simsimi_api(self, path: str, query: str, body: bytes) -> None:
+        """simsimi.html served by the dashboard talks to the same chat API as inside the sandbox."""
+        status, content_type, text = self._fakenet_handler({"handler": "simsimi"}, path, query, body)
+        self._send(text.encode("utf-8"), content_type, status)
 
     def _sandbox_web_save(self, path: str) -> None:
         try:
@@ -2113,6 +2148,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         request_path = urlparse(self.path).path
+        if request_path.startswith("/simsimi/api/"):
+            length = self.headers.get("Content-Length", "0")
+            body = self.rfile.read(min(int(length), 64 * 1024)) if length.isdigit() else b""
+            self._simsimi_api(request_path, urlparse(self.path).query, body)
+            return
         if request_path in ("/api/sandbox/web/routes", "/api/sandbox/web/file"):
             if self.headers.get_content_type() != "application/json":
                 self._json({"error": "Content-Type must be application/json."}, 415)
@@ -2675,6 +2715,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
+        if parsed.path.startswith("/simsimi/api/"):
+            self._simsimi_api(parsed.path, parsed.query, b"")
+            return
+        if parsed.path in ("/simsimi.html", "/naver.html", "/search.naver"):
+            name = "simsimi.html" if parsed.path == "/simsimi.html" else "naver.html"
+            page = PROJECT_ROOT / "SANDBOX" / "fakenet" / "sites" / name
+            self._send(page.read_bytes(), "text/html; charset=utf-8")
+            return
         if parsed.path in ("/api/sandbox/web", "/api/sandbox/web/file", "/api/sandbox/web/preview"):
             try:
                 self._sandbox_web_api(parsed.path, parse_qs(parsed.query))
@@ -3092,6 +3140,55 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "histogram": [{"count": int(x)} for x in counts], "axis0": axis0}
 
 
+def port_owner(port: int) -> tuple[int | None, str]:
+    """(pid, command line) of the process listening on ``port`` (Linux ss), or (None, "")."""
+    try:
+        listing = subprocess.run(["ss", "-ltnpH", f"sport = :{port}"], capture_output=True, text=True,
+                                 timeout=5).stdout
+    except (OSError, subprocess.SubprocessError):
+        return None, ""
+    match = re.search(r"pid=(\d+)", listing)
+    if not match:
+        return None, ""
+    pid = int(match.group(1))
+    try:
+        command = Path(f"/proc/{pid}/cmdline").read_bytes().replace(b"\0", b" ").decode(errors="replace").strip()
+    except OSError:
+        command = ""
+    return pid, command
+
+
+def bind_server(host: str, port: int, replace: bool = False) -> ThreadingHTTPServer:
+    """Bind the dashboard; explain (or with --replace, stop) an older dashboard still holding the port."""
+    import errno
+    import os
+    import signal
+    import time
+
+    try:
+        return ThreadingHTTPServer((host, port), DashboardHandler)
+    except OSError as error:
+        if error.errno != errno.EADDRINUSE:
+            raise
+        pid, command = port_owner(port)
+        is_dashboard = "hidden_state_dashboard" in command
+        if replace and pid and is_dashboard and pid != os.getpid():
+            print(f"이전 대시보드(PID {pid})를 종료하고 다시 시작합니다.")
+            os.kill(pid, signal.SIGTERM)
+            for _ in range(50):
+                time.sleep(0.1)
+                try:
+                    return ThreadingHTTPServer((host, port), DashboardHandler)
+                except OSError as retry:
+                    if retry.errno != errno.EADDRINUSE:
+                        raise
+            raise SystemExit(f"PID {pid}가 포트 {port}를 놓지 않습니다. kill {pid} 후 다시 실행하세요.")
+        owner = f"PID {pid}: {command}" if pid else "알 수 없는 프로세스"
+        hint = ("이전에 띄운 대시보드입니다. 새 코드로 다시 띄우려면 --replace 를 붙이세요"
+                if is_dashboard else f"다른 프로그램입니다. --port {port + 1} 처럼 다른 포트를 쓰세요")
+        raise SystemExit(f"포트 {port}가 이미 사용 중입니다 ({owner}).\n{hint}.")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Live graph/table browser for Argus-V Hook tensors")
     parser.add_argument("--data-dir", type=Path, default=PROJECT_ROOT / "tensor_data",
@@ -3108,6 +3205,8 @@ def main() -> None:
                         help="출력 어휘 투영(lm_head, 최종 norm)에 쓸 safetensors 체크포인트 폴더")
     parser.add_argument("--host", default="127.0.0.1", help="기본값은 로컬 PC만 접근")
     parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--replace", action="store_true",
+                        help="포트를 이미 쓰고 있는 이전 대시보드(hidden_state_dashboard.py)를 종료하고 새로 시작")
     args = parser.parse_args()
     data_dir = args.data_dir.expanduser().resolve()
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -3130,7 +3229,7 @@ def main() -> None:
                                              exclude=(args.rollouts_dir.expanduser(),))
     DashboardHandler.rollouts = RolloutIndex(args.rollouts_dir.expanduser())
     DashboardHandler.lens = LogitLens(args.model_dir.expanduser().resolve(), args.tokenizer.expanduser())
-    server = ThreadingHTTPServer((args.host, args.port), DashboardHandler)
+    server = bind_server(args.host, args.port, args.replace)
     print(f"Research dashboard: http://{args.host}:{args.port}/")
     print(f"Watching Hook artifacts under: {data_dir}")
     print(f"SQLite index: {store.db_path}")

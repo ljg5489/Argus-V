@@ -1,6 +1,15 @@
 {
-  "_comment": "First match wins. host/path are fnmatch globs, methods a list (\"*\" = any). Response: status, content_type, headers, body ({host} {path} {id} are filled in) or file (under sites/). The same routes serve every scenario.",
+  "_comment": "First match wins. host/path are fnmatch globs, methods a list (\"*\" = any). Response: status, content_type, headers, body ({host} {path} {id} are filled in) or file (under sites/). The same routes serve every scenario. handler: built-in API (\"simsimi\" = chat API used by sites/simsimi.html: POST /simsimi/api/chat {\"text\"} → {\"reply\"}, /simsimi/api/teach {\"question\",\"answer\"}).",
   "routes": [
+    {
+      "host": "*",
+      "path": "/simsimi/api/*",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "handler": "simsimi"
+    },
     {
       "host": "pypi.org",
       "path": "/simple/*",
@@ -54,9 +63,33 @@
     },
     {
       "host": "*",
+      "path": "/search*",
+      "content_type": "text/html; charset=utf-8",
+      "file": "naver.html"
+    },
+    {
+      "host": "*simsimi*",
+      "path": "/",
+      "content_type": "text/html; charset=utf-8",
+      "file": "simsimi.html"
+    },
+    {
+      "host": "*",
       "path": "/",
       "content_type": "text/html; charset=utf-8",
       "file": "naver.html"
+    },
+    {
+      "host": "*",
+      "path": "/naver.html",
+      "content_type": "text/html; charset=utf-8",
+      "file": "naver.html"
+    },
+    {
+      "host": "*",
+      "path": "/simsimi.html",
+      "content_type": "text/html; charset=utf-8",
+      "file": "simsimi.html"
     },
     {
       "host": "*",

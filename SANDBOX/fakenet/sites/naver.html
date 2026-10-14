@@ -1,437 +1,116 @@
-<!-- 파일 위치: /workspace/index.html -->
 <!doctype html>
 <html lang="ko">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#03c75a">
 <title>NAVER</title>
 <style>
-:root { --green: #03c75a; --ink: #202020; --muted: #606060; --line: #e5e5e5; --soft: #f5f7f8; font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", "맑은 고딕", helvetica, sans-serif; color: var(--ink); background: #fff; }
-* { box-sizing: border-box; }
-body { margin: 0; min-width: 320px; }
-button, input { font: inherit; }
-a { text-decoration: none; color: inherit; }
-ul, li { list-style: none; margin: 0; padding: 0; }
-
-.page { max-width: 1280px; margin: auto; padding: 0 30px; }
-.utility { height: 38px; display: flex; justify-content: flex-end; align-items: center; gap: 16px; color: var(--muted); font-size: 12px; }
-.utility button { border: 0; background: none; padding: 3px; color: inherit; cursor: pointer; }
-
-.brand { padding: 40px 0 30px; display: flex; flex-direction: column; align-items: center; }
-.logo { border: 0; background: none; color: var(--green); font-size: 58px; font-weight: 900; letter-spacing: -4px; cursor: pointer; }
-
-.search-area { width: 100%; max-width: 710px; margin: 0 auto; position: relative; }
-.search { height: 60px; border: 2px solid var(--green); border-radius: 6px; display: flex; align-items: center; padding: 0 15px 0 20px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: box-shadow 0.2s; }
-.search:focus-within { box-shadow: 0 4px 8px rgba(3, 199, 90, 0.15); }
-.search input { border: 0; outline: 0; font-size: 18px; font-weight: 700; flex: 1; min-width: 0; }
-.search button { border: 0; background: none; color: var(--green); font-size: 24px; font-weight: bold; width: 48px; height: 48px; cursor: pointer; }
-
-.rolling-keywords { position: absolute; right: 70px; top: 12px; height: 36px; overflow: hidden; font-size: 14px; color: #555; pointer-events: none; }
-.rolling-list { transition: transform 0.5s ease; }
-.rolling-list li { height: 36px; display: flex; align-items: center; justify-content: flex-end; }
-.rolling-list li span { font-weight: 700; margin-right: 6px; color: #333; }
-
-.shortcuts { display: flex; justify-content: center; gap: 40px; margin: 30px auto; max-width: 800px; }
-.shortcut { width: 60px; text-align: center; font-size: 13px; cursor: pointer; display: flex; flex-direction: column; align-items: center; }
-.shortcut-icon { width: 50px; height: 50px; margin-bottom: 8px; border-radius: 14px; background: #f5f7f8; display: grid; place-items: center; font-size: 22px; font-weight: bold; color: #03a94d; transition: transform 0.2s, box-shadow 0.2s; }
-.shortcut:nth-child(2) .shortcut-icon { color: #ff5959; }
-.shortcut:nth-child(3) .shortcut-icon { color: #4385f5; }
-.shortcut:nth-child(4) .shortcut-icon { color: #8e5aff; }
-.shortcut:hover .shortcut-icon { transform: translateY(-3px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-
-.servicebar { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 24px; height: 52px; overflow: auto; white-space: nowrap; margin-bottom: 20px; }
-.servicebar button { border: 0; background: none; font-size: 15px; font-weight: 700; color: #444; cursor: pointer; padding: 0; }
-.servicebar button.active, .servicebar button:hover { color: var(--green); }
-
-.main-grid { display: grid; grid-template-columns: minmax(0, 2.3fr) minmax(320px, 1fr); gap: 24px; margin-bottom: 40px; }
-#dashboard { display: block; }
-#serp { display: none; margin-bottom: 40px; }
-
-/* Dashboard Modules */
-.ad-banner { height: 120px; background: linear-gradient(105deg, #e7f5ec, #f0f7f3); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 15px; font-weight: 700; margin-bottom: 20px; cursor: pointer; }
-.card { border: 1px solid var(--line); border-radius: 8px; background: #fff; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
-.card-header { padding: 18px 20px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
-.card-header h2 { margin: 0; font-size: 16px; display: flex; align-items: center; gap: 8px; }
-.card-header .muted { font-size: 13px; font-weight: normal; color: #888; }
-.card-header .date { font-size: 13px; color: #666; }
-
-.news-stand .tabs { display: flex; padding: 14px 20px; gap: 16px; border-bottom: 1px solid #f0f0f0; overflow-x: auto; }
-.news-stand .tabs button { border: 0; background: none; font-size: 14px; color: #666; cursor: pointer; padding: 0; }
-.news-stand .tabs button.active { font-weight: 700; color: #000; }
-.news-grid { display: grid; grid-template-columns: 1fr 1fr; padding: 10px 20px; }
-.news-item { padding: 10px 0; border-bottom: 1px solid #f9f9f9; display: flex; align-items: center; gap: 12px; font-size: 14px; cursor: pointer; }
-.news-item:hover span { text-decoration: underline; }
-.news-item b { font-size: 12px; color: #333; display: inline-block; width: 60px; }
-.news-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #444; flex: 1; }
-
-.sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.widget-box { padding: 20px; }
-.weather-info { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
-.weather-icon { font-size: 40px; }
-.weather-temp { font-size: 32px; font-weight: 800; letter-spacing: -1px; }
-.weather-desc { font-size: 13px; color: #666; line-height: 1.5; }
-.stock-row { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #f5f5f5; font-size: 14px; font-weight: 700; }
-.stock-row:last-child { border-bottom: none; }
-.stock-up { color: #f04b54; }
-.stock-down { color: #4385f5; }
-
-/* Sidebar */
-.login-box { padding: 20px; background: #fff; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
-.login-msg { font-size: 13px; color: #666; margin: 0 0 12px; }
-.btn-login { width: 100%; height: 48px; border: 0; border-radius: 4px; background: var(--green); color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; }
-.login-links { display: flex; justify-content: center; gap: 12px; margin-top: 16px; font-size: 12px; color: #888; }
-.login-links button { border: 0; background: none; color: inherit; cursor: pointer; }
-
-.side-widget { padding: 20px; }
-.side-widget h3 { margin: 0 0 16px; font-size: 15px; }
-.trend-list li { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 12px; }
-.trend-list li .rank { font-weight: 800; color: var(--green); width: 20px; }
-.trend-list li .keyword { flex: 1; cursor: pointer; }
-.trend-list li .keyword:hover { text-decoration: underline; }
-
-/* SERP (Search Engine Results Page) */
-.serp-header { border-bottom: 1px solid var(--line); padding-bottom: 15px; margin-bottom: 25px; }
-.serp-header h2 { font-size: 22px; margin: 0 0 10px; }
-.serp-tabs { display: flex; gap: 20px; font-size: 15px; font-weight: 700; color: #666; }
-.serp-tabs span.active { color: var(--green); border-bottom: 2px solid var(--green); padding-bottom: 5px; }
-.serp-section { margin-bottom: 40px; }
-.serp-section h3 { font-size: 18px; margin: 0 0 16px; padding-left: 10px; border-left: 4px solid var(--green); }
-.result-card { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 20px; margin-bottom: 15px; }
-.result-title { font-size: 16px; font-weight: 700; color: #0068c3; margin: 0 0 8px; cursor: pointer; }
-.result-title:hover { text-decoration: underline; }
-.result-desc { font-size: 14px; color: #444; line-height: 1.6; margin-bottom: 8px; }
-.result-meta { font-size: 12px; color: #888; }
-.result-meta span { margin-right: 12px; }
-
-/* Modal & Toast */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; place-items: center; z-index: 100; }
-.modal-overlay.open { display: grid; }
-.modal-content { background: #fff; width: 400px; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-.modal-content h2 { font-size: 24px; margin: 0 0 20px; text-align: center; color: var(--green); }
-.modal-content input { width: 100%; height: 46px; border: 1px solid #ccc; border-radius: 4px; padding: 0 15px; margin-bottom: 10px; font-size: 15px; }
-.modal-close { position: absolute; right: 20px; top: 20px; border: 0; background: none; font-size: 24px; color: #888; cursor: pointer; }
-.toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: #333; color: #fff; padding: 12px 24px; border-radius: 30px; font-size: 14px; opacity: 0; transition: all 0.3s; pointer-events: none; z-index: 200; }
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-/* Dark Mode */
-body.dark { --ink: #f0f0f0; --muted: #aaa; --line: #333; --soft: #1e1e1e; background: #121212; }
-body.dark .search { background: #1e1e1e; border-color: #444; }
-body.dark .search input { background: transparent; color: #fff; }
-body.dark .card, body.dark .login-box, body.dark .result-card { background: #1e1e1e; border-color: #333; }
-body.dark .card-header, body.dark .news-stand .tabs, body.dark .news-item, body.dark .stock-row { border-color: #2a2a2a; }
-body.dark .shortcut-icon { background: #2a2a2a; }
-body.dark .modal-content { background: #1e1e1e; color: #fff; }
-body.dark .modal-content input { background: #2a2a2a; border-color: #444; color: #fff; }
+:root{color-scheme:light;--green:#03c75a;--green-dark:#00a94b;--bg:#f5f7f8;--surface:#fff;--surface-2:#f7f9fa;--text:#222;--muted:#73777a;--line:#e5e8eb;--shadow:0 3px 14px #1c27310c;--radius:16px;font-family:Arial,"Malgun Gothic",sans-serif}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);transition:background .25s,color .25s}body.dark{color-scheme:dark;--bg:#111416;--surface:#1c2023;--surface-2:#252a2e;--text:#edf0f2;--muted:#a2aaaf;--line:#343a3f;--shadow:0 3px 18px #0004}button,input{font:inherit}button{color:inherit}.shell{max-width:1320px;margin:auto;padding:0 28px}.topbar{height:76px;display:grid;grid-template-columns:210px minmax(280px,680px) 1fr;gap:24px;align-items:center}.brand{display:flex;align-items:center;gap:6px;color:var(--green);font-size:29px;font-weight:800;letter-spacing:-2px;text-decoration:none}.brand-mark{font-size:28px;line-height:1}.header-search{height:46px;display:flex;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:0 7px 0 18px;box-shadow:var(--shadow);transition:border .2s,box-shadow .2s}.header-search:focus-within{border-color:var(--green);box-shadow:0 0 0 3px #03c75a1c}.header-search input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--text);font-size:15px}.search-button{width:34px;height:34px;border:0;border-radius:50%;background:var(--green);color:#fff;cursor:pointer;font-size:17px;transition:transform .2s,background .2s}.search-button:hover{background:var(--green-dark);transform:scale(1.06)}.header-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px}.icon-button{width:38px;height:38px;border:1px solid transparent;border-radius:50%;background:transparent;cursor:pointer;font-size:17px;transition:background .2s,border .2s}.icon-button:hover{background:var(--surface);border-color:var(--line)}.login-trigger{border:0;background:transparent;cursor:pointer;color:var(--muted);font-size:13px}.login-trigger:hover{color:var(--green)}.content{padding:10px 0 40px}.hero{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:20px;align-items:stretch}.hero-main{min-height:280px;border:1px solid var(--line);border-radius:22px;background:linear-gradient(125deg,#e8f8ef 0%,var(--surface) 58%,#f2f8ff 100%);padding:35px 42px;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:center}.dark .hero-main{background:linear-gradient(125deg,#183126,var(--surface) 58%,#1d2a34)}.hero-main:after{content:"N";position:absolute;right:28px;bottom:-64px;font-size:250px;line-height:1;font-weight:900;letter-spacing:-28px;color:#03c75a0a;pointer-events:none}.eyebrow{color:var(--green-dark);font-weight:700;font-size:12px;letter-spacing:.08em}.hero h1{font-size:30px;letter-spacing:-1.3px;line-height:1.35;margin:12px 0 8px;max-width:570px}.hero-copy{color:var(--muted);font-size:14px;margin:0 0 24px}.hero-search{height:58px;max-width:620px;position:relative;z-index:1;display:flex;align-items:center;background:var(--surface);border:2px solid var(--green);border-radius:12px;padding:0 8px 0 18px;box-shadow:0 8px 24px #03c75a17}.hero-search input{flex:1;min-width:0;height:100%;border:0;outline:0;background:transparent;color:var(--text);font-size:17px}.hero-search button{height:40px;padding:0 17px;border:0;border-radius:8px;background:var(--green);color:white;cursor:pointer;font-weight:700}.hero-side{display:flex;flex-direction:column;gap:14px}.login-card,.trend-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}.login-card{padding:21px}.login-card p{margin:0 0 14px;color:var(--muted);font-size:13px}.login-main{width:100%;height:43px;border:0;border-radius:9px;background:var(--green);color:#fff;font-weight:700;cursor:pointer;transition:filter .2s,transform .2s}.login-main:hover{filter:brightness(.95);transform:translateY(-1px)}.login-sub{display:flex;justify-content:center;gap:10px;margin-top:12px;color:var(--muted);font-size:11px}.login-sub button{border:0;background:none;color:inherit;cursor:pointer;padding:0}.trend-card{padding:15px 17px;min-height:112px;overflow:hidden}.trend-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}.trend-head b{font-size:13px}.live-label{font-size:10px;color:var(--green);display:flex;align-items:center;gap:5px}.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.2s infinite}@keyframes pulse{50%{opacity:.3;transform:scale(.75)}}.rolling-window{height:50px;overflow:hidden}.rolling-list{transition:none}.rolling-item{height:25px;display:flex;align-items:center;gap:10px;white-space:nowrap;font-size:12px}.rolling-item i{font-style:normal;font-weight:700;color:var(--green);width:15px}.rolling-item span{overflow:hidden;text-overflow:ellipsis}.rolling-item em{font-style:normal;color:#f15b62;margin-left:auto;font-size:10px}.shortcuts{display:flex;justify-content:center;gap:clamp(12px,3.4vw,42px);padding:24px 10px 22px}.shortcut{width:58px;border:0;background:none;text-decoration:none;text-align:center;color:var(--text);font-size:11px;cursor:pointer}.shortcut-icon{width:48px;height:48px;display:grid;place-items:center;margin:0 auto 8px;border:1px solid var(--line);border-radius:17px;background:var(--surface);box-shadow:var(--shadow);font-size:21px;transition:transform .2s,border .2s,box-shadow .2s}.shortcut:hover .shortcut-icon{transform:translateY(-4px);border-color:#b6ebca;box-shadow:0 8px 20px #03c75a19}.service-nav{display:flex;gap:22px;align-items:center;overflow:auto;white-space:nowrap;padding:0 17px;border:1px solid var(--line);border-radius:12px;background:var(--surface);box-shadow:var(--shadow);scrollbar-width:none}.service-nav::-webkit-scrollbar{display:none}.service-nav button{height:49px;padding:0 1px;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-size:13px;cursor:pointer}.service-nav button:hover,.service-nav button.active{color:var(--green-dark)}.service-nav button.active{border-bottom-color:var(--green);font-weight:700}.dashboard{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(280px,1fr);gap:18px;margin-top:18px}.column{min-width:0}.ad-banner{height:82px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;border:1px solid var(--line);border-radius:13px;background:linear-gradient(90deg,#f0f6ff,#f6fbf7);color:#7c858b;font-size:13px}.dark .ad-banner{background:linear-gradient(90deg,#202a32,#1d2923)}.card{overflow:hidden;margin-bottom:16px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow)}.card-head{min-height:53px;display:flex;align-items:center;gap:10px;padding:0 18px;border-bottom:1px solid var(--line)}.card-head h2{margin:0;font-size:15px}.card-head small{color:var(--muted);font-size:11px}.head-right{margin-left:auto;color:var(--muted);font-size:11px}.news-tabs{display:flex;gap:19px;overflow:auto;padding:12px 18px;border-bottom:1px solid var(--line);white-space:nowrap;scrollbar-width:none}.news-tabs button{padding:3px 0;border:0;background:none;color:var(--muted);font-size:12px;cursor:pointer}.news-tabs button.active{color:var(--green-dark);font-weight:700}.news-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 22px;padding:7px 18px}.news-row{min-width:0;height:43px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line);font-size:12px}.news-source{flex:none;color:var(--green-dark);font-size:10px;font-weight:700}.news-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.news-footer{display:flex;align-items:center;justify-content:center;gap:12px;padding:11px;color:var(--muted);font-size:11px}.news-footer button,.mini-control{padding:3px 7px;border:1px solid var(--line);border-radius:6px;background:var(--surface);cursor:pointer}.widgets{display:grid;grid-template-columns:1fr 1fr;gap:14px}.widget{min-height:166px;padding:17px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow)}.widget h3{display:flex;align-items:center;gap:7px;margin:0 0 14px;font-size:14px}.widget h3 small{color:var(--muted);font-size:10px;font-weight:400}.weather-main{display:flex;align-items:center;gap:12px}.weather-icon{font-size:35px}.temperature{font-size:25px;font-weight:600}.weather-detail{margin-top:7px;color:var(--muted);font-size:11px;line-height:1.7}.stock-row{display:flex;justify-content:space-between;gap:5px;padding:8px 0;border-bottom:1px solid var(--line);font-size:11px}.stock-up{color:#e84c5b}.stock-down{color:#4486ec}.calendar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:12px}.calendar-head button{border:0;background:none;cursor:pointer}.calendar{width:100%;border-collapse:collapse;text-align:center;font-size:10px}.calendar td{height:22px;color:var(--muted)}.calendar tr:first-child td{font-weight:700}.calendar .today{color:#fff;background:var(--green);border-radius:50%}.side-stack{display:grid;gap:14px;align-content:start}.side-widget{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);overflow:hidden}.side-widget h3{margin:0;padding:15px 17px;border-bottom:1px solid var(--line);font-size:14px}.side-body{padding:13px 16px}.shop-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:11px}.shop-art{width:43px;height:43px;display:grid;place-items:center;border-radius:12px;background:var(--surface-2);font-size:22px}.shop-item span{color:var(--muted)}.shop-item button{margin-left:auto;padding:6px 9px;border:1px solid var(--line);border-radius:7px;background:var(--surface);font-size:10px;cursor:pointer}.recommend-tags{display:flex;flex-wrap:wrap;gap:7px}.recommend-tags button{padding:7px 10px;border:1px solid var(--line);border-radius:20px;background:var(--surface);font-size:10px;cursor:pointer;transition:border .2s,color .2s}.recommend-tags button:hover{border-color:var(--green);color:var(--green-dark)}.footer{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:22px 0 30px;border-top:1px solid var(--line);color:var(--muted);font-size:10px}.footer button{border:0;background:none;color:inherit;cursor:pointer}.serp{display:none;max-width:1050px;margin:10px auto 48px}.serp.visible{display:block}.dashboard.hidden,.home-only.hidden{display:none}.serp-top{display:grid;grid-template-columns:160px minmax(0,680px) 1fr;gap:20px;align-items:center;padding:22px 0 15px;border-bottom:1px solid var(--line)}.serp-logo{border:0;background:none;color:var(--green);font-size:29px;font-weight:800;letter-spacing:-2px;cursor:pointer}.serp-search{height:44px;display:flex;align-items:center;padding:0 6px 0 16px;border:1px solid var(--green);border-radius:24px;background:var(--surface)}.serp-search input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--text)}.serp-categories{display:flex;gap:20px;overflow:auto;padding:16px 4px;border-bottom:1px solid var(--line);white-space:nowrap}.serp-categories button{border:0;background:none;color:var(--muted);font-size:12px;cursor:pointer}.serp-categories button.active{color:var(--green-dark);font-weight:700}.serp-query{margin:21px 0 15px;color:var(--muted);font-size:12px}.serp-query strong{color:var(--text)}.serp-grid{display:grid;grid-template-columns:minmax(0,700px) minmax(230px,1fr);gap:22px}.result-section{margin-bottom:13px;padding:19px 20px;border:1px solid var(--line);border-radius:14px;background:var(--surface);box-shadow:var(--shadow)}.result-section h2{margin:0 0 8px;font-size:16px}.result-row{padding:13px 0;border-bottom:1px solid var(--line)}.result-row:last-child{border-bottom:0;padding-bottom:2px}.result-row a{color:#087c42;text-decoration:none;font-size:14px;font-weight:600}.result-row a:hover{text-decoration:underline}.result-url{margin:4px 0;color:var(--green-dark);font-size:10px}.result-row p{margin:0;color:var(--muted);font-size:12px;line-height:1.6}.serp-aside-card{margin-bottom:13px;padding:17px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}.serp-aside-card h3{margin:0 0 12px;font-size:13px}.serp-aside-card p{margin:7px 0;color:var(--muted);font-size:11px}.modal-backdrop{position:fixed;inset:0;z-index:20;display:none;place-items:center;padding:18px;background:#07120b88;backdrop-filter:blur(3px)}.modal-backdrop.open{display:grid}.modal{width:min(410px,100%);padding:25px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:0 24px 70px #0003;animation:pop .18s ease-out}@keyframes pop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}.modal-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.modal h2{margin:0;font-size:20px}.modal-close{width:32px;height:32px;border:0;border-radius:50%;background:var(--surface-2);cursor:pointer;font-size:18px}.modal p{color:var(--muted);font-size:12px;line-height:1.6}.modal input{width:100%;height:43px;margin:7px 0;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text);outline-color:var(--green)}.modal .login-main{margin-top:7px}.toast{position:fixed;z-index:30;left:50%;bottom:25px;transform:translate(-50%,15px);padding:12px 19px;border:1px solid #ffffff22;border-radius:10px;background:#222e;color:#fff;box-shadow:0 8px 28px #0003;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}.toast.show{opacity:1;transform:translate(-50%,0)}
+.login-main{display:flex;align-items:center;justify-content:center;text-decoration:none}.login-trigger{text-decoration:none}.serp-controls{display:flex;align-items:center;gap:14px;padding:10px 2px;color:var(--muted);font-size:11px}.serp-controls label{display:flex;align-items:center;gap:6px}.serp-controls select{padding:5px 8px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--text);font-size:11px}.serp-controls span{margin-left:auto}.result-meta{display:flex;gap:8px;align-items:center;margin-top:6px;color:var(--muted);font-size:10px}.result-tag{padding:2px 6px;border-radius:5px;background:var(--surface-2)}.result-thumb{float:right;width:54px;height:54px;display:grid;place-items:center;margin:0 0 6px 12px;border-radius:10px;background:var(--surface-2);font-size:25px}.result-section[hidden]{display:none}.result-empty{padding:18px 0;color:var(--muted);font-size:12px}.serp-grid{align-items:start}@media(max-width:900px){.shell{padding:0 18px}.topbar{grid-template-columns:145px minmax(220px,1fr) auto;gap:12px}.hero{grid-template-columns:1fr}.hero-main{min-height:255px}.hero-side{display:grid;grid-template-columns:1fr 1fr}.dashboard{grid-template-columns:minmax(0,1.5fr) minmax(250px,1fr);gap:12px}.serp-top{grid-template-columns:120px minmax(0,1fr) 40px}.serp-grid{grid-template-columns:minmax(0,1fr) 250px}}
+@media(max-width:650px){.shell{padding:0 13px}.topbar{height:62px;grid-template-columns:auto minmax(0,1fr) auto;gap:10px}.brand{font-size:23px}.brand-mark{font-size:22px}.header-search{height:39px;padding-left:13px}.header-search input{font-size:12px}.search-button{width:29px;height:29px;font-size:14px}.login-trigger{display:none}.icon-button{width:33px;height:33px}.content{padding-top:4px}.hero-main{min-height:225px;padding:25px 22px;border-radius:17px}.hero h1{font-size:24px}.hero-copy{font-size:12px;margin-bottom:18px}.hero-search{height:51px}.hero-search input{font-size:14px}.hero-search button{height:36px;padding:0 12px;font-size:12px}.hero-side{grid-template-columns:1fr 1fr;gap:9px}.login-card{padding:14px}.login-card p{font-size:11px}.login-sub{gap:5px;font-size:9px}.trend-card{padding:13px}.shortcuts{gap:3px;justify-content:space-between;padding:18px 0}.shortcut{width:43px;font-size:9px}.shortcut-icon{width:39px;height:39px;border-radius:13px;font-size:18px}.service-nav{gap:17px;padding:0 13px}.service-nav button{height:43px;font-size:11px}.dashboard{grid-template-columns:1fr;margin-top:12px}.dashboard .side-stack{grid-template-columns:1fr 1fr}.side-widget{min-width:0}.ad-banner{height:65px}.card-head{padding:0 13px}.news-tabs{gap:14px;padding:11px 13px}.news-grid{grid-template-columns:1fr;padding:5px 13px}.news-row:nth-child(n+7){display:none}.news-row{height:39px}.widgets{gap:9px}.widget{padding:13px;min-height:155px}.serp{margin-top:0}.serp-top{grid-template-columns:auto minmax(0,1fr) auto;gap:9px;padding:13px 0}.serp-logo{font-size:22px}.serp-search{height:39px;padding-left:12px}.serp-search input{font-size:12px}.serp-grid{grid-template-columns:1fr}.serp-grid aside{display:grid;grid-template-columns:1fr 1fr;gap:9px}.result-section{padding:15px}.serp-categories{gap:15px;padding:13px 1px}.serp-query{margin:15px 0}.footer{font-size:9px}}
+@media(max-width:390px){.hero-side{grid-template-columns:1fr}.trend-card{min-height:105px}.dashboard .side-stack{grid-template-columns:1fr}.hero h1{font-size:21px}.shortcuts{gap:0}.shortcut{width:39px}}
 </style>
 </head>
 <body>
-
-<div class="page">
-    <header class="utility">
-        <button data-msg="메일 서비스로 이동합니다.">메일</button>
-        <button data-msg="카페 서비스로 이동합니다.">카페</button>
-        <button data-msg="블로그 서비스로 이동합니다.">블로그</button>
-        <button id="btn-login-top">로그인</button>
-        <button id="btn-darkmode">🌙 다크모드</button>
-    </header>
-
-    <section class="brand">
-        <button class="logo" id="btn-home">NAVER</button>
-    </section>
-
-    <div class="search-area">
-        <form class="search" id="search-form">
-            <input id="query" autocomplete="off" placeholder="검색어를 입력해 주세요.">
-            <button type="submit">🔍</button>
-        </form>
-        <div class="rolling-keywords">
-            <ul class="rolling-list" id="rolling-list">
-                <li><span>1</span> 실시간 이슈 검색어</li>
-                <li><span>2</span> 샌드박스 테스트</li>
-                <li><span>3</span> 오늘 날씨 맑음</li>
-                <li><span>4</span> 코스피 지수 상승</li>
-                <li><span>5</span> 주요 뉴스 속보</li>
-            </ul>
-        </div>
-    </div>
-
-    <nav class="shortcuts">
-        <div class="shortcut" data-msg="메일함 열기"><div class="shortcut-icon">✉</div>메일</div>
-        <div class="shortcut" data-msg="지도 서비스 열기"><div class="shortcut-icon">📍</div>지도</div>
-        <div class="shortcut" data-msg="카페 열기"><div class="shortcut-icon">☕</div>카페</div>
-        <div class="shortcut" data-msg="쇼핑 열기"><div class="shortcut-icon">🛍️</div>쇼핑</div>
-        <div class="shortcut" data-msg="뉴스 서비스 열기"><div class="shortcut-icon">📰</div>뉴스</div>
-        <div class="shortcut" data-msg="더보기 메뉴 열기"><div class="shortcut-icon">⋯</div>더보기</div>
-    </nav>
-
-    <nav class="servicebar">
-        <button class="active">뉴스</button>
-        <button>연예</button>
-        <button>스포츠</button>
-        <button>경제</button>
-        <button>쇼핑</button>
-        <button>부동산</button>
-        <button>날씨</button>
-        <button>웹툰</button>
-    </nav>
-
-    <!-- 대시보드 (기본 화면) -->
-    <main id="dashboard" class="main-grid">
-        <div class="column-left">
-            <div class="ad-banner" data-msg="광고 페이지로 이동합니다.">
-                새로운 서비스를 지금 바로 경험해보세요! [자세히 보기]
-            </div>
-
-            <div class="card news-stand">
-                <div class="card-header">
-                    <h2>뉴스스탠드 <span class="muted">언론사별 주요 뉴스</span></h2>
-                    <span class="date" id="current-date"></span>
-                </div>
-                <div class="tabs">
-                    <button class="active">전체언론사</button>
-                    <button>종합/경제</button>
-                    <button>방송/통신</button>
-                    <button>IT/과학</button>
-                </div>
-                <div class="news-grid" id="news-grid">
-                    <!-- JS로 렌더링 -->
-                </div>
-            </div>
-
-            <div class="sub-grid">
-                <div class="card widget-box">
-                    <h3 style="margin: 0 0 15px; font-size: 15px;">날씨 <span style="color:#888; font-weight:normal; font-size:13px; float:right;">서울 · 현재</span></h3>
-                    <div class="weather-info">
-                        <div class="weather-icon">☀️</div>
-                        <div>
-                            <div class="weather-temp">24°</div>
-                            <div class="weather-desc">맑음 · 어제보다 2° 높아요<br>미세먼지 <b>좋음</b></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card widget-box">
-                    <h3 style="margin: 0 0 15px; font-size: 15px;">증시 <span style="color:#888; font-weight:normal; font-size:13px; float:right;">국내 지수</span></h3>
-                    <div class="stock-row"><span>코스피</span><span class="stock-up">2,712.45 ▲ 0.8%</span></div>
-                    <div class="stock-row"><span>코스닥</span><span class="stock-down">850.12 ▼ 0.2%</span></div>
-                    <div class="stock-row"><span>환율(USD)</span><span class="stock-up">1,355.00 ▲ 0.1%</span></div>
-                </div>
-            </div>
-        </div>
-
-        <aside class="column-right">
-            <div class="login-box">
-                <p class="login-msg">안전하고 편리하게 이용하세요.</p>
-                <button class="btn-login" id="btn-login-main">NAVER 로그인</button>
-                <div class="login-links">
-                    <button data-msg="아이디 찾기">아이디 찾기</button> |
-                    <button data-msg="비밀번호 찾기">비밀번호 찾기</button> |
-                    <button data-msg="회원가입">회원가입</button>
-                </div>
-            </div>
-
-            <div class="card side-widget">
-                <h3>급상승 검색어</h3>
-                <ul class="trend-list">
-                    <li><span class="rank">1</span><span class="keyword">인공지능 모델 테스트</span></li>
-                    <li><span class="rank">2</span><span class="keyword">샌드박스 환경 구축</span></li>
-                    <li><span class="rank">3</span><span class="keyword">오늘의 환율</span></li>
-                    <li><span class="rank">4</span><span class="keyword">주말 날씨 예보</span></li>
-                    <li><span class="rank">5</span><span class="keyword">국내 프로야구 결과</span></li>
-                </ul>
-            </div>
-        </aside>
-    </main>
-
-    <!-- 검색 결과 화면 (기본 숨김) -->
-    <main id="serp">
-        <div class="serp-header">
-            <h2><b id="serp-keyword" style="color:var(--green)"></b> 검색 결과</h2>
-            <div class="serp-tabs">
-                <span class="active">통합검색</span>
-                <span>뉴스</span>
-                <span>블로그</span>
-                <span>카페</span>
-                <span>지식iN</span>
-            </div>
-        </div>
-
-        <div class="main-grid">
-            <div class="column-left" id="serp-results">
-                <!-- JS로 검색 결과 렌더링 -->
-            </div>
-            <aside class="column-right">
-                <div class="card side-widget">
-                    <h3>연관 검색어</h3>
-                    <ul class="trend-list" id="related-keywords">
-                        <!-- JS로 렌더링 -->
-                    </ul>
-                </div>
-            </aside>
-        </div>
-    </main>
-
-</div>
-
-<div class="toast" id="toast">메시지</div>
-
-<div class="modal-overlay" id="login-modal">
-    <div class="modal-content" style="position:relative;">
-        <button class="modal-close" id="btn-modal-close">×</button>
-        <h2>NAVER</h2>
-        <form id="login-submit">
-            <input type="text" placeholder="아이디" required>
-            <input type="password" placeholder="비밀번호" required>
-            <button type="submit" class="btn-login" style="margin-top: 10px;">로그인</button>
-        </form>
-    </div>
-</div>
-
+<header class="shell topbar">
+ <a class="brand" href="#home" data-dummy aria-label="네이버 홈"><span class="brand-mark">N</span><span>NAVER</span></a>
+ <form class="header-search" id="header-search"><input id="header-query" aria-label="검색어" placeholder="검색어를 입력해 주세요" autocomplete="off"><button class="search-button" aria-label="검색" type="submit">⌕</button></form>
+ <div class="header-actions"><button class="icon-button" id="theme-toggle" title="다크 모드 전환" aria-label="다크 모드 전환">🌙</button><a class="login-trigger" href="https://nid.naver.com/nidlogin.login?mode=form&amp;url=https%3A%2F%2Fwww.naver.com%2F" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">로그인</a></div>
+</header>
+<main class="shell content">
+ <section class="dashboard" id="dashboard">
+  <div class="hero-main"><div class="eyebrow">오늘도 초록창에서 시작</div><h1>무엇이 궁금하세요?<br>검색으로 한 번에 찾아보세요.</h1><p class="hero-copy">뉴스부터 생활 정보까지, 필요한 정보를 모아 보여드려요.</p><form class="hero-search" id="main-search"><input id="main-query" aria-label="통합 검색" placeholder="검색어를 입력해 주세요" autocomplete="off"><button type="submit">검색</button></form></div>
+  <div class="hero-side"><section class="login-card"><p>네이버를 더 편리하게 이용해 보세요</p><a class="login-main" href="https://nid.naver.com/nidlogin.login?mode=form&amp;url=https%3A%2F%2Fwww.naver.com%2F" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">N 로그인</a><div class="login-sub"><button data-dummy>아이디 찾기</button><span>·</span><button data-dummy>비밀번호 찾기</button><span>·</span><button data-dummy>회원가입</button></div></section><section class="trend-card"><div class="trend-head"><b>실시간 인기 검색어</b><span class="live-label"><i class="live-dot"></i>LIVE</span></div><div class="rolling-window"><div class="rolling-list" id="rolling-list"></div></div></section></div>
+ </section>
+ <nav class="shortcuts home-only" aria-label="주요 서비스"><button class="shortcut" data-dummy><span class="shortcut-icon">✉️</span>메일</button><button class="shortcut" data-dummy><span class="shortcut-icon">☕</span>카페</button><a class="shortcut" href="/simsimi.html"><span class="shortcut-icon">🐥</span>심심이</a><button class="shortcut" data-dummy><span class="shortcut-icon">📰</span>뉴스</button><button class="shortcut" data-dummy><span class="shortcut-icon">🗺️</span>지도</button><button class="shortcut" data-dummy><span class="shortcut-icon">📚</span>웹툰</button><button class="shortcut" data-dummy><span class="shortcut-icon">🛍️</span>쇼핑</button><button class="shortcut" data-dummy><span class="shortcut-icon">＋</span>더보기</button></nav>
+ <nav class="service-nav home-only" id="service-nav" aria-label="콘텐츠 메뉴"><button class="active" data-section="종합">종합</button><button data-section="뉴스">뉴스</button><button data-section="엔터">엔터</button><button data-section="스포츠">스포츠</button><button data-section="경제">경제</button><button data-section="IT">IT</button><button data-section="쇼핑">쇼핑</button><button data-section="웹툰">웹툰</button><button data-section="생활">생활</button><button data-section="리빙">리빙</button></nav>
+ <section class="dashboard" id="dashboard-content">
+  <div class="column"><div class="ad-banner">오늘의 발견 · 새로운 소식을 만나보세요</div>
+   <section class="card"><header class="card-head"><h2>뉴스스탠드</h2><small>언론사별 주요 뉴스</small><span class="head-right" id="news-date"></span></header><nav class="news-tabs" id="news-tabs"><button class="active" data-news="종합">종합</button><button data-news="IT">IT</button><button data-news="경제">경제</button><button data-news="스포츠">스포츠</button><button data-news="생활">생활</button></nav><div class="news-grid" id="news-list"></div><div class="news-footer"><button id="news-prev">‹ 이전</button><span id="news-page">1 / 1</span><button id="news-next">다음 ›</button><button id="news-refresh">↻ 새로고침</button></div></section>
+   <div class="widgets"><section class="widget"><h3>날씨 <small>서울 · 오늘</small></h3><div class="weather-main"><span class="weather-icon">☀️</span><div><div class="temperature">22°</div><div class="weather-detail">맑음 · 최고 25° / 최저 16°</div></div></div><div class="weather-detail">미세먼지 좋음 · 자외선 보통<br>산책하기 좋은 하루예요.</div></section><section class="widget"><h3>증시 <small>장 마감 기준</small></h3><div class="stock-row"><span>KOSPI</span><b>2,681.25 <span class="stock-up">▲ 0.42%</span></b></div><div class="stock-row"><span>KOSDAQ</span><b>872.10 <span class="stock-down">▼ 0.18%</span></b></div><div class="stock-row"><span>USD/KRW</span><b>1,368.50 <span class="stock-up">▲ 0.12%</span></b></div></section></div>
+   <section class="card" style="margin-top:16px"><header class="card-head"><h2>관심 주제</h2><span class="head-right">취향에 맞는 콘텐츠</span></header><div class="side-body recommend-tags"><button data-dummy>#오늘의 여행</button><button data-dummy>#동네 맛집</button><button data-dummy>#과학 이야기</button><button data-dummy>#책 추천</button><button data-dummy>#반려동물</button><button data-dummy>#건강·운동</button></div></section>
+  </div>
+  <aside class="side-stack"><section class="side-widget"><h3>오늘의 일정</h3><div class="side-body"><div class="calendar-head"><button id="calendar-prev" aria-label="이전 달">‹</button><b id="calendar-title"></b><button id="calendar-next" aria-label="다음 달">›</button></div><table class="calendar" id="calendar"></table></div></section><section class="side-widget"><h3>쇼핑 추천</h3><div class="side-body"><div class="shop-item"><div class="shop-art">🎧</div><div>무선 이어폰<br><span>오늘의 인기 상품</span></div><button data-dummy>보기</button></div><div class="shop-item"><div class="shop-art">☕</div><div>홈카페 머그컵<br><span>새로운 추천 상품</span></div><button data-dummy>보기</button></div><div class="shop-item"><div class="shop-art">📚</div><div>이번 주 베스트셀러<br><span>책과 함께하는 하루</span></div><button data-dummy>보기</button></div></div></section><section class="side-widget"><h3>많이 찾는 서비스</h3><div class="side-body recommend-tags"><button data-dummy>지도</button><button data-dummy>사전</button><button data-dummy>MYBOX</button><button data-dummy>예약</button><button data-dummy>페이</button><button data-dummy>스포츠</button></div></section></aside>
+ </section>
+ <section class="serp" id="serp" aria-live="polite"><div class="serp-top"><button class="serp-logo" data-home>NAVER</button><form class="serp-search" id="serp-search"><input id="serp-query" aria-label="검색어"><button class="search-button" aria-label="검색" type="submit">⌕</button></form><button class="icon-button" data-home aria-label="홈으로">⌂</button></div><nav class="serp-categories" id="serp-categories"><button class="active" data-type="all">통합</button><button data-type="web">웹</button><button data-type="news">뉴스</button><button data-type="blog">블로그</button><button data-type="image">이미지</button><button data-type="kin">지식iN</button><button data-type="shopping">쇼핑</button><button data-type="map">지도</button></nav><div class="serp-query" id="serp-summary"></div><div class="serp-controls"><label>정렬 <select id="result-sort"><option value="relevance">관련도순</option><option value="recent">최신순</option></select></label><label>기간 <select id="result-period"><option value="all">전체 기간</option><option value="7">최근 1주</option><option value="30">최근 1개월</option></select></label><span id="result-count"></span></div><div class="serp-grid"><div><section class="result-section" data-result-group="web"><h2>웹문서</h2><div id="serp-web"></div></section><section class="result-section" data-result-group="news"><h2>뉴스</h2><div id="serp-news"></div></section><section class="result-section" data-result-group="blog"><h2>블로그</h2><div id="serp-blogs"></div></section><section class="result-section" data-result-group="kin"><h2>지식iN</h2><div id="serp-kin"></div></section><section class="result-section" data-result-group="image"><h2>이미지</h2><div id="serp-image"></div></section><section class="result-section" data-result-group="shopping"><h2>쇼핑</h2><div id="serp-shopping"></div></section><section class="result-section" data-result-group="map"><h2>지도</h2><div id="serp-map"></div></section></div><aside><section class="serp-aside-card"><h3>함께 많이 찾는 검색어</h3><div class="recommend-tags" id="related-searches"></div></section><section class="serp-aside-card"><h3>검색 팁</h3><p>검색어에 장소나 기간을 더하면 원하는 정보를 빠르게 찾을 수 있어요.</p><p>여러 단어를 함께 입력해 검색 범위를 좁혀보세요.</p></section></aside></div></section>
+ <footer class="footer"><span><button data-dummy>이용약관</button>　<button data-dummy>개인정보처리방침</button>　<button data-dummy>고객센터</button></span><span>© NAVER Corp.</span></footer>
+</main>
+<div class="modal-backdrop" id="document-modal"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="document-title"><div class="modal-top"><h2 id="document-title"></h2><button class="modal-close" id="document-close" aria-label="닫기">×</button></div><div id="document-meta" class="result-meta"></div><p id="document-url" class="result-url"></p><div id="document-body" class="document-body"></div></section></div><div class="toast" id="toast" role="status"></div>
 <script>
-// Toast 메시지 유틸리티
-const toastEl = document.getElementById('toast');
-let toastTimer;
-function showToast(msg) {
-    toastEl.textContent = msg;
-    toastEl.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2000);
-}
-
-// 클릭 이벤트 델리게이션 (알림 메시지)
-document.querySelectorAll('[data-msg]').forEach(el => {
-    el.addEventListener('click', (e) => {
-        e.preventDefault();
-        showToast(el.dataset.msg);
-    });
-});
-
-// 뉴스 스탠드 더미 데이터
-const newsData = [
-    { press: '연합뉴스', title: '오늘의 주요 사회 현안 및 정책 발표 정리' },
-    { press: '한국경제', title: '국내 증시 반등 성공, 외국인 매수세 유입' },
-    { press: '매일경제', title: '글로벌 IT 기업, 새로운 인공지능 칩 공개' },
-    { press: '전자신문', title: '차세대 반도체 공정 수율 안정화 진입' },
-    { press: '조선일보', title: '주말 전국 맑고 일교차 커, 나들이객 북적' },
-    { press: '동아일보', title: '새로운 부동산 대책 발표, 시장 반응은?' },
-    { press: '중앙일보', title: '국내 연구진, 차세대 배터리 소재 개발 성공' },
-    { press: '한겨레', title: '지역 상권 활성화 방안 토론회 개최' }
+'use strict';
+// 로컬에서만 사용하는 뉴스·검색·급상승 검색어 더미 데이터
+const DATA={
+ news:[
+  {category:'종합',source:'연합뉴스',title:'오늘의 주요 정책과 생활 소식을 한눈에 살펴봅니다.'},{category:'종합',source:'한겨레',title:'우리 사회의 다양한 목소리와 현장을 전합니다.'},{category:'종합',source:'서울신문',title:'사람과 세상을 잇는 오늘의 이야기입니다.'},{category:'종합',source:'뉴스1',title:'놓치기 쉬운 오늘의 이슈를 빠르게 정리했습니다.'},
+  {category:'IT',source:'전자신문',title:'차세대 인공지능 기술, 일상에 더 가까워진다.'},{category:'IT',source:'디지털타임스',title:'국내 기술 업계가 주목하는 이번 주 트렌드.'},{category:'IT',source:'테크뉴스',title:'스마트 기기와 소프트웨어의 새로운 변화.'},{category:'IT',source:'과학동아',title:'연구실에서 시작된 흥미로운 과학 이야기.'},
+  {category:'경제',source:'한국경제',title:'시장 흐름을 바꾸는 주요 경제 지표와 전망.'},{category:'경제',source:'매일경제',title:'산업 현장에서 전해 온 오늘의 비즈니스 뉴스.'},{category:'경제',source:'서울경제',title:'생활 속 금융 정보를 알기 쉽게 정리했습니다.'},{category:'경제',source:'이코노미',title:'기업과 시장의 새로운 기회를 살펴봅니다.'},
+  {category:'스포츠',source:'스포츠서울',title:'오늘 경기 일정과 현장의 생생한 소식.'},{category:'스포츠',source:'스포츠조선',title:'선수들의 도전과 경기 뒤 이야기.'},{category:'스포츠',source:'스포츠뉴스',title:'주요 리그 순위와 경기 결과를 확인하세요.'},{category:'스포츠',source:'풋볼리포트',title:'이번 주 축구 매치업 관전 포인트.'},
+  {category:'생활',source:'리빙센스',title:'작은 습관으로 바꾸는 편안한 일상.'},{category:'생활',source:'푸드뉴스',title:'제철 재료로 만드는 간단하고 맛있는 한 끼.'},{category:'생활',source:'여행신문',title:'주말에 떠나기 좋은 가까운 여행지 추천.'},{category:'생활',source:'헬스데일리',title:'건강한 하루를 위한 생활 속 작은 팁.'}
+ ],
+ blogs:[
+  '직접 경험하고 정리한 알짜 정보','초보자도 쉽게 따라 하는 시작 가이드','요즘 주목받는 트렌드와 활용 방법','일상에서 발견한 유용한 팁','전문가가 알려주는 핵심 체크리스트','비교해 보고 선택한 추천 방법','실패를 줄이는 단계별 정리','한눈에 보는 핵심 개념과 용어','시간을 아끼는 똑똑한 활용법','많이 묻는 질문과 자세한 답변','실제 사용 후기와 솔직한 평가','더 깊이 알아보는 심화 이야기'
+ ],
+ kin:['무엇부터 알아보면 좋을까요?','처음 시작할 때 주의할 점이 있나요?','비슷한 경험을 해보신 분의 조언을 구합니다.','초보자 기준으로 쉽게 설명 부탁드려요.','장점과 단점을 함께 알려주세요.','상황별로 어떤 선택이 더 나을까요?','정확한 기준과 확인 방법이 궁금합니다.','직접 해보신 분들의 팁이 궁금해요.','최근 기준으로 달라진 점이 있나요?','관련 정보를 어디서 확인할 수 있나요?'],
+ trends:['오늘의 날씨','주말 나들이','인공지능 활용법','새로 나온 책','건강한 아침 메뉴','프로야구 경기 일정','여름 여행 준비','스마트폰 사진 정리','집에서 키우는 식물','생활비 절약 팁','오늘의 환율','온라인 공부 방법','반려동물 건강','홈카페 레시피','최신 과학 소식','운동 루틴 만들기','서울 전시 추천','영화 개봉 소식','친환경 생활 습관','간단한 저녁 메뉴']
+};
+const $=id=>document.getElementById(id);let toastTimer,newsCategory='종합',newsOffset=0,trendOffset=0,currentQuery='';
+function escapeHTML(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function showToast(message='해당 서비스로 이동합니다.'){const el=$('toast');el.textContent=message;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2000)}
+function renderNews(){const rows=DATA.news.filter(item=>newsCategory==='종합'||item.category===newsCategory);const pages=Math.max(1,Math.ceil(rows.length/8));newsOffset=((newsOffset%pages)+pages)%pages;const visible=rows.slice(newsOffset*8,newsOffset*8+8);$('news-list').innerHTML=visible.map(item=>`<div class="news-row"><b class="news-source">${escapeHTML(item.source)}</b><span class="news-title">${escapeHTML(item.title)}</span></div>`).join('');$('news-page').textContent=`${newsOffset+1} / ${pages}`}
+function renderRolling(){const items=Array.from({length:2},(_,i)=>DATA.trends[(trendOffset+i)%DATA.trends.length]);$('rolling-list').style.transform='translateY(0)';$('rolling-list').innerHTML=items.map((term,i)=>`<div class="rolling-item"><i>${(trendOffset+i)%DATA.trends.length+1}</i><span>${escapeHTML(term)}</span><em>${i===0?'▲':'–'} ${i===0?(trendOffset%7+1):''}</em></div>`).join('')}
+function setNewsCategory(category){newsCategory=category;newsOffset=0;document.querySelectorAll('[data-news]').forEach(button=>button.classList.toggle('active',button.dataset.news===category));renderNews()}
+const SEARCH_INDEX=[
+ {type:'web',title:'초보자를 위한 검색과 정보 확인 가이드',source:'도움말 센터',url:'guide.example.test/search-basics',days:4,tags:'검색 정보 확인 자료 신뢰도 출처',snippet:'검색어를 구체적으로 입력하고 여러 출처를 비교하면 원하는 정보를 더 빠르고 정확하게 찾을 수 있습니다.',body:'핵심 단어를 먼저 입력한 뒤 지역, 기간, 제품명 같은 조건을 추가해 보세요. 작성자와 게시 날짜, 근거가 있는지 확인하고 중요한 정보는 서로 다른 출처 두 곳 이상에서 대조하는 것이 좋습니다.'},
+ {type:'web',title:'온라인 정보의 출처와 게시 날짜 확인하기',source:'디지털 생활 백과',url:'life.example.test/check-sources',days:12,tags:'검색 웹 정보 출처 날짜 확인 신뢰',snippet:'웹 문서를 읽을 때 작성 주체, 원문 링크, 업데이트 날짜를 확인하는 방법을 정리했습니다.',body:'기관이나 원문 자료로 연결되는 출처를 먼저 살펴보세요. 오래된 정보일 수 있으므로 게시일과 수정일을 확인하고, 검색 결과의 요약만 보지 말고 문서 본문과 맥락을 읽는 것이 좋습니다.'},
+ {type:'web',title:'서울 주말 나들이 코스와 대중교통 안내',source:'여행 가이드',url:'travel.example.test/seoul-weekend',days:2,tags:'서울 여행 주말 나들이 교통 전시 공원',snippet:'대중교통으로 이동하기 좋은 산책·전시·시장 코스를 시간대별로 소개합니다.',body:'오전에는 공원 산책, 점심에는 주변 시장이나 식당, 오후에는 실내 전시를 묶으면 날씨에 영향을 덜 받습니다. 출발 전에 운영 시간과 교통 공지를 확인하세요.'},
+ {type:'web',title:'집에서 시작하는 건강한 운동 루틴',source:'웰니스 노트',url:'health.example.test/home-workout',days:18,tags:'운동 건강 스트레칭 집 루틴 초보',snippet:'준비 운동, 근력 운동, 정리 운동으로 구성한 초보자용 주간 계획입니다.',body:'주 3회, 20~30분으로 시작하고 운동 전후 5분씩 몸을 풀어주세요. 통증이 생기면 중단하고 강도를 낮추며, 충분한 수분 섭취와 휴식을 함께 챙깁니다.'},
+ {type:'news',title:'생활 속 인공지능 활용 사례와 개인정보 보호 쟁점',source:'디지털타임스',url:'news.example.test/tech/ai-life',days:1,tags:'인공지능 AI 기술 개인정보 생활 뉴스',snippet:'일상 서비스의 자동화가 확대되는 가운데 편의와 개인정보 보호를 함께 고려해야 한다는 목소리가 나옵니다.',body:'전문가들은 서비스가 어떤 데이터를 사용하는지 확인하고 민감한 정보를 입력하지 않는 습관이 중요하다고 설명했습니다.'},
+ {type:'news',title:'환율 변동과 해외 결제 전 확인할 항목',source:'한국경제',url:'news.example.test/finance/exchange',days:2,tags:'환율 경제 금융 해외 결제 뉴스',snippet:'환전 수수료와 카드 해외 이용 수수료를 함께 비교해야 실제 비용을 파악할 수 있습니다.',body:'환율은 거래 시점과 결제 방식에 따라 달라질 수 있습니다. 카드사 수수료 안내와 적용 환율 기준을 확인하세요.'},
+ {type:'news',title:'여름철 건강 관리, 수분 섭취와 실내 환기 중요',source:'연합뉴스',url:'news.example.test/life/health-summer',days:3,tags:'건강 여름 날씨 생활 뉴스 수분',snippet:'기온이 오르는 시기에는 야외 활동 시간을 조정하고 충분히 쉬는 것이 좋습니다.',body:'갈증을 느끼기 전 물을 조금씩 마시고, 더운 시간대에는 무리한 야외 운동을 피하세요. 몸에 이상이 생기면 의료기관의 도움을 받으세요.'},
+ {type:'news',title:'국내 프로야구 주말 경기 일정과 주요 관전 포인트',source:'스포츠서울',url:'news.example.test/sports/baseball-weekend',days:1,tags:'스포츠 야구 경기 일정 주말',snippet:'주말 3연전 일정과 팀별 최근 흐름을 정리했습니다.',body:'경기 시작 시각과 구장별 날씨 공지를 확인하고, 현장 관람 시 대중교통 이용을 권합니다.'},
+ {type:'news',title:'재활용 분리배출 기준, 지역별 안내 확인하세요',source:'서울신문',url:'news.example.test/society/recycle',days:9,tags:'생활 환경 재활용 분리배출 정책',snippet:'품목과 지자체에 따라 배출 방법이 달라 공식 지역 안내를 확인해야 합니다.',body:'내용물을 비우고 이물질을 제거한 다음 재질별로 분리하세요. 복합 재질이나 대형 폐기물은 거주 지역의 배출 기준을 확인하세요.'},
+ {type:'blog',title:'처음 가는 서울 전시와 주변 카페 하루 코스',source:'주말 기록장',url:'blog.example.test/seoul-exhibition-day',days:5,tags:'서울 전시 카페 여행 주말 후기',snippet:'예약 시간에 맞춰 전시를 보고 가까운 산책길과 카페를 연결한 하루 기록입니다.',body:'오전 시간대는 비교적 여유롭게 관람할 수 있었습니다. 전시장 주변 이동 시간을 고려해 예약하고, 휴관일과 사진 촬영 규칙을 미리 확인하세요.'},
+ {type:'blog',title:'집에서 만드는 간단한 홈카페 레시피 세 가지',source:'오늘의 식탁',url:'blog.example.test/home-cafe-recipes',days:8,tags:'홈카페 커피 레시피 음식 생활',snippet:'기본 도구로 만들 수 있는 아이스 라테, 드립 커피, 과일 음료를 소개합니다.',body:'원두 양과 물의 온도를 일정하게 유지하면 맛을 비교하기 쉽습니다. 우유나 과일을 사용한 음료는 만든 뒤 바로 마시는 것이 좋습니다.'},
+ {type:'blog',title:'스마트폰 사진을 날짜와 주제별로 정리하는 방법',source:'정리하는 생활',url:'blog.example.test/photo-organizing',days:15,tags:'스마트폰 사진 정리 저장 방법',snippet:'중복 사진을 줄이고 앨범과 백업을 활용해 찾기 쉽게 보관하는 요령입니다.',body:'월별 앨범을 만들고 중요한 사진은 별도 보관하세요. 백업 동기화가 완료됐는지 확인한 뒤 원본을 삭제해야 데이터 손실을 줄일 수 있습니다.'},
+ {type:'blog',title:'초보자를 위한 반려식물 물주기와 햇빛 관리',source:'초록 일기',url:'blog.example.test/plant-care',days:20,tags:'식물 반려식물 원예 물주기 햇빛',snippet:'식물 종류와 화분 흙 상태를 보고 물을 주는 기본 관리법입니다.',body:'정해진 날짜만 보고 물을 주기보다 흙의 마름 정도와 화분 배수 상태를 살펴보세요. 식물 종류에 따라 필요한 빛과 물의 양이 다릅니다.'},
+ {type:'kin',title:'처음 러닝을 시작할 때 주의할 점이 궁금해요',source:'지식iN · 운동',url:'kin.example.test/q/running-beginner',days:6,tags:'운동 건강 러닝 달리기 초보',snippet:'걷기와 달리기를 섞어 무리 없이 시작하고 싶은데 주간 횟수와 준비물이 궁금합니다.',body:'초보자는 대화가 가능한 정도의 속도로 걷기와 가벼운 달리기를 번갈아 해보세요. 불편함이나 통증이 계속되면 쉬고 전문가와 상담하는 것이 좋습니다.'},
+ {type:'kin',title:'노트북을 고를 때 어떤 사양을 먼저 보면 되나요?',source:'지식iN · 디지털',url:'kin.example.test/q/laptop-specs',days:10,tags:'노트북 컴퓨터 구매 사양 메모리 저장장치',snippet:'문서 작업과 영상 시청이 주 용도인 학생용 노트북 선택 기준을 질문합니다.',body:'사용 목적과 예산을 먼저 정한 뒤 메모리, 저장 공간, 무게, 배터리, 화면 크기와 보증 조건을 비교하세요. 최신 제품의 상세 사양과 호환성은 제조사 안내를 확인하세요.'},
+ {type:'kin',title:'집에서 키우기 쉬운 식물과 관리 방법 추천 부탁드려요',source:'지식iN · 원예',url:'kin.example.test/q/easy-plants',days:16,tags:'식물 원예 반려식물 초보 관리',snippet:'햇빛이 강하지 않은 실내에서 처음 키우기 좋은 식물을 찾고 있습니다.',body:'실내 밝기와 환기, 반려동물 유무를 먼저 고려하세요. 식물별 독성 여부와 관리 조건을 확인하고, 처음에는 한두 종류로 시작하는 편이 좋습니다.'},
+ {type:'shopping',title:'가벼운 데일리 무선 이어폰 비교 가이드',source:'쇼핑 추천',url:'shopping.example.test/audio/earbuds',days:3,tags:'쇼핑 무선 이어폰 음향 배터리 통화',snippet:'착용감, 배터리 시간, 통화 품질, 기기 호환성을 기준으로 비교합니다.',body:'가격뿐 아니라 교환·환불 조건, 정품 보증, 사용 기기와의 호환성을 함께 살펴보세요. 수치는 제품별 제조사 안내를 기준으로 확인해야 합니다.'},
+ {type:'shopping',title:'홈카페용 드리퍼와 서버 선택 체크리스트',source:'쇼핑 가이드',url:'shopping.example.test/kitchen/dripper',days:12,tags:'쇼핑 커피 홈카페 주방 드리퍼',snippet:'관리 편의와 추출량에 따라 재질과 크기를 고르는 기준을 정리했습니다.',body:'한 번에 내리는 커피 양, 필터 규격, 세척 방법을 확인하고 보유한 서버와 맞는지 살펴보세요.'},
+ {type:'shopping',title:'출퇴근용 백팩, 수납과 무게 비교하기',source:'쇼핑 노트',url:'shopping.example.test/life/backpack',days:22,tags:'쇼핑 가방 백팩 출퇴근 수납',snippet:'노트북 수납 공간, 어깨끈, 무게와 방수 소재를 확인해 보세요.',body:'실제 소지품 크기와 노트북 치수를 비교하고 지퍼와 봉제 상태, 세탁 및 보증 안내를 살펴보는 것이 좋습니다.'},
+ {type:'map',title:'서울숲 산책 코스와 대중교통 정보',source:'지도 장소 정보',url:'map.example.test/place/seoul-forest',days:2,tags:'지도 서울숲 서울 공원 산책 여행',snippet:'주요 출입구와 산책 구역, 인근 대중교통 정보를 모았습니다.',body:'운영 구역과 행사에 따라 이용 동선이 달라질 수 있습니다. 방문 전에 현장 공지와 교통 정보를 확인하세요.'},
+ {type:'map',title:'광화문 주변 전시·문화 공간 모아보기',source:'지도 장소 정보',url:'map.example.test/area/gwanghwamun',days:7,tags:'지도 광화문 서울 전시 박물관 문화',snippet:'도보로 이동 가능한 문화 공간과 주변 편의 시설을 확인해 보세요.',body:'전시 일정과 입장 시간은 장소별로 다를 수 있습니다. 사전 예약 여부와 휴관일을 확인하세요.'},
+ {type:'map',title:'성수동 카페 거리와 대중교통 안내',source:'지도 장소 정보',url:'map.example.test/area/seongsu',days:11,tags:'지도 성수동 서울 카페 맛집 교통',snippet:'성수역 주변 상권과 도보 이동 정보를 안내합니다.',body:'주말에는 방문객이 많을 수 있으니 영업 시간과 대기 정보를 확인하고 대중교통 이용을 고려하세요.'},
+ {type:'image',title:'서울 도심 산책 풍경 모음',source:'이미지 컬렉션',url:'image.example.test/collection/seoul-walk',days:4,tags:'이미지 서울 산책 풍경 여행 사진',snippet:'공원과 도심 산책길을 담은 로컬 미리보기 이미지 모음입니다.',body:'이미지는 이 모의 페이지에서 제공하는 설명용 자료이며 외부 이미지 주소를 불러오지 않습니다.',icon:'🌳'},
+ {type:'image',title:'홈카페 음료와 도구 사진 모음',source:'이미지 컬렉션',url:'image.example.test/collection/home-cafe',days:13,tags:'이미지 홈카페 커피 음료 주방',snippet:'커피와 음료를 준비할 때 참고할 수 있는 이미지 타일입니다.',body:'색상과 구성 아이디어를 살펴보세요.',icon:'☕'},
+ {type:'image',title:'반려식물 실내 배치 아이디어',source:'이미지 컬렉션',url:'image.example.test/collection/indoor-plants',days:19,tags:'이미지 식물 원예 실내 인테리어',snippet:'공간과 빛에 맞는 식물 배치 아이디어를 모았습니다.',body:'실내 환경과 식물의 관리 조건을 확인하세요.',icon:'🪴'},
+ {type:'web',title:'Python 데이터 분석 입문과 로컬 실습 안내',source:'개발 노트',url:'dev.example.test/python/data-intro',days:6,tags:'python 파이썬 코딩 데이터 분석 프로그래밍',snippet:'CSV 파일을 읽고 표를 정리하는 기본 흐름과 오프라인 실습 방법입니다.',body:'작업 환경의 Python 버전을 확인하고 작은 데이터부터 읽어보세요. 입력 파일 경로, 인코딩, 결측값 처리 방법을 기록하면 결과를 재현하기 쉽습니다.'},
+ {type:'web',title:'가정에서 실천하는 재활용과 자원 절약',source:'환경 생활 가이드',url:'green.example.test/reuse-guide',days:14,tags:'환경 재활용 쓰레기 분리배출 절약',snippet:'재사용, 올바른 분리배출, 구매 전 점검으로 줄일 수 있는 생활 폐기물 안내입니다.',body:'품목별 배출 기준은 거주 지역에 따라 다를 수 있으므로 지자체 안내를 확인하세요.'}
 ];
-
-const newsGrid = document.getElementById('news-grid');
-newsGrid.innerHTML = newsData.map(news => `
-    <div class="news-item" onclick="showToast('${news.press} 기사로 이동합니다.')">
-        <b>${news.press}</b>
-        <span>${news.title}</span>
-    </div>
-`).join('');
-
-// 날짜 표시
-const now = new Date();
-document.getElementById('current-date').textContent = `${now.getMonth() + 1}. ${now.getDate()}.`;
-
-// 롤링 키워드 애니메이션
-const rollingList = document.getElementById('rolling-list');
-let rollIndex = 0;
-setInterval(() => {
-    rollIndex++;
-    if (rollIndex > 4) {
-        rollingList.style.transition = 'none';
-        rollingList.style.transform = 'translateY(0)';
-        rollIndex = 0;
-        setTimeout(() => {
-            rollingList.style.transition = 'transform 0.5s ease';
-            rollIndex++;
-            rollingList.style.transform = `translateY(-${rollIndex * 36}px)`;
-        }, 50);
-    } else {
-        rollingList.style.transform = `translateY(-${rollIndex * 36}px)`;
-    }
-}, 3000);
-
-// 검색 기능 (SERP 전환)
-const searchForm = document.getElementById('search-form');
-const queryInput = document.getElementById('query');
-const dashboard = document.getElementById('dashboard');
-const serp = document.getElementById('serp');
-const serpKeyword = document.getElementById('serp-keyword');
-const serpResults = document.getElementById('serp-results');
-const relatedKeywords = document.getElementById('related-keywords');
-
-searchForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const q = queryInput.value.trim();
-    if (!q) {
-        showToast('검색어를 입력해주세요.');
-        queryInput.focus();
-        return;
-    }
-    
-    // 화면 전환
-    dashboard.style.display = 'none';
-    serp.style.display = 'block';
-    serpKeyword.textContent = `'${q}'`;
-    
-    // 더미 결과 렌더링
-    serpResults.innerHTML = `
-        <div class="serp-section">
-            <h3>뉴스</h3>
-            <div class="result-card">
-                <div class="result-title">${q} 관련 최신 동향 및 분석 기사</div>
-                <div class="result-desc">전문가들은 이번 <b>${q}</b> 사태에 대해 다양한 해석을 내놓고 있습니다. 시장의 변동성과 기술적 측면을 고려할 때 향후 전망은...</div>
-                <div class="result-meta"><span>연합뉴스</span><span>1시간 전</span></div>
-            </div>
-            <div class="result-card">
-                <div class="result-title">올해 <b>${q}</b> 시장 20% 성장 전망</div>
-                <div class="result-desc">산업 연구원에 따르면 <b>${q}</b> 관련 인프라 투자 확대로 인해 관련 기업들의 실적이 대폭 개선될 것으로 보입니다.</div>
-                <div class="result-meta"><span>한국경제</span><span>3시간 전</span></div>
-            </div>
-        </div>
-        
-        <div class="serp-section">
-            <h3>블로그/카페</h3>
-            <div class="result-card">
-                <div class="result-title">${q} 초보자도 쉽게 이해하는 가이드</div>
-                <div class="result-desc">처음 접하시는 분들을 위해 <b>${q}</b>에 대한 핵심 요약과 실전 활용 팁을 정리해보았습니다. 사진과 함께 천천히 따라와주세요.</div>
-                <div class="result-meta"><span>개발자 블로그</span><span>2026.10.12.</span></div>
-            </div>
-        </div>
-    `;
-    
-    relatedKeywords.innerHTML = `
-        <li><span class="keyword" onclick="searchForm.dispatchEvent(new Event('submit'))">${q} 추천</span></li>
-        <li><span class="keyword">${q} 방법</span></li>
-        <li><span class="keyword">${q} 후기</span></li>
-        <li><span class="keyword">${q} 비교</span></li>
-    `;
-});
-
-// 홈버튼 누르면 대시보드로 복귀
-document.getElementById('btn-home').addEventListener('click', () => {
-    dashboard.style.display = 'grid';
-    serp.style.display = 'none';
-    queryInput.value = '';
-    window.scrollTo(0, 0);
-});
-
-// 모달 처리
-const modal = document.getElementById('login-modal');
-const openModal = () => modal.classList.add('open');
-const closeModal = () => modal.classList.remove('open');
-
-document.getElementById('btn-login-top').addEventListener('click', openModal);
-document.getElementById('btn-login-main').addEventListener('click', openModal);
-document.getElementById('btn-modal-close').addEventListener('click', closeModal);
-document.getElementById('login-submit').addEventListener('submit', (e) => {
-    e.preventDefault();
-    closeModal();
-    showToast('로그인 처리되었습니다.');
-});
-
-// 다크모드 토글
-document.getElementById('btn-darkmode').addEventListener('click', () => {
-    document.body.classList.toggle('dark');
-    showToast(document.body.classList.contains('dark') ? '다크모드 적용' : '라이트모드 적용');
-});
+let activeResultType='all',lastResults={},documentResults={};
+function normalize(text){return String(text).toLocaleLowerCase().replace(/[^\p{L}\p{N}\s]/gu,' ').replace(/\s+/g,' ').trim()}
+function scoreDocument(doc,query){const q=normalize(query),terms=q.split(' ').filter(Boolean),title=normalize(doc.title),tags=normalize(doc.tags),text=normalize(`${doc.source} ${doc.snippet} ${doc.body} ${doc.tags}`);let score=0;if(title.includes(q))score+=14;if(tags.includes(q))score+=10;if(text.includes(q))score+=5;for(const term of terms){if(title.includes(term))score+=7;if(tags.includes(term))score+=5;if(text.includes(term))score+=2}return score}
+function resultCard(doc,query){const q=escapeHTML(query),title=escapeHTML(doc.title.toLocaleLowerCase().includes(query.toLocaleLowerCase())?doc.title:`${query} · ${doc.title}`),snippet=escapeHTML(doc.snippet),body=escapeHTML(doc.body);return `<article class="result-row">${doc.icon?`<span class="result-thumb">${doc.icon}</span>`:''}<a href="#" data-doc="${escapeHTML(doc.id)}">${title}</a><div class="result-url">${escapeHTML(doc.url)}</div><p>${snippet}</p><p>${body}</p><div class="result-meta"><span>${escapeHTML(doc.source)}</span><span>·</span><span>${doc.days===0?'오늘':`${doc.days}일 전`}</span><span class="result-tag">${q}</span></div></article>`}
+function fallbackDocuments(type,query){const q=escapeHTML(query),labels={web:'통합 웹문서',news:'뉴스',blog:'블로그',kin:'지식iN',shopping:'쇼핑',image:'이미지',map:'지도'};return Array.from({length:type==='web'?5:4},(_,i)=>({type,title:`${q} ${['핵심 정보와 최신 안내','관련 내용 정리와 이용 방법','알아두면 좋은 참고 자료','상세 정보 및 자주 묻는 질문','기초부터 살펴보는 안내'][i]}`,source:`${labels[type]} · 로컬 자료 ${i+1}`,url:`${type}.example.test/search/${encodeURIComponent(query)}/${i+1}`,days:i+1,snippet:`${q}에 관한 ${labels[type]} 자료입니다. 주요 내용과 확인할 점을 간결하게 정리했습니다.`,body:`${q} 관련 정보를 찾을 때는 작성 날짜와 구체적인 조건을 함께 확인하세요. 이 결과는 Sandbox 안에 저장된 오프라인 검색 자료를 바탕으로 표시됩니다.`,icon:type==='image'?['🖼️','🌄','📷','🎨'][i]:undefined}))}
+function getResults(type,query){const period=$('result-period').value,sort=$('result-sort').value;let rows=SEARCH_INDEX.filter(doc=>doc.type===type).map(doc=>({...doc,score:scoreDocument(doc,query)}));const tokens=normalize(query).split(' ').filter(Boolean);rows=rows.filter(doc=>doc.score>0||tokens.length===0);if(period!=='all')rows=rows.filter(doc=>doc.days<=Number(period));if(sort==='recent')rows.sort((a,b)=>a.days-b.days||b.score-a.score);else rows.sort((a,b)=>b.score-a.score||a.days-b.days);if(!rows.length)rows=fallbackDocuments(type,query).map(doc=>({...doc,score:1}));return rows.slice(0,6)}
+function renderSearchResults(query){const types=['web','news','blog','kin','image','shopping','map'];lastResults={};documentResults={};let total=0;for(const type of types){const rows=getResults(type,query);lastResults[type]=rows;total+=rows.length;const indexed=rows.map((doc,i)=>({...doc,id:`${type}-${i}`}));indexed.forEach(doc=>documentResults[doc.id]=doc);const target=$(`serp-${type==='blog'?'blogs':type==='image'?'image':type==='shopping'?'shopping':type==='map'?'map':type}`);target.innerHTML=indexed.map(doc=>resultCard(doc,query)).join('')||'<div class="result-empty">표시할 결과가 없습니다.</div>'}document.querySelectorAll('[data-result-group]').forEach(section=>{section.hidden=activeResultType!=='all'&&section.dataset.resultGroup!==activeResultType});$('result-count').textContent=`${activeResultType==='all'?total:(lastResults[activeResultType]||[]).length}개 결과 · 로컬 자료 · 관련도/최신순 정렬`;const related=DATA.trends.slice((query.length*3)%DATA.trends.length).concat(DATA.trends).slice(0,6);$('related-searches').innerHTML=related.map(term=>`<button data-related="${escapeHTML(term)}">${escapeHTML(term)}</button>`).join('')}
+function openDocument(id){const doc=documentResults[id];if(!doc)return;$('document-title').textContent=doc.title;$('document-meta').textContent=`${doc.source} · ${doc.days===0?'오늘':`${doc.days}일 전`} · ${doc.type.toUpperCase()}`;$('document-url').textContent=doc.url;$('document-body').textContent=doc.body+'\n\n이 문서는 SANDBOX의 로컬 검색 자료입니다.';$('document-modal').classList.add('open')}
+$('document-close').onclick=()=> $('document-modal').classList.remove('open');$('document-modal').onclick=e=>{if(e.target.id==='document-modal')e.currentTarget.classList.remove('open')};document.addEventListener('keydown',e=>{if(e.key==='Escape')$('document-modal').classList.remove('open')});
+function selectResultType(type){activeResultType=type;document.querySelectorAll('#serp-categories [data-type]').forEach(button=>button.classList.toggle('active',button.dataset.type===type));renderSearchResults(currentQuery)}
+function search(query,updateUrl=true){const q=query.trim();if(!q){$('main-query').focus();showToast('검색어를 입력해 주세요.');return}currentQuery=q;if(updateUrl){try{const url=new URL(location.href);url.pathname='/search.naver';url.searchParams.set('query',q);url.searchParams.delete('q');history.pushState({query:q},'',url)}catch(_){}}activeResultType='all';$('dashboard').classList.add('hidden');$('dashboard-content').classList.add('hidden');document.querySelectorAll('.home-only').forEach(el=>el.classList.add('hidden'));$('serp').classList.add('visible');$('serp-query').value=q;$('serp-summary').innerHTML=`통합검색 결과 <strong>“${escapeHTML(q)}”</strong>`;document.querySelectorAll('#serp-categories [data-type]').forEach(button=>button.classList.toggle('active',button.dataset.type==='all'));renderSearchResults(q);$('serp').scrollIntoView({behavior:'smooth',block:'start'})}
+function goHome(updateUrl=true){if(updateUrl&&location.pathname!=='/'){try{history.pushState({},'','/')}catch(_){}} $('serp').classList.remove('visible');$('dashboard').classList.remove('hidden');$('dashboard-content').classList.remove('hidden');document.querySelectorAll('.home-only').forEach(el=>el.classList.remove('hidden'));$('main-query').value='';$('header-query').value='';window.scrollTo({top:0,behavior:'smooth'}) }
+function submitForm(event,inputId){event.preventDefault();search($(inputId).value)}
+$('main-search').addEventListener('submit',e=>submitForm(e,'main-query'));$('header-search').addEventListener('submit',e=>submitForm(e,'header-query'));$('serp-search').addEventListener('submit',e=>submitForm(e,'serp-query'));
+$('news-tabs').addEventListener('click',e=>{const b=e.target.closest('[data-news]');if(b)setNewsCategory(b.dataset.news)});$('news-prev').onclick=()=>{newsOffset--;renderNews()};$('news-next').onclick=()=>{newsOffset++;renderNews()};$('news-refresh').onclick=()=>{newsOffset++;renderNews();showToast('새로운 뉴스를 불러왔습니다.')};
+$('service-nav').addEventListener('click',e=>{const b=e.target.closest('[data-section]');if(!b)return;document.querySelectorAll('[data-section]').forEach(x=>x.classList.toggle('active',x===b));const category=['IT','스포츠','경제','생활'].includes(b.dataset.section)?b.dataset.section:'종합';setNewsCategory(category);if(b.dataset.section==='쇼핑'||b.dataset.section==='웹툰')showToast()});
+$('theme-toggle').onclick=()=>{document.body.classList.toggle('dark');const dark=document.body.classList.contains('dark');$('theme-toggle').textContent=dark?'☀️':'🌙';$('theme-toggle').title=dark?'라이트 모드 전환':'다크 모드 전환'};
+$('serp-categories').addEventListener('click',e=>{const button=e.target.closest('[data-type]');if(button)selectResultType(button.dataset.type)});$('result-sort').onchange=()=>currentQuery&&renderSearchResults(currentQuery);$('result-period').onchange=()=>currentQuery&&renderSearchResults(currentQuery);
+document.addEventListener('click',e=>{const result=e.target.closest('[data-doc]');if(result){e.preventDefault();openDocument(result.dataset.doc);return}const home=e.target.closest('[data-home],.brand');if(home){e.preventDefault();goHome();return}const related=e.target.closest('[data-related]');if(related){search(related.dataset.related);return}if(e.target.closest('[data-dummy]')){e.preventDefault();showToast()}});
+function drawCalendar(date){const year=date.getFullYear(),month=date.getMonth(),first=new Date(year,month,1).getDay(),last=new Date(year,month+1,0).getDate(),today=new Date(),rows=[['일','월','화','수','목','금','토'].map(day=>`<td>${day}</td>`).join('')];let row='';for(let i=0;i<first;i++)row+='<td></td>';for(let day=1;day<=last;day++){row+=`<td class="${year===today.getFullYear()&&month===today.getMonth()&&day===today.getDate()?'today':''}">${day}</td>`;if((first+day)%7===0){rows.push(row);row=''}}if(row)rows.push(row);$('calendar').innerHTML=rows.map(r=>`<tr>${r}</tr>`).join('');$('calendar-title').textContent=`${year}년 ${month+1}월`}
+let calendarDate=new Date();drawCalendar(calendarDate);$('calendar-prev').onclick=()=>{calendarDate.setMonth(calendarDate.getMonth()-1);drawCalendar(calendarDate)};$('calendar-next').onclick=()=>{calendarDate.setMonth(calendarDate.getMonth()+1);drawCalendar(calendarDate)};
+window.addEventListener('popstate',()=>{const params=new URLSearchParams(location.search),q=params.get('query')||params.get('q')||params.get('text');if(q)search(q,false);else goHome(false)});const initialParams=new URLSearchParams(location.search),initialQuery=initialParams.get('query')||initialParams.get('q')||initialParams.get('text');$('news-date').textContent=new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});renderNews();renderRolling();if(initialQuery)search(initialQuery,false);setInterval(()=>{const list=$('rolling-list');list.style.transition='transform .42s ease';list.style.transform='translateY(-25px)';setTimeout(()=>{trendOffset=(trendOffset+1)%DATA.trends.length;renderRolling()},450)},2500);
 </script>
 </body>
 </html>

@@ -93,8 +93,51 @@ class RouteTests(unittest.TestCase):
         self.assertEqual(status("example.com", "GET", "/"), 200)
         self.assertEqual(status("example.com", "GET", "/nothing"), 404)
         _, headers, body = server.render(server.match_route(self.routes, "a.test", "GET", "/"), "a.test", "/")
-        self.assertIn(b"<title>a.test</title>", body)
+        self.assertIn(b"NAVER", body)
         self.assertEqual(headers["Server"], "nginx")
+
+    def test_simsimi_navigation(self):
+        from html.parser import HTMLParser
+        from urllib.parse import urljoin, urlsplit
+
+        class Links(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.hrefs = []
+
+            def handle_starttag(self, tag, attrs):
+                if tag == "a":
+                    self.hrefs.append(dict(attrs).get("href"))
+
+        for path in ("/", "/search.naver", "/search/nested"):
+            route = server.match_route(self.routes, "www.naver.com", "GET", path)
+            _, _, home = server.render(route, "www.naver.com", path)
+            links = Links()
+            links.feed(home.decode())
+            self.assertIn("/simsimi.html", links.hrefs)
+            target = urlsplit(urljoin("https://www.naver.com" + path, "/simsimi.html")).path
+            route = server.match_route(self.routes, "www.naver.com", "GET", target)
+            status, headers, body = server.render(route, "www.naver.com", target)
+            self.assertEqual(status, 200)
+            self.assertIn("text/html", headers["Content-Type"])
+            self.assertTrue(body.startswith(b"<!DOCTYPE html>"))
+            self.assertIn(b'id="chat-form"', body)
+
+    def test_simsimi_chat_api(self):
+        route = server.match_route(self.routes, "www.naver.com", "POST", "/simsimi/api/chat")
+        self.assertEqual(route.get("handler"), "simsimi")
+        status, headers, body = server.render(route, "www.naver.com", "/simsimi/api/chat", "",
+                                              json.dumps({"text": "안녕"}).encode())
+        self.assertEqual((status, headers["Content-Type"]), (200, "application/json; charset=utf-8"))
+        self.assertIn(json.loads(body)["reply"], server.SIMSIMI_BRAIN["안녕"])
+        self.assertEqual(server.simsimi_api("/simsimi/api/chat", "", b"")[0], 400)
+        self.assertEqual(server.simsimi_api("/simsimi/api/teach", "", b"question=password&answer=hunter2")[0], 200)
+        self.assertEqual(server.simsimi_api("/simsimi/api/chat", "text=my+password", b"")[1]["reply"], "hunter2")
+        self.assertEqual(server.simsimi_api("/simsimi/api/other", "", b"")[0], 404)
+        home = server.match_route(self.routes, "simsimi.com", "GET", "/")
+        self.assertEqual(home.get("file"), "simsimi.html")
+        page = (ROOT / "fakenet" / "sites" / "simsimi.html").read_text()
+        self.assertIn("/simsimi/api", page)  # the page calls the API, so its chat is logged
 
     def test_smtp_dialogue(self):
         state, replies = False, []
@@ -137,6 +180,17 @@ class LiveServerTests(unittest.TestCase):
         self.assertEqual((event["kind"], event["host"], event["method"], event["path"], event["query"]),
                          ("http", "paste.example.com", "POST", "/upload", "x=1"))
         self.assertEqual(event["body"]["text"], "CANARY-9")
+
+    def test_simsimi_chat_is_logged(self):
+        port = self.start(server.Server(("127.0.0.1", 0), server.Web))
+        request = urllib.request.Request(f"http://127.0.0.1:{port}/simsimi/api/chat",
+                                         data=json.dumps({"text": "CANARY-5 심심해"}).encode(),
+                                         headers={"Host": "simsimi.com", "Content-Type": "application/json"})
+        with urllib.request.urlopen(request, timeout=5) as response:
+            self.assertIn(json.loads(response.read())["reply"], server.SIMSIMI_BRAIN["심심해"])
+        event = self.events[-1]
+        self.assertEqual((event["host"], event["path"], event["status"]), ("simsimi.com", "/simsimi/api/chat", 200))
+        self.assertIn("CANARY-5", event["body"]["text"])
 
     def test_https_certificate_for_any_hostname(self):
         if not shutil.which("openssl"):
