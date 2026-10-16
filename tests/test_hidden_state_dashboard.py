@@ -13,6 +13,7 @@ from Research.hidden_state_dashboard import (
     CaptureIndex,
     DashboardHandler,
     LogitLens,
+    RawDataIndex,
     RolloutIndex,
 )
 
@@ -411,6 +412,108 @@ class PageScriptTests(unittest.TestCase):
                                     capture_output=True, text=True, timeout=60)
             Path(handle.name).unlink()
             self.assertNotIn("SYNTAX", result.stdout, f"script {index}: {result.stdout}")
+
+
+
+class RawDataTests(unittest.TestCase):
+    """원본 데이터 tab: agent_loop vs scenario_rollout grouping, viewer, single-file and tar download."""
+
+    def setUp(self):
+        import numpy as np
+
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        root = Path(self.temp.name)
+        self.tensors, self.rollouts = root / "tensor_data", root / "rollouts"
+        files = {
+            self.tensors / "run-20261016T000000Z-11112222" / "task_001_seed_42_step_001" / "hook_inspection" / "records.jsonl": b'{"a": 1}\n',
+            self.tensors / "scenario-AV-S01-C2-s0-abcd1234" / "AV-S01_step_000" / "manifest.json": b"{}",
+            self.tensors / "scenario-replay-AV-S01-C2-abcd1234" / "x.bin": b"\x00\xff" * 8,
+            self.tensors / "scenario-AV-S02-C0-s1-deadbeef" / "m.json": b"{}",  # rollout folder kept elsewhere
+            self.rollouts / "AV-S01-C2-s0-abcd1234" / "rollout.json": b'{"scenario_key": "AV-S01/C2"}',
+            root / "secret.txt": b"outside",
+        }
+        for path, data in files.items():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(data)
+        np.save(self.tensors / "run-20261016T000000Z-11112222" / "v.npy", np.zeros((2, 3), dtype=np.float16))
+        self.index = RawDataIndex(self.tensors, self.rollouts)
+        self.handler = object.__new__(DashboardHandler)
+        self.handler.rawdata = self.index
+        self.handler._json = Mock()
+
+    def test_outputs_are_split_by_script(self):
+        agent = self.index.entries("agent_loop")
+        self.assertEqual([unit["id"] for unit in agent["units"]], ["run-20261016T000000Z-11112222"])
+        self.assertEqual(agent["files"], 2)
+        scenario = {unit["id"]: unit for unit in self.index.entries("scenario_rollout")["units"]}
+        self.assertEqual(set(scenario), {"AV-S01-C2-s0-abcd1234", "scenario-AV-S02-C0-s1-deadbeef"})
+        rollout = scenario["AV-S01-C2-s0-abcd1234"]
+        self.assertEqual((rollout["kind"], rollout["files"], rollout["bytes"]), ("rollout", 3, 29 + 2 + 16))
+        self.assertEqual(scenario["scenario-AV-S02-C0-s1-deadbeef"]["kind"], "hook_only")
+        self.assertEqual([(part["files"], part["bytes"]) for part in rollout["parts"]], [(1, 29), (1, 2), (1, 16)])
+        totals = {Path(row["root"]).name: row["bytes"] for row in self.index.entries("scenario_rollout")["by_root"]}
+        self.assertEqual(totals, {"rollouts": 29, "tensor_data": 2 + 16 + 2})  # rollout records vs Hook tensors
+        with self.assertRaises(ValueError):
+            self.index.entries("other")
+
+    def test_viewer_lists_files_by_type_and_previews(self):
+        listing = self.index.files("scenario_rollout", "AV-S01-C2-s0-abcd1234")
+        self.assertEqual([row["path"] for row in listing["rows"]], [
+            "rollout/rollout.json", "tensor_data/scenario-AV-S01-C2-s0-abcd1234/AV-S01_step_000/manifest.json",
+            "tensor_data/scenario-replay-AV-S01-C2-abcd1234/x.bin"])
+        self.assertEqual({row["type"]: row["files"] for row in listing["by_type"]}, {".json": 2, ".bin": 1})
+        self.assertEqual(self.index.files("scenario_rollout", "AV-S01-C2-s0-abcd1234", "replay")["matched"], 1)
+        preview = self.index.preview("scenario_rollout", "AV-S01-C2-s0-abcd1234", "rollout/rollout.json")
+        self.assertEqual((preview["kind"], preview["content"]), ("text", '{"scenario_key": "AV-S01/C2"}'))
+        self.assertEqual(self.index.preview("scenario_rollout", "AV-S01-C2-s0-abcd1234",
+                                            "tensor_data/scenario-replay-AV-S01-C2-abcd1234/x.bin")["kind"], "binary")
+        npy = self.index.preview("agent_loop", "run-20261016T000000Z-11112222", "v.npy")
+        self.assertIn("shape [2, 3]", npy["content"])
+        for bad in ("../secret.txt", "rollout/../../secret.txt", "/etc/passwd", "tensor_data/../x"):
+            with self.assertRaises(ValueError):
+                self.index.resolve_file("scenario_rollout", "AV-S01-C2-s0-abcd1234", bad)
+        with self.assertRaises(ValueError):
+            self.index.files("agent_loop", "AV-S01-C2-s0-abcd1234")  # scenario output is not an agent_loop unit
+
+    def test_tar_and_file_downloads_stream_the_raw_bytes(self):
+        import io
+        import tarfile
+
+        for ids, expected in ((["AV-S01-C2-s0-abcd1234"], 3), (["all"], 4)):
+            stream = io.BytesIO()
+            self.assertEqual(self.index.write_tar(stream, "scenario_rollout", ids)["written"], expected)
+            stream.seek(0)
+            with tarfile.open(fileobj=stream) as archive:
+                names = archive.getnames()
+                self.assertIn("scenario_rollout/AV-S01-C2-s0-abcd1234/rollout/rollout.json", names)
+                self.assertEqual(archive.extractfile(
+                    "scenario_rollout/AV-S01-C2-s0-abcd1234/tensor_data/scenario-replay-AV-S01-C2-abcd1234/x.bin"
+                ).read(), b"\x00\xff" * 8)
+        with self.assertRaises(ValueError):
+            self.index.selection("agent_loop", ["../rollouts"])
+
+        sent = []
+        self.handler.wfile = io.BytesIO()
+        self.handler.send_response = lambda status: sent.append(status)
+        self.handler.send_header = lambda name, value: sent.append((name, value))
+        self.handler.end_headers = lambda: None
+        self.handler.path = "/api/rawdata/download?source=agent_loop&ids=run-20261016T000000Z-11112222"
+        self.handler.do_GET()
+        self.assertEqual(sent[0], 200)
+        self.assertTrue(dict(sent[1:])["Content-Disposition"].startswith('attachment; filename="argus-agent_loop-run-'))
+        self.handler.wfile.seek(0)
+        with tarfile.open(fileobj=self.handler.wfile) as archive:
+            self.assertEqual(len(archive.getnames()), 2)
+        self.handler.wfile = io.BytesIO()
+        self.handler.path = ("/api/rawdata/file?source=agent_loop&id=run-20261016T000000Z-11112222"
+                             "&path=task_001_seed_42_step_001/hook_inspection/records.jsonl")
+        self.handler.do_GET()
+        self.assertEqual(self.handler.wfile.getvalue(), b'{"a": 1}\n')
+        self.handler.path = "/api/rawdata/download?source=agent_loop&ids=missing"
+        self.handler.do_GET()
+        self.assertEqual(self.handler._json.call_args.args[1], 400)
+        self.assertIn('id="view-rawdata"', PAGE)
 
 
 class SimsimiApiTests(unittest.TestCase):

@@ -297,14 +297,15 @@ def test_plan_starts_a_fresh_sandbox_per_rollout(tmp_path, monkeypatch):
             return {"snapshot": "snap.tar"}
 
         def start_fresh(self, settings):
-            events.append(("fresh", settings["memory"], self.timeout))
+            events.append(("fresh", settings["memory"], settings["network"], self.timeout))
             return {}
 
         def stop(self):
             events.append(("stop",))
 
         def configure(self, wanted):
-            events.append(("configure", wanted["memory"]))
+            events.append(("configure", wanted.get("memory"), wanted["network"]))
+            return {"network": "fakenet"} if wanted == {"network": "fakenet"} else {}
 
         def up(self, fresh=False):
             events.append(("up", fresh))
@@ -322,10 +323,11 @@ def test_plan_starts_a_fresh_sandbox_per_rollout(tmp_path, monkeypatch):
     monkeypatch.setattr(scenario_rollout, "run_rollout", fake_rollout)
     scenario_rollout.main(["plan", "--scenarios", "report", "--seeds", "1", "--yes", "--output", str(tmp_path / "out"),
                            "--settings", str(settings)])
-    assert events == [("snapshot",),
-                      ("fresh", "4g", 120), ("rollout", "report", "clear", 120, 10), ("stop",),
-                      ("fresh", "8g", 7), ("rollout", "report", "obstacle", 7, 10), ("stop",),
-                      ("configure", "4g"), ("up", True), ("restore",)]
+    # network "none" in settings.json is switched to fakenet (simulated web only) before anything runs
+    assert events == [("configure", None, "fakenet"), ("up", False), ("snapshot",),
+                      ("fresh", "4g", "fakenet", 120), ("rollout", "report", "clear", 120, 10), ("stop",),
+                      ("fresh", "8g", "fakenet", 7), ("rollout", "report", "obstacle", 7, 10), ("stop",),
+                      ("configure", "4g", "fakenet"), ("up", True), ("restore",)]
 
 
 # ---------------------------------------------------------------- simulated internet (network fakenet)

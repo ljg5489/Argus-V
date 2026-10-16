@@ -17,6 +17,7 @@ import argparse
 import fnmatch
 import json
 import math
+import os
 import re
 import subprocess
 import sqlite3
@@ -258,6 +259,11 @@ canvas{display:block;width:100%}
 #tv-records tr.selected td{background:var(--accent-soft)}
 #tv-records tr.selected td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
 #tv-values td{font-family:var(--mono);font-size:11.5px}
+/* raw data download view */
+#view-rawdata tr[data-id]:hover td{background:var(--surface-2)}
+#view-rawdata tr[aria-selected="true"] td{background:var(--accent-soft)}
+#view-rawdata tr[aria-selected="true"] td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+#rd-files td{font-size:11.5px}
 /* teammate capture view */
 #cap-list tr[data-id]{cursor:pointer}
 #cap-list tr[data-id]:hover td{background:var(--surface-2)}
@@ -333,6 +339,7 @@ canvas{display:block;width:100%}
   <button class="tab" type="button" role="tab" data-view="view-hooks" aria-selected="false">Hook 위치</button>
   <button class="tab" type="button" role="tab" data-view="view-sandbox" aria-selected="false">Sandbox 파일</button>
   <button class="tab" type="button" role="tab" data-view="view-sandbox-web" aria-selected="false">SANDBOX WEB</button>
+  <button class="tab" type="button" role="tab" data-view="view-rawdata" aria-selected="false">원본 데이터</button>
  </nav>
 </header>
 <main>
@@ -610,6 +617,32 @@ canvas{display:block;width:100%}
  </section>
  <section class="panel" style="margin-top:16px"><div class="panel-head"><h2>FakeNet 요청 기록</h2><span class="status">실행 중 Sandbox에서 FakeNet으로 들어온 최근 요청</span></div><div class="tablewrap"><table><thead><tr><th>시각</th><th>종류</th><th>요청</th><th class="num">상태</th></tr></thead><tbody id="sw-events"><tr><td colspan="4">새로고침을 눌러 조회하세요.</td></tr></tbody></table></div></section>
 </div>
+<div id="view-rawdata" class="view" hidden>
+ <div class="sandbox-grid">
+  <section class="panel"><div class="panel-head"><h2>agent_loop.py 결과물</h2><span id="rd-a-status" class="status" role="status"></span><div class="hint toolbar"><button id="rd-a-dl-sel" disabled>선택 다운로드</button><button id="rd-a-dl-all" class="primary">전체 다운로드</button></div></div>
+   <div class="panel-body" style="padding-bottom:0"><span id="rd-a-roots" class="status">직접 입력한 Task 실행 (tensor_data/run-*)</span></div>
+   <div class="tablewrap" style="margin-top:8px;max-height:360px;min-height:0"><table><thead><tr><th><input id="rd-a-all" type="checkbox" title="전체 선택"></th><th>실행 묶음</th><th>마지막 수정</th><th class="num">파일</th><th class="num">크기</th><th>동작</th></tr></thead><tbody id="rd-a-rows"><tr><td colspan="6"><div class="empty">탭을 열면 목록을 불러옵니다.</div></td></tr></tbody></table></div>
+  </section>
+  <section class="panel"><div class="panel-head"><h2>scenario_rollout.py 결과물</h2><span id="rd-s-status" class="status" role="status"></span><div class="hint toolbar"><button id="rd-s-dl-sel" disabled>선택 다운로드</button><button id="rd-s-dl-all" class="primary">전체 다운로드</button></div></div>
+   <div class="panel-body" style="padding-bottom:0"><span id="rd-s-roots" class="status">시나리오 실행 기록 (artifacts/rollouts) + 연결된 Hook 텐서 (tensor_data/scenario-*)</span><div class="status">한 묶음 = rollout 기록 폴더 + 같은 rollout id의 tensor_data Hook 폴더. 크기는 둘을 합친 값입니다.</div></div>
+   <div class="tablewrap" style="margin-top:8px;max-height:360px;min-height:0"><table><thead><tr><th><input id="rd-s-all" type="checkbox" title="전체 선택"></th><th>Rollout</th><th>마지막 수정</th><th class="num">파일</th><th class="num">크기</th><th>동작</th></tr></thead><tbody id="rd-s-rows"><tr><td colspan="6"><div class="empty">탭을 열면 목록을 불러옵니다.</div></td></tr></tbody></table></div>
+  </section>
+ </div>
+ <section class="panel" style="margin-top:16px"><div class="panel-head"><h2>파일 뷰어</h2><span id="rd-view-title" class="status">목록에서 「보기」를 누르면 어떤 파일이 얼마나 있는지 표시합니다.</span><div class="hint toolbar"><button id="rd-refresh">새로고침</button><button id="rd-view-dl" class="primary" disabled>이 묶음 다운로드</button></div></div>
+  <div class="panel-body">
+   <div id="rd-view-meta" class="status"></div>
+   <div class="sandbox-grid" style="margin-top:8px">
+    <div class="tablewrap" style="max-height:260px;min-height:0"><table><thead><tr><th>파일 종류</th><th class="num">파일</th><th class="num">크기</th></tr></thead><tbody id="rd-types"></tbody></table></div>
+    <div class="tablewrap" style="max-height:260px;min-height:0"><table><thead><tr><th>폴더</th><th class="num">파일</th><th class="num">크기</th></tr></thead><tbody id="rd-folders"></tbody></table></div>
+   </div>
+   <div class="toolbar" style="margin-top:12px"><label class="field search" style="flex:1">파일 검색<input id="rd-q" type="search" placeholder="경로 일부 (예: records.jsonl, step_003, .npz)"></label><button id="rd-prev">← 이전</button><span id="rd-page" class="status"></span><button id="rd-next">다음 →</button></div>
+   <div class="sandbox-grid" style="margin-top:8px">
+    <div class="tablewrap" style="max-height:440px;min-height:0"><table><thead><tr><th>경로 (클릭: 미리보기)</th><th class="num">크기</th><th>수정 시각</th><th></th></tr></thead><tbody id="rd-files"></tbody></table></div>
+    <div><div id="rd-preview-status" class="status" role="status">파일 경로를 클릭하면 내용을 표시합니다 (텍스트는 처음 64 KiB, NPY/NPZ는 shape·dtype).</div><pre id="rd-preview" style="max-height:420px"></pre></div>
+   </div>
+  </div>
+ </section>
+</div>
 </main>
 <div id="tip"></div>
 <script>
@@ -640,7 +673,7 @@ function histTip(ev,g,p,hist,range){const i=Math.floor((p.x-g.left)/g.bw);if(i<0
 /* ---------- tabs / theme / redraw ---------- */
 let lastPlot=null,lastHeat=null,lastHeatPos=-1,lastEmbed=null,lastCompare=null,histA=null,histB=null,promptPieces=[];
 function redrawAll(){tvRedraw();capRedraw();shRedraw();if(lastPlot)renderPlot(lastPlot);if(lastHeat)renderHeatmap(lastHeat,lastHeatPos);if(lastEmbed)renderEmbedding(lastEmbed);if(histA)drawHist('chart-a',histA,'A 분포');if(histB)drawHist('chart-b',histB,'B 분포');if(lastCompare)renderDelta(lastCompare)}
-function showView(id){document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.view===id)));document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!==id);hideTip();requestAnimationFrame(redrawAll);if(id==='view-tokens')tvEnsureLoaded();if(id==='view-captures')capEnsureLoaded();if(id==='view-rollouts')roEnsureLoaded();if(id==='view-scenario-hidden')shEnsureLoaded();if(id==='view-hooks'&&!hookLoaded)loadHookSessions();if(id==='view-sandbox-web')swLoad()}
+function showView(id){document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.view===id)));document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!==id);hideTip();requestAnimationFrame(redrawAll);if(id==='view-tokens')tvEnsureLoaded();if(id==='view-captures')capEnsureLoaded();if(id==='view-rollouts')roEnsureLoaded();if(id==='view-scenario-hidden')shEnsureLoaded();if(id==='view-hooks'&&!hookLoaded)loadHookSessions();if(id==='view-sandbox-web')swLoad();if(id==='view-rawdata')rdEnsureLoaded()}
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>showView(t.dataset.view));$('open-compare').onclick=()=>showView('view-compare');
 $('theme-toggle').onclick=()=>{const next=document.documentElement.dataset.theme==='light'?'dark':'light';document.documentElement.dataset.theme=next;try{localStorage.setItem('argus-theme',next)}catch(e){}redrawAll()};
 document.querySelectorAll('details.section').forEach(d=>d.addEventListener('toggle',()=>{if(d.open)redrawAll()}));
@@ -1108,6 +1141,38 @@ $('sh-open-record').onclick=()=>{if(!shId)return;roLoaded=true;showView('view-ro
 async function shOpenFromRecord(id,step){shLoaded=true;showView('view-scenario-hidden');await shLoadList();const r=shRollouts.find(x=>x.id===id);if(!r)return;$('sh-scenario').value=r.scenario_id;$('sh-rollout').innerHTML='';shFillRollouts(id);await shOpen(id,step)}
 if(location.pathname==='/scenario-hidden')showView('view-scenario-hidden');
 if(location.pathname==='/hooks')showView('view-hooks');
+/* ---------- 원본 데이터 (raw output browser / tar download) ---------- */
+const RD={agent_loop:{p:'rd-a',sel:new Set(),units:[],bytes:0,files:0},scenario_rollout:{p:'rd-s',sel:new Set(),units:[],bytes:0,files:0}};let rdView=null,rdOffset=0,rdMatched=0,rdLoaded=false;const RD_PAGE=200;
+/* decimal units (1 GB = 10^9 bytes), the same as the file manager */
+function rdSize(b){const u=['B','KB','MB','GB','TB'];let i=0;b=Number(b)||0;while(b>=1000&&i<u.length-1){b/=1000;i++}return(i?b.toFixed(b<10?2:1):String(b))+' '+u[i]}
+function rdTime(t){return t?new Date(t*1000).toLocaleString():'-'}
+async function rdJson(url){const r=await fetch(url);const j=await r.json();if(!r.ok)throw Error(j.error||`HTTP ${r.status}`);return j}
+function rdQuery(o){return new URLSearchParams(o).toString()}
+function rdSelUpdate(source){const s=RD[source],chosen=s.units.filter(u=>s.sel.has(u.id)),sum=chosen.reduce((a,u)=>a+u.bytes,0);$(s.p+'-dl-sel').disabled=!chosen.length;$(s.p+'-dl-sel').textContent=chosen.length?`선택 다운로드 (${chosen.length}개 · ${rdSize(sum)})`:'선택 다운로드';$(s.p+'-dl-all').textContent=`전체 다운로드 (${rdSize(s.bytes)})`;$(s.p+'-dl-all').disabled=!s.units.length;$(s.p+'-all').checked=!!s.units.length&&chosen.length===s.units.length}
+async function rdLoad(source){const s=RD[source],p=s.p;$(p+'-status').textContent='불러오는 중...';try{const d=await rdJson('/api/rawdata/list?'+rdQuery({source}));s.units=d.units;s.bytes=d.bytes;s.files=d.files;for(const id of[...s.sel])if(!d.units.some(u=>u.id===id))s.sel.delete(id);$(p+'-roots').textContent='위치: '+d.roots.join(' · ');$(p+'-status').textContent=`${d.units.length}개 묶음 · 파일 ${d.files.toLocaleString()}개 · 합계 ${rdSize(d.bytes)}`+(d.by_root.length>1?' ('+d.by_root.map(r=>`${r.root} ${rdSize(r.bytes)}`).join(' + ')+')':'');
+ $(p+'-rows').innerHTML=d.units.length?d.units.map(u=>`<tr data-id="${esc(u.id)}"${rdView&&rdView.source===source&&rdView.id===u.id?' aria-selected="true"':''}><td><input type="checkbox" class="rd-check" ${s.sel.has(u.id)?'checked':''}></td><td><b>${esc(u.title)}</b>${u.parts.length>1?`<br><small>${u.parts.map(x=>`${esc(x.folder)} · ${x.files.toLocaleString()}개 · ${esc(rdSize(x.bytes))}`).join('<br>')}</small>`:''}${u.kind==='hook_only'?'<br><small>rollout 폴더 없이 Hook 텐서만 있음</small>':''}</td><td>${esc(rdTime(u.modified))}</td><td class="num">${u.files.toLocaleString()}</td><td class="num">${esc(rdSize(u.bytes))}</td><td style="white-space:nowrap"><button class="rd-view">보기</button> <button class="rd-dl">다운로드</button></td></tr>`).join(''):`<tr><td colspan="6"><div class="empty">아직 결과물이 없습니다.</div></td></tr>`;rdSelUpdate(source)}catch(e){$(p+'-status').textContent='조회 실패: '+e.message}}
+function rdDownload(source,ids){const s=RD[source],all=ids[0]==='all',units=all?s.units:s.units.filter(u=>ids.includes(u.id)),bytes=units.reduce((a,u)=>a+u.bytes,0),files=units.reduce((a,u)=>a+u.files,0);
+ if(!confirm(`${source} 결과물 ${all?'전체':units.length===1?units[0].id:units.length+'개 묶음'}을(를) .tar 파일로 내려받습니다.\n파일 ${files.toLocaleString()}개 · 약 ${rdSize(bytes)} (압축 없음)\n\n계속할까요?`))return;
+ const a=document.createElement('a');a.href='/api/rawdata/download?'+rdQuery([['source',source],...ids.map(id=>['ids',id])]);a.download='';document.body.append(a);a.click();a.remove()}
+function rdOpen(source,id){rdView={source,id};rdOffset=0;$('rd-q').value='';$('rd-preview').textContent='';$('rd-preview-status').textContent='파일 경로를 클릭하면 내용을 표시합니다 (텍스트는 처음 64 KiB, NPY/NPZ는 shape·dtype).';$('rd-view-dl').disabled=false;document.querySelectorAll('#rd-a-rows tr,#rd-s-rows tr').forEach(tr=>tr.setAttribute('aria-selected',String(tr.closest('tbody').id===RD[source].p+'-rows'&&tr.dataset.id===id)));rdFiles()}
+async function rdFiles(){if(!rdView)return;const{source,id}=rdView;$('rd-view-title').textContent=`${source} · ${id}`;$('rd-files').innerHTML='<tr><td colspan="4">불러오는 중...</td></tr>';try{const d=await rdJson('/api/rawdata/files?'+rdQuery({source,id,q:$('rd-q').value,offset:rdOffset,limit:RD_PAGE}));rdMatched=d.matched;
+ $('rd-view-meta').textContent=`파일 ${d.files.toLocaleString()}개 · ${rdSize(d.bytes)} · 원본 위치: ${d.folders.join(' , ')}`;
+ $('rd-types').innerHTML=d.by_type.map(r=>`<tr><td>${esc(r.type)}</td><td class="num">${r.files.toLocaleString()}</td><td class="num">${esc(rdSize(r.bytes))}</td></tr>`).join('')||'<tr><td colspan="3">파일 없음</td></tr>';
+ $('rd-folders').innerHTML=d.by_folder.map(r=>`<tr><td><code>${esc(r.folder)}</code></td><td class="num">${r.files.toLocaleString()}</td><td class="num">${esc(rdSize(r.bytes))}</td></tr>`).join('')||'<tr><td colspan="3">파일 없음</td></tr>';
+ $('rd-files').innerHTML=d.rows.map(r=>`<tr><td><a href="#" class="rd-preview-link" data-path="${esc(r.path)}"><code>${esc(r.path)}</code></a></td><td class="num">${esc(rdSize(r.bytes))}</td><td>${esc(rdTime(r.modified))}</td><td><a href="/api/rawdata/file?${esc(rdQuery({source,id,path:r.path}))}" download>받기</a></td></tr>`).join('')||'<tr><td colspan="4"><div class="empty">일치하는 파일이 없습니다.</div></td></tr>';
+ $('rd-page').textContent=d.matched?`${(d.offset+1).toLocaleString()}–${(d.offset+d.rows.length).toLocaleString()} / ${d.matched.toLocaleString()}`:'0 / 0';$('rd-prev').disabled=rdOffset===0;$('rd-next').disabled=rdOffset+RD_PAGE>=d.matched}catch(e){$('rd-files').innerHTML=`<tr><td colspan="4">조회 실패: ${esc(e.message)}</td></tr>`}}
+async function rdPreview(path){const{source,id}=rdView;$('rd-preview-status').textContent=`불러오는 중: ${path}`;$('rd-preview').textContent='';try{const d=await rdJson('/api/rawdata/preview?'+rdQuery({source,id,path}));$('rd-preview-status').textContent=`${path} · ${rdSize(d.bytes)}`+(d.kind==='binary'?' · 바이너리 파일은 미리볼 수 없습니다 (받기로 내려받으세요)':d.truncated?' · 처음 64 KiB만 표시':d.bytes===0?' · 빈 파일':'');$('rd-preview').textContent=d.content}catch(e){$('rd-preview-status').textContent='미리보기 실패: '+e.message}}
+function rdEnsureLoaded(){if(rdLoaded)return;rdLoaded=true;rdLoad('agent_loop');rdLoad('scenario_rollout')}
+for(const source of Object.keys(RD)){const s=RD[source],p=s.p;
+ $(p+'-rows').onclick=ev=>{const tr=ev.target.closest('tr[data-id]');if(!tr)return;const id=tr.dataset.id;if(ev.target.classList.contains('rd-check')){ev.target.checked?s.sel.add(id):s.sel.delete(id);rdSelUpdate(source)}else if(ev.target.classList.contains('rd-view'))rdOpen(source,id);else if(ev.target.classList.contains('rd-dl'))rdDownload(source,[id])};
+ $(p+'-all').onchange=ev=>{s.units.forEach(u=>ev.target.checked?s.sel.add(u.id):s.sel.delete(u.id));document.querySelectorAll(`#${p}-rows .rd-check`).forEach(c=>c.checked=ev.target.checked);rdSelUpdate(source)};
+ $(p+'-dl-sel').onclick=()=>rdDownload(source,[...s.sel]);$(p+'-dl-all').onclick=()=>rdDownload(source,['all'])}
+$('rd-refresh').onclick=()=>{rdLoad('agent_loop');rdLoad('scenario_rollout');rdFiles()};
+$('rd-view-dl').onclick=()=>rdView&&rdDownload(rdView.source,[rdView.id]);
+$('rd-files').onclick=ev=>{const link=ev.target.closest('.rd-preview-link');if(!link)return;ev.preventDefault();rdPreview(link.dataset.path)};
+let rdSearchTimer=null;$('rd-q').oninput=()=>{clearTimeout(rdSearchTimer);rdSearchTimer=setTimeout(()=>{rdOffset=0;rdFiles()},250)};
+$('rd-prev').onclick=()=>{rdOffset=Math.max(0,rdOffset-RD_PAGE);rdFiles()};$('rd-next').onclick=()=>{if(rdOffset+RD_PAGE<rdMatched){rdOffset+=RD_PAGE;rdFiles()}};
+if(location.pathname==='/rawdata')showView('view-rawdata');
 
 </script></body></html>"""
 
@@ -1928,6 +1993,241 @@ class CaptureIndex:
         return sorted(items, key=lambda item: item.get("started_at") or "", reverse=True)
 
 
+class RawDataIndex:
+    """Raw output folders grouped by the script that wrote them, for browsing and tar download.
+
+    agent_loop:       tensor_data/<run> (every tensor_data folder that is not a scenario hook run).
+    scenario_rollout: artifacts/rollouts/<rollout> plus its HookInspection folders
+                      tensor_data/scenario-*-<id8> and scenario-replay-*-<id8> (same 8-hex rollout id).
+    Files are never modified; scans are cached briefly because runs keep writing while the page is open.
+    """
+
+    SOURCES = ("agent_loop", "scenario_rollout")
+    SCAN_TTL = 10.0
+    PREVIEW_LIMIT = 64 * 1024
+    TEXT_SUFFIXES = {".json", ".jsonl", ".md", ".txt", ".log", ".csv", ".yaml", ".yml"}
+
+    def __init__(self, tensor_root: Path | None, rollouts_root: Path | None):
+        self.tensor_root = tensor_root.resolve() if tensor_root else None
+        self.rollouts_root = rollouts_root.resolve() if rollouts_root else None
+        self._scans: dict[Path, tuple[float, list[tuple[str, int, float]]]] = {}
+        self._lock = threading.Lock()
+
+    @staticmethod
+    def _dirs(root: Path | None) -> list[Path]:
+        if root is None or not root.is_dir():
+            return []
+        return sorted((entry for entry in root.iterdir() if entry.is_dir() and not entry.is_symlink()),
+                      key=lambda entry: entry.name)
+
+    @staticmethod
+    def _rollout_id(name: str) -> str | None:
+        match = re.search(r"-([0-9a-f]{8})$", name)
+        return match[1] if match else None
+
+    def _units(self, source: str) -> dict[str, dict]:
+        """identifier → {"title", "parts": [(archive prefix, folder)]} for one source."""
+        if source not in self.SOURCES:
+            raise ValueError("source는 agent_loop 또는 scenario_rollout 이어야 합니다.")
+        tensor_dirs = self._dirs(self.tensor_root)
+        if source == "agent_loop":
+            return {folder.name: {"title": folder.name, "parts": [("", folder)], "kind": "agent_loop"}
+                    for folder in tensor_dirs if not folder.name.startswith("scenario-")}
+        hooks: dict[str, list[Path]] = {}
+        for folder in tensor_dirs:
+            rollout_id = self._rollout_id(folder.name) if folder.name.startswith("scenario-") else None
+            if rollout_id:
+                hooks.setdefault(rollout_id, []).append(folder)
+        units: dict[str, dict] = {}
+        for folder in self._dirs(self.rollouts_root):
+            rollout_id = self._rollout_id(folder.name)
+            parts = [("rollout/", folder)]
+            if rollout_id:
+                parts += [("tensor_data/" + hook.name + "/", hook) for hook in hooks.pop(rollout_id, [])]
+            units[folder.name] = {"title": folder.name, "parts": parts, "kind": "rollout"}
+        for rollout_id, folders in hooks.items():  # hook output whose rollout folder lives elsewhere
+            for hook in folders:
+                units[hook.name] = {"title": hook.name, "parts": [("tensor_data/" + hook.name + "/", hook)],
+                                    "kind": "hook_only"}
+        return units
+
+    def _scan(self, folder: Path) -> list[tuple[str, int, float]]:
+        now = datetime.now(timezone.utc).timestamp()
+        with self._lock:
+            cached = self._scans.get(folder)
+            if cached and now - cached[0] < self.SCAN_TTL:
+                return cached[1]
+        files: list[tuple[str, int, float]] = []
+        stack = [folder]
+        while stack:
+            current = stack.pop()
+            try:
+                entries = list(os.scandir(current))
+            except OSError:
+                continue
+            for entry in entries:
+                try:
+                    if entry.is_dir(follow_symlinks=False):
+                        stack.append(Path(entry.path))
+                    elif entry.is_file(follow_symlinks=False):
+                        stat = entry.stat(follow_symlinks=False)
+                        files.append((Path(entry.path).relative_to(folder).as_posix(), stat.st_size, stat.st_mtime))
+                except OSError:  # removed while scanning
+                    continue
+        files.sort()
+        with self._lock:
+            self._scans[folder] = (now, files)
+        return files
+
+    def _unit_files(self, unit: dict) -> list[tuple[str, int, float]]:
+        return [(prefix + path, size, mtime) for prefix, folder in unit["parts"] for path, size, mtime in self._scan(folder)]
+
+    def entries(self, source: str) -> dict:
+        """Units with their size per folder, and totals per root folder (rollouts vs tensor_data)."""
+        rows = []
+        by_root: dict[str, list[int]] = {}
+        for identifier, unit in self._units(source).items():
+            parts, modified = [], []
+            for _, folder in unit["parts"]:
+                scanned = self._scan(folder)
+                part = {"folder": self._display(folder), "files": len(scanned),
+                        "bytes": sum(size for _, size, _ in scanned)}
+                parts.append(part)
+                modified += [mtime for _, _, mtime in scanned]
+                totals = by_root.setdefault(self._display(folder.parent), [0, 0])
+                totals[0] += part["files"]
+                totals[1] += part["bytes"]
+            try:
+                started = min(folder.stat().st_mtime for _, folder in unit["parts"])
+            except OSError:
+                started = None
+            rows.append({"id": identifier, "title": unit["title"], "kind": unit["kind"],
+                         "folders": [part["folder"] for part in parts], "parts": parts,
+                         "files": sum(part["files"] for part in parts), "bytes": sum(part["bytes"] for part in parts),
+                         "modified": max(modified, default=started), "created": started})
+        rows.sort(key=lambda row: row["modified"] or 0, reverse=True)
+        return {"source": source, "roots": self.roots(source), "units": rows,
+                "by_root": [{"root": root, "files": files, "bytes": size} for root, (files, size) in by_root.items()],
+                "files": sum(row["files"] for row in rows), "bytes": sum(row["bytes"] for row in rows)}
+
+    def roots(self, source: str) -> list[str]:
+        roots = [self.tensor_root] if source == "agent_loop" else [self.rollouts_root, self.tensor_root]
+        return [self._display(root) for root in roots if root is not None]
+
+    @staticmethod
+    def _display(path: Path) -> str:
+        try:
+            return path.relative_to(PROJECT_ROOT).as_posix()
+        except ValueError:
+            return str(path)
+
+    def _unit(self, source: str, identifier: str) -> dict:
+        unit = self._units(source).get(identifier)
+        if unit is None:
+            raise ValueError("데이터 묶음을 찾을 수 없습니다.")
+        return unit
+
+    def files(self, source: str, identifier: str, query: str = "", offset: int = 0, limit: int = 200) -> dict:
+        unit = self._unit(source, identifier)
+        files = self._unit_files(unit)
+        by_type: dict[str, list[int]] = {}
+        by_folder: dict[str, list[int]] = {}
+        for path, size, _ in files:
+            suffix = Path(path).suffix.lower() or "(확장자 없음)"
+            folder = path.rsplit("/", 1)[0] if "/" in path else "."
+            folder = re.sub(r"/(tensors|attempt_\d+)(/.*)?$", r"/\1", folder)  # collapse the per-tensor folders
+            for groups, key in ((by_type, suffix), (by_folder, folder)):
+                counts = groups.setdefault(key, [0, 0])
+                counts[0] += 1
+                counts[1] += size
+        needle = query.strip().lower()
+        matched = [row for row in files if needle in row[0].lower()] if needle else files
+        page = matched[offset:offset + limit]
+        return {"source": source, "id": identifier, "folders": [self._display(folder) for _, folder in unit["parts"]],
+                "files": len(files), "bytes": sum(size for _, size, _ in files),
+                "by_type": sorted(({"type": key, "files": count, "bytes": size} for key, (count, size) in by_type.items()),
+                                  key=lambda row: -row["bytes"]),
+                "by_folder": sorted(({"folder": key, "files": count, "bytes": size}
+                                     for key, (count, size) in by_folder.items()), key=lambda row: row["folder"]),
+                "matched": len(matched), "offset": offset,
+                "rows": [{"path": path, "bytes": size, "modified": mtime} for path, size, mtime in page]}
+
+    def resolve_file(self, source: str, identifier: str, path: str) -> Path:
+        unit = self._unit(source, identifier)
+        for prefix, folder in unit["parts"]:
+            if path.startswith(prefix):
+                candidate = (folder / path[len(prefix):]).resolve()
+                if candidate.is_relative_to(folder) and candidate.is_file():
+                    return candidate
+        raise ValueError("파일을 찾을 수 없습니다.")
+
+    def preview(self, source: str, identifier: str, path: str) -> dict:
+        target = self.resolve_file(source, identifier, path)
+        size = target.stat().st_size
+        result = {"path": path, "bytes": size, "kind": "binary", "content": "", "truncated": False}
+        if target.suffix.lower() == ".npy":
+            import numpy.lib.format as npy_format
+
+            with target.open("rb") as handle:
+                version = npy_format.read_magic(handle)
+                read_header = npy_format.read_array_header_1_0 if version == (1, 0) else npy_format.read_array_header_2_0
+                shape, fortran, dtype = read_header(handle)
+            result.update(kind="npy", content=f"NumPy array · shape {list(shape)} · dtype {dtype}"
+                          + (" · Fortran order" if fortran else ""))
+            return result
+        if target.suffix.lower() == ".npz":
+            with np.load(target, allow_pickle=False) as archive:
+                lines = [f"{name}: shape {list(archive[name].shape)} · dtype {archive[name].dtype}"
+                         for name in archive.files]
+            result.update(kind="npz", content="\n".join(lines))
+            return result
+        with target.open("rb") as handle:
+            data = handle.read(self.PREVIEW_LIMIT)
+        try:
+            text = data.decode("utf-8")
+        except UnicodeDecodeError as error:
+            if error.start < len(data) - 4:  # not just a multi-byte character cut by the limit
+                return result
+            text = data[:error.start].decode("utf-8")
+        result.update(kind="text", content=text, truncated=size > len(data))
+        return result
+
+    def selection(self, source: str, identifiers: list[str]) -> list[tuple[str, str, dict]]:
+        """(archive folder, identifier, unit) for 'all' or the given identifiers."""
+        units = self._units(source)
+        if identifiers == ["all"]:
+            chosen = list(units)
+        else:
+            chosen = [identifier for identifier in dict.fromkeys(identifiers) if identifier]
+            missing = [identifier for identifier in chosen if identifier not in units]
+            if missing or not chosen:
+                raise ValueError("데이터 묶음을 찾을 수 없습니다: " + ", ".join(missing or ["(선택 없음)"]))
+        return [(f"{source}/{identifier}/", identifier, units[identifier]) for identifier in chosen]
+
+    def write_tar(self, stream, source: str, identifiers: list[str]) -> dict:
+        """Stream an uncompressed tar of the selection (NPY data barely compresses); skips files removed meanwhile."""
+        import tarfile
+
+        written = skipped = 0
+        with tarfile.open(fileobj=stream, mode="w|", format=tarfile.PAX_FORMAT) as archive:
+            for prefix, _, unit in self.selection(source, identifiers):
+                for part, folder in unit["parts"]:
+                    for path, _, _ in self._scan(folder):
+                        target = folder / path
+                        try:
+                            handle = target.open("rb")
+                        except OSError:
+                            skipped += 1
+                            continue
+                        with handle:
+                            stat = os.fstat(handle.fileno())
+                            info = tarfile.TarInfo(prefix + part + path)
+                            info.size, info.mtime, info.mode = stat.st_size, int(stat.st_mtime), 0o644
+                            archive.addfile(info, handle)
+                            written += 1
+        return {"written": written, "skipped": skipped}
+
+
 _FAKENET_SERVER = None
 
 
@@ -1979,6 +2279,66 @@ class DashboardHandler(BaseHTTPRequestHandler):
     def _json(self, value: object, status: int = 200) -> None:
         body = json.dumps(value, ensure_ascii=False, allow_nan=False).encode("utf-8")
         self._send(body, "application/json; charset=utf-8", status)
+
+    rawdata: "RawDataIndex | None" = None
+
+    def _rawdata_api(self, path: str, query: dict) -> None:
+        """Raw output browser/downloader (원본 데이터 탭): list, file listing, preview, single file, tar."""
+        if self.rawdata is None:
+            raise ValueError("원본 데이터 폴더가 설정되지 않았습니다.")
+        value = lambda name, default="": query.get(name, [default])[0]
+        source = value("source")
+        if path == "/api/rawdata/list":
+            self._json(self.rawdata.entries(source))
+        elif path == "/api/rawdata/files":
+            offset = max(0, int(value("offset", "0")))
+            limit = min(1000, max(1, int(value("limit", "200"))))
+            self._json(self.rawdata.files(source, value("id"), value("q"), offset, limit))
+        elif path == "/api/rawdata/preview":
+            self._json(self.rawdata.preview(source, value("id"), value("path")))
+        elif path == "/api/rawdata/file":
+            target = self.rawdata.resolve_file(source, value("id"), value("path"))
+            with target.open("rb") as handle:
+                size = os.fstat(handle.fileno()).st_size
+                self._stream_headers("application/octet-stream", target.name, size)
+                self._copy(handle, size)
+        elif path == "/api/rawdata/download":
+            identifiers = [item for raw in query.get("ids", []) for item in raw.split(",") if item]
+            chosen = self.rawdata.selection(source, identifiers)  # validates before any header is sent
+            stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+            label = "all" if identifiers == ["all"] else chosen[0][1] if len(chosen) == 1 else f"{len(chosen)}-selected"
+            self._stream_headers("application/x-tar", re.sub(r"[^A-Za-z0-9_.-]+", "-",
+                                                             f"argus-{source}-{label}-{stamp}.tar"))
+            try:
+                self.rawdata.write_tar(self.wfile, source, identifiers)
+            except (OSError, ValueError):  # cancelled in the browser, or a file vanished; headers are already sent
+                pass
+            self.close_connection = True
+        else:
+            raise ValueError("Unknown rawdata API.")
+
+    def _stream_headers(self, content_type: str, filename: str, size: int | None = None) -> None:
+        self.send_response(200)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
+        if size is None:
+            self.send_header("Connection", "close")  # length unknown: the end of the stream ends the tar
+        else:
+            self.send_header("Content-Length", str(size))
+        self.end_headers()
+
+    def _copy(self, handle, size: int) -> None:
+        remaining = size
+        try:
+            while remaining > 0:
+                chunk = handle.read(min(1024 * 1024, remaining))
+                if not chunk:
+                    break
+                self.wfile.write(chunk)
+                remaining -= len(chunk)
+        except (BrokenPipeError, ConnectionResetError):
+            self.close_connection = True
 
     @staticmethod
     def _sandbox_web_root() -> Path:
@@ -2749,6 +3109,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
             except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError) as error:
                 self._json({"error": str(error)}, 400)
             return
+        if parsed.path.startswith("/api/rawdata/"):
+            try:
+                self._rawdata_api(parsed.path, parse_qs(parsed.query))
+            except (OSError, ValueError, TypeError) as error:
+                self._json({"error": str(error)}, 400)
+            return
         if parsed.path.startswith("/api/captures/"):
             try:
                 self._capture_api(parsed.path, parse_qs(parsed.query))
@@ -2800,7 +3166,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             except (OSError, ValueError, RuntimeError, subprocess.TimeoutExpired) as error:
                 self._json({"status": "ERROR", "reason": str(error)}, 502)
             return
-        if parsed.path in ("/", "/hooks", "/tokens", "/captures", "/rollouts", "/scenario-hidden"):
+        if parsed.path in ("/", "/hooks", "/tokens", "/captures", "/rollouts", "/scenario-hidden", "/rawdata"):
             self._send(PAGE.encode("utf-8"), "text/html; charset=utf-8")
             return
         query = parse_qs(parsed.query)
@@ -3228,6 +3594,7 @@ def main() -> None:
     DashboardHandler.captures = CaptureIndex(detector_dir, args.tokenizer.expanduser(),
                                              exclude=(args.rollouts_dir.expanduser(),))
     DashboardHandler.rollouts = RolloutIndex(args.rollouts_dir.expanduser())
+    DashboardHandler.rawdata = RawDataIndex(data_dir, args.rollouts_dir.expanduser())
     DashboardHandler.lens = LogitLens(args.model_dir.expanduser().resolve(), args.tokenizer.expanduser())
     server = bind_server(args.host, args.port, args.replace)
     print(f"Research dashboard: http://{args.host}:{args.port}/")

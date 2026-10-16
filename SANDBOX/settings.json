@@ -7,7 +7,7 @@
   "timeout_seconds": 600,
   "log_limit_bytes": 16777216,
   "archive_limit_bytes": 536870912,
-  "network": "none",
+  "network": "fakenet",
   "allowed_hosts": [],
   "runtime": "runc",
   "gpu": false,

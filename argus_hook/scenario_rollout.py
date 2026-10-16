@@ -26,6 +26,9 @@ the policy; scenarios only add obstacles. Labels are ``policy_rule_unreviewed``.
 Each rollout gets its own fresh sandbox (``up --fresh`` → rollout → ``stop``), so a command that hangs
 only affects its own rollout. Per-scenario command_timeout / max_steps / sandbox resources live in
 Scenario/rollout/settings.json (``--settings``); the values used are stored in rollout.json.
+The sandbox network is always ``fakenet`` (SANDBOX/fakenet): only the simulated web is reachable, its
+requests are recorded per step (``network_events``) and the system prompt points the agent at the
+fakenet server (http://fakenet/) and the pages in SANDBOX/fakenet/sites.
 
     PYTHONPATH=src python argus_hook/scenario_rollout.py manifest --output artifacts/rollouts/probe-manifest.json
 """
@@ -161,6 +164,7 @@ SANDBOX_SETTING_FLAGS = {"cpus": "--cpus", "memory": "--memory", "workspace_size
                          "tmp_size": "--tmp-size", "pids": "--pids", "timeout_seconds": "--timeout",
                          "log_limit_bytes": "--log-limit", "archive_limit_bytes": "--archive-limit",
                          "network": "--network"}  # network "fakenet" = simulated internet (SANDBOX/fakenet)
+NETWORK = "fakenet"  # rollouts only ever reach the simulated web, whatever the settings file says
 
 
 class SandboxClient:
@@ -637,16 +641,21 @@ def run_rollout(
     """
     from argus_v.activations import ActionSpan, SnapshotContext, write_capture
 
+    from argus_v.agent_actions import fakenet_pages, system_prompt_for
+
     episode = scenario.episode(condition, sandbox, command_timeout)
     rollout_id = uuid.uuid4().hex
     folder = Path(output_root) / f"{getattr(episode, 'folder_label', episode.family)}-{condition}-s{seed}-{rollout_id[:8]}"
     start = episode.start()
-    messages = [{"role": "system", "content": episode.system_prompt}, {"role": "user", "content": episode.user_message}]
+    network = sandbox.settings().get("network") if hasattr(sandbox, "settings") else None
+    system_prompt = system_prompt_for(network, episode.system_prompt, fakenet_pages(SANDBOX_SCRIPT.parent))
+    messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": episode.user_message}]
     summary = {"schema_version": SCHEMA, "kind": episode.kind, "rollout_id": rollout_id, "trajectory_id": rollout_id,
                "scenario_id": episode.scenario_id, "scenario_key": episode.scenario_key, "family": episode.family,
                "condition": condition, "seed": seed, "task_id": episode.task_id, **start, "identity": identity,
                "sampling": sampling, "observe_every": observe_every, "label_source": "policy_rule_unreviewed",
-               "system_prompt_sha256": hashlib.sha256(episode.system_prompt.encode("utf-8")).hexdigest(),
+               "system_prompt_sha256": hashlib.sha256(system_prompt.encode("utf-8")).hexdigest(),
+               "sandbox_network": network,
                "run_settings": run_settings or {"command_timeout": command_timeout, "max_steps": max_steps},
                "started_at": time.time(), "steps": []}
     brief = episode.brief() if hasattr(episode, "brief") else {}
@@ -1021,8 +1030,11 @@ def main(argv=None) -> int:
         if answer.strip().lower() != "y":
             return 1
     base_sandbox = {key: value for key, value in sandbox.settings().items() if key in SANDBOX_SETTING_FLAGS}
-    if sandbox.status() != "RUNNING":
-        sandbox.up()  # a stopped sandbox comes back with its recovery checkpoint, so that state is saved too
+    base_sandbox["network"] = NETWORK
+    if sandbox.configure({"network": NETWORK}) or sandbox.status() != "RUNNING":
+        # up recreates the container on the new network; a stopped sandbox comes back with its recovery
+        # checkpoint and a reconfigured one with the /workspace it had, so that state is saved too
+        sandbox.up()
     original = sandbox.cli("snapshot", "--name", "before-scenario-rollouts").get("snapshot")
     print(f"[sandbox] current /workspace saved: {original}")
     generate, decode, capture, identity, sampling = _model_runtime(args)
@@ -1034,7 +1046,7 @@ def main(argv=None) -> int:
         effective = scenario_settings(run_settings, name, condition, cli_defaults)
         sandbox.timeout = effective["command_timeout"]
         if not args.shared_sandbox:
-            changes = sandbox.start_fresh({**base_sandbox, **effective["sandbox"]})
+            changes = sandbox.start_fresh({**base_sandbox, **effective["sandbox"], "network": NETWORK})
             print(f"[sandbox] fresh sandbox for {name}/{condition} seed {seed}"
                   + (f" · settings {changes}" if changes else "")
                   + f" · command timeout {effective['command_timeout']}s · max steps {effective['max_steps']}")
@@ -1058,7 +1070,7 @@ def main(argv=None) -> int:
                 print(f"[rollout error] {name}/{condition}/{seed}: {type(error).__name__}: {error}")
     finally:
         if not args.shared_sandbox:
-            try:  # leave the sandbox as it was: default settings and the pre-batch /workspace
+            try:  # leave the sandbox as it was: default settings (network fakenet) and the pre-batch /workspace
                 sandbox.configure(base_sandbox)
                 if original:
                     sandbox.up(fresh=True)

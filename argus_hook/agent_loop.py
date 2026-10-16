@@ -16,10 +16,11 @@ from pathlib import Path
 # Argus-V 공식 모듈 임포트
 # ============================================================
 from argus_v.agent_actions import (
-    ACTION_SYSTEM_PROMPT,
     generate_sandbox_action,
     observation_message,
+    fakenet_pages,
     parse_action,
+    system_prompt_for,
 )
 
 from argus_v.activations import (
@@ -49,21 +50,33 @@ class RealSandboxClient:
         return {"status": "ERROR", "reason": (result.stdout + result.stderr)[-500:]}
 
     def ensure_running(self) -> dict:
-        """샌드박스가 꺼져 있으면 켠다(sandbox.py up: 마지막 복구 지점의 /workspace가 돌아온다)."""
+        """가짜 인터넷(fakenet)만 연결된 샌드박스를 켠다.
+
+        network가 fakenet이 아니면 sandbox.py config로 바꾸고 up으로 다시 만든다
+        (up은 바꾸기 직전의 /workspace를 스냅샷해서 새 컨테이너에 복원한다).
+        """
+        changed = self.network() != "fakenet"
+        if changed:
+            print("[Sandbox API] network를 fakenet(가짜 인터넷만 연결)으로 변경 중 (sandbox.py config)...")
+            result = self._cli("config", "--network", "fakenet")
+            if result.get("network") != "fakenet":
+                raise RuntimeError(f"샌드박스 network를 fakenet으로 바꾸지 못했습니다: {result}")
         status = self._cli("status")
-        if status.get("status") != "RUNNING":
-            print("[Sandbox API] 샌드박스가 꺼져 있어 켜는 중 (sandbox.py up)...")
+        if changed or status.get("status") != "RUNNING":
+            print("[Sandbox API] 샌드박스를 켜는 중 (sandbox.py up)...")
             status = self._cli("up")
             if status.get("status") != "RUNNING":
                 raise RuntimeError(f"샌드박스를 켜지 못했습니다: {status}")
+        print("[Sandbox API] 샌드박스 실행 중 · network=fakenet"
+              " (가짜 인터넷만 연결: sandbox.py fakenet-log 로 요청 기록 확인)")
+        return status
+
+    def network(self) -> str:
         try:
             settings = json.loads((Path(self.sandbox_script).parent / "settings.json").read_text())
-            network = settings.get("network")
+            return settings.get("network", "unknown")
         except (OSError, json.JSONDecodeError):
-            network = "unknown"
-        print(f"[Sandbox API] 샌드박스 실행 중 · network={network}"
-              + (" (가짜 인터넷 연결: sandbox.py fakenet-log 로 요청 기록 확인)" if network == "fakenet" else ""))
-        return status
+            return "unknown"
 
     def execute(self, command: str) -> str:
         print("[Sandbox API] 샌드박스(sandbox.py)로 명령 전송 중...")
@@ -274,7 +287,8 @@ def main():
     max_action_retries = args.max_action_retries
     run_id = datetime.now(timezone.utc).strftime("run-%Y%m%dT%H%M%SZ-") + uuid.uuid4().hex[:8]
 
-    base_context = ACTION_SYSTEM_PROMPT
+    base_context = system_prompt_for(sandbox.network(),
+                                     pages=fakenet_pages(Path(sandbox.sandbox_script).parent))
 
     print("=" * 80)
     print("실행할 Task를 입력하십시오.")
