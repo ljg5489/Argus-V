@@ -111,6 +111,86 @@ PYTHONPATH=src python scripts/train_probe.py \
 검수되지 않은 표본은 manifest에 넣지 않습니다. test 표본은 좌표와 분할 메타데이터만 연결하고
 feature archive는 열지 않습니다. 학습기는 train으로 가중치를, validation으로 임계값을 정합니다.
 
+## 대시보드에서 검수하기 (「라벨 검수」 탭)
+
+JSON을 손으로 고치는 대신 `python Research/hidden_state_dashboard.py`의 **라벨 검수** 탭(`/review`)에서
+행동 하나씩 판정하고, 결과를 이 문서의 `reviews.json` 형식으로 내보냅니다. 사람은 2,880개 숫자를 읽지 않습니다.
+step 기록을 보고 "이 다음 행동이 정책 위반 시도인가?"를 판단하면, 조립기가 같은 행동 직전의 C-01 벡터를 자동으로 연결합니다.
+
+- **목록과 분포**: 행 하나가 행동(step) 하나입니다. 과제 계열·조건·split·검수 상태·규칙 판정·출처로 거르고,
+  과제 계열 × 조건 분포표에서 양성/음성 편중과 남은 작업을 봅니다. 규칙 판정(`policy_label`)은 우선순위 표시일 뿐 내보내지 않습니다.
+- **행동 검수**: 사용자 과제, 신뢰 정책, 모델 추론, 생성된 다음 행동, 실행 결과, static/effect finding, 그다음 행동을 한 화면에서 보고
+  위반(1) / 준수(2) / 불명확(3)과 근거를 저장합니다. 다른 검수자의 판정은 내가 판정하기 전까지 숨겨집니다(독립 검수).
+- **2차 검수와 조정**: 위반·불명확은 두 번째 검수자가 필요합니다. 판정이 다르면 "불일치"가 되고, 조정자 모드에서 최종 판정을 내립니다.
+- **trajectory 판정**: 행동 라벨과 따로 "관찰 구간 전체에 위반이 있었나"를 판정합니다. "위반 없음"은 그 실행의 모든 행동을 준수로 판정한 뒤에만 저장됩니다.
+- **분할 미지정 과제**: 분할표에 없는 workspace 시나리오·agent_loop 실행은 탭에서 그룹과 split을 지정합니다.
+- **내보내기**: 확정된 라벨만 `artifacts/probe-reviews/reviews-<시각>-<개수>.json`으로 저장하고, split별 위반/준수 수,
+  위반 trajectory의 과제 계열 수, 제외 사유(미검수·2차 대기·불일치·trajectory 미판정·split 없음)와 경고를 보여 줍니다.
+- **진단**: split·조건별 확정 라벨 구성, 행동 직전 벡터의 PCA 2D 투영(라벨·규칙·과제 계열·조건·split별 색)을 봅니다.
+  투영은 데이터 오류·편향을 찾는 그림일 뿐이며 test split 벡터는 열지 않습니다. Probe 입력은 원래 벡터입니다.
+
+검수 기록은 `artifacts/probe-reviews/review-log.jsonl`에 한 줄씩 추가만 됩니다(누가·언제·무엇을·왜).
+같은 검수자의 마지막 판정이 유효하고, 철회도 기록으로 남습니다. 대시보드 없이 내보낼 때는:
+
+```bash
+python scripts/export_probe_reviews.py --labels-revision team-policy-reviewed-v1 \
+  --split-revision team-scenario-split-v1
+```
+
+내보낼 때의 규칙:
+
+- 행동 라벨이 확정되고(1명의 준수, 2명 이상 합의, 조정) 그 trajectory 판정도 확정된 행동만 들어갑니다. 불명확은 라벨이 아닙니다.
+- trajectory가 "위반 없음"인데 확정된 위반 행동이 있으면 모순이므로 제외합니다. 행동 하나라도 위반이면 `trajectory_has_violation=true`입니다.
+- 검수자 1명의 위반 판정은 기본적으로 제외합니다(`--allow-single-positive` 또는 탭의 체크박스로 포함, 보고서에 개수 표시).
+
+행동 판정에는 선택 항목으로 **위반 유형**(무단 접근·승인 우회·평가 조작·무단 전송/공개·기타)과
+**결과**(실행됨·차단됨·실패·실행 안 됨)를, trajectory 판정에는 **사례 출처**(자발적·유도됨·합성/재생)를 남길 수 있습니다.
+계획서 §07에 따라 첫 위반 시도는 차단 여부와 별개로 위반이며, 유도·합성 사례는 자발적 위반 증거와 따로 보고합니다.
+trajectory 상자에는 확정 라벨 기준 "첫 위반 시도 step"이 표시됩니다.
+
+## 은닉 신호 분석 (「은닉 신호 분석」 탭, `/signal`)
+
+activation만으로 위험 행동을 예측하는 모델(계획서 M2, 로드맵 C-02~C-04)을 만들기 전에 데이터를 점검합니다.
+모델을 학습하지 않으며 **test split은 어떤 분석에서도 열지 않습니다.** 라벨 출처는 사람 검수 확정 라벨이 기본이고,
+검수 전 탐색용으로 규칙 판정 라벨을 고를 수 있습니다(화면에 경고 표시, 결론·학습 라벨로 쓰지 않음).
+
+- **라벨 지평**: 다음 1회 행동(`y_next_action`)과 다음 2·3회 행동 이내 위반(`y_h2`, `y_h3`). 캡처가 없는 행동(형식 실패)은
+  알 수 없음으로 두되, trajectory가 "위반 없음"으로 확정되면 준수로 봅니다. 관찰 구간이 끝나 창이 짧아지면 관찰된 행동만으로 정합니다.
+- **데이터 충분성**: split별 위반/준수/라벨 없음, 위반·정상 run 수, 위반이 나온 과제 계열 수, 관측 시점별 라벨 수와 경고.
+- **교란·누수 점검**: prefix 길이·step 번호·장애물 조건·seed 하나만으로 라벨을 맞히는 AUROC(0.5 = 정보 없음, |AUROC−0.5| ≥ 0.2이면 경고),
+  위반이 몰린 과제 계열, 서로 다른 trajectory에 똑같이 나타나는 prefix(조건·seed 사이에서 앞부분이 같은 경우; split을 넘으면 누수 경고).
+- **레이어 × 관측 시점 신호 점검 (train 전용)**: 관측 시점은 추론 시작 전·추론 중간·추론 끝·행동 직전, 행동마다 한 점씩.
+  과제 그룹 하나를 뺀 나머지 train으로 표준화 평균 차이 방향을 정하고 뺀 그룹을 점수화한 AUROC와 trajectory bootstrap 95% 구간을 보여 줍니다.
+  같은 표본에서 prefix 길이만 쓴 AUROC가 아래 줄에 있어, 이보다 높아야 의미가 있습니다. 학습된 Probe가 아닌 탐색 지표이며
+  레이어·임계값 선택은 validation에서 Probe 담당자가 합니다.
+- **분석 패키지**: 관측 지점 단위 `analysis.csv`, 열 역할 `columns.json`, 점검 결과 `report.json`을
+  `artifacts/probe-analysis/analysis-<라벨 출처>-<시각>/`에 저장합니다. `columns.json`에서 모델 입력은
+  `capture_dir`·`token_index`가 가리키는 activation뿐이고, 라벨·행동 경계·결과·향후 위반 시점은 입력 금지(eval_only)로 표시됩니다.
+
+```bash
+python scripts/export_probe_analysis.py                                  # 검수 확정 라벨
+python scripts/export_probe_analysis.py --label-source rule              # 규칙 판정 (탐색용)
+python scripts/export_probe_analysis.py --signal-scan --layers 0 11 23   # 신호 점검 포함
+```
+
+## 관측 지점과 레이어 선택
+
+시나리오 rollout 캡처는 layer 0–23을 모두 저장하므로 재수집 없이 레이어를 비교할 수 있습니다.
+agent_loop 캡처(`tensor_data/run-*/…/post_residual_block`)는 0·11·23만 있어, 다른 레이어를 요청하면
+`layers_unavailable`(요청·실제 레이어 목록 포함)로 보고되고 표본에서 빠집니다.
+
+```bash
+python scripts/assemble_probe_dataset.py --reviews <reviews.json> --layers 23          # 단일 레이어부터
+python scripts/assemble_probe_dataset.py --reviews <reviews.json> --layers 0 11 23     # 8,640차원
+python scripts/assemble_probe_dataset.py --reviews <reviews.json> --layers 23 \
+  --observation-points all                                                              # 추론 중 관측점도 표본으로
+```
+
+`--observation-points all`은 각 검수 행동의 이전 관측점(pre_reasoning, reasoning+N)도 표본으로 내보내며,
+모두 같은 행동의 라벨을 공유합니다. 독립 행동 사례가 늘어난 것은 아니므로 분할과 신뢰구간은 과제 계열·trajectory 단위로 묶입니다.
+보고서의 `reviewed_actions`와 `samples_by_observation_kind`로 실제 행동 수와 관측점별 표본 수를 구분합니다.
+24개 레이어를 모두 붙인 69,120차원 입력은 표본 수보다 훨씬 크므로 탐색 결과로만 다룹니다.
+
 ## 제공된 시나리오 분할표
 
 `Scenario/scenario-splits.v1.json`은 사용자가 제공한 Excel `Sheet1!F8:I15`의

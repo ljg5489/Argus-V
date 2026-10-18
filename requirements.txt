@@ -5,3 +5,4 @@ accelerate
 kernels>=0.12,<0.13
 triton==3.4.0
 numpy
+pyarrow  # Parquet conversion in scripts/upload_raw_data_to_hf.py

@@ -26,6 +26,12 @@ def main(argv=None):
     parser.add_argument("--layers", type=int, nargs="+", default=[23])
     parser.add_argument("--split-file", type=Path)
     parser.add_argument("--reviews", type=Path)
+    parser.add_argument(
+        "--observation-points",
+        choices=("pre_action", "all"),
+        default="pre_action",
+        help="all: also export earlier captured rows (pre_reasoning, reasoning+N) of each reviewed action",
+    )
     parser.add_argument("--path-map", action="append", default=[], metavar="OLD=NEW")
     parser.add_argument(
         "--output",
@@ -70,6 +76,7 @@ def main(argv=None):
             reviews=args.reviews,
             path_maps=maps,
             output=output,
+            observation_points=args.observation_points,
         )
     except (OSError, ValueError, KeyError, TypeError) as error:
         parser.error(str(error))

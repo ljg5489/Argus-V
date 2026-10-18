@@ -186,6 +186,12 @@ class SourceAssembler:
                 raise ValueError("feature archive resolves outside source roots")
             require_digest(archive["sha256"], "archive sha256")
             blocks = {block["layer_index"]: block for block in metadata["blocks"]}
+            unavailable = [layer for layer in self.layers if layer not in blocks]
+            if unavailable:
+                # e.g. agent_loop captures keep only blocks 0/11/23: report it instead of a bare KeyError
+                self.issue("layers_unavailable", directory,
+                           f"requested {list(self.layers)}, captured {sorted(blocks)}")
+                return
             spec = FeatureSpec(
                 ModelIdentity(**metadata["identity"]),
                 metadata["config_sha256"],
@@ -239,6 +245,8 @@ class SourceAssembler:
                 existing["sources"].append(provenance)
                 self.stats["duplicate_capture_references"] += 1
                 return
+            kinds = {p["token_index"]: p["kind"] for p in (step or {}).get("observations", [])}
+            kinds[position] = "pre_action"
             present = (directory / "features.npz").is_file()
             if not present:
                 self.issue("missing_feature_archive", directory / "features.npz")
@@ -250,6 +258,7 @@ class SourceAssembler:
                 "step_index": context.action.step_index,
                 "token_index": position,
                 "prefix_length": length,
+                "action_token_start": context.action.token_start,
                 "prefix_ids_sha256": digest,
                 "source_identity": metadata["identity"],
                 "feature_spec": spec.to_dict(),
@@ -257,6 +266,11 @@ class SourceAssembler:
                 "feature_present": present,
                 "original_ids_verified": verified_ids,
                 "capture_dir": str(directory),
+                # every captured row (pre_reasoning, reasoning+N, pre_action ...); pre_action is token_index
+                "observation_points": [
+                    {"token_index": row["token_index"], "kind": kinds.get(row["token_index"], "captured")}
+                    for row in metadata["alignment"]
+                ],
                 "sources": [provenance],
                 "hook_sessions": [],
                 "source_family_id": rollout.get("family") if rollout else None,
@@ -398,7 +412,13 @@ def assemble_dataset(
     reviews=None,
     split_file=None,
     path_maps=(),
+    observation_points="pre_action",
 ):
+    """``observation_points="all"`` also exports every earlier captured row of a reviewed action
+    (pre_reasoning, reasoning+N ...) as its own sample sharing that action's label. They are more inputs
+    for earlier detection, not more independent actions: splits stay grouped by task/trajectory."""
+    if observation_points not in ("pre_action", "all"):
+        raise ValueError("observation_points must be pre_action or all")
     output = Path(output).resolve()
     if output.exists():
         raise FileExistsError(output)
@@ -427,7 +447,7 @@ def assemble_dataset(
     candidates = list(assembler.candidates.values())
     for unknown in set(review_rows) - set(assembler.candidates):
         assembler.issue("review_without_source", reviews, unknown)
-    samples, template, specs = [], [], set()
+    samples, template, specs, point_kinds = [], [], set(), Counter()
     for candidate in candidates:
         identifier = candidate["snapshot_id"]
         split = assignments.get(candidate["source_task_group_id"])
@@ -486,21 +506,28 @@ def assemble_dataset(
                 specs.add(json.dumps(snapshot.spec.to_dict(), sort_keys=True))
             specs.add(json.dumps(candidate["feature_spec"], sort_keys=True))
             # Test vectors remain unopened during train/validation preparation.
-            samples.append(
-                {
-                    "snapshot_id": identifier,
-                    "run_id": candidate["run_id"],
-                    "trajectory_id": candidate["trajectory_id"],
-                    "action_id": candidate["action_id"],
-                    "family_id": row["family_id"],
-                    "task_group_id": row["task_group_id"],
-                    "split": row["split"],
-                    "capture_dir": candidate["capture_dir"],
-                    "token_index": candidate["token_index"],
-                    "next_action_violation": label,
-                    "trajectory_has_violation": trajectory_label,
-                }
-            )
+            sample = {
+                "snapshot_id": identifier,
+                "run_id": candidate["run_id"],
+                "trajectory_id": candidate["trajectory_id"],
+                "action_id": candidate["action_id"],
+                "family_id": row["family_id"],
+                "task_group_id": row["task_group_id"],
+                "split": row["split"],
+                "capture_dir": candidate["capture_dir"],
+                "token_index": candidate["token_index"],
+                "next_action_violation": label,
+                "trajectory_has_violation": trajectory_label,
+            }
+            samples.append(sample)
+            point_kinds["pre_action"] += 1
+            if observation_points == "all":
+                # same capture archive (already checked above), earlier rows of the same prefix
+                for point in candidate.get("observation_points", []):
+                    if point["token_index"] < candidate["token_index"]:
+                        samples.append({**sample, "snapshot_id": f"{identifier}@t{point['token_index']}",
+                                        "token_index": point["token_index"]})
+                        point_kinds[point["kind"].split("+")[0]] += 1
         except (OSError, ValueError, KeyError, TypeError) as error:
             assembler.issue("reviewed_sample_rejected", candidate["capture_dir"], error)
     output.mkdir(parents=True)
@@ -541,6 +568,9 @@ def assemble_dataset(
         "manifest_written": valid,
         "candidates": len(candidates),
         "reviewed_samples": len(samples),
+        "reviewed_actions": point_kinds["pre_action"],
+        "observation_points": observation_points,
+        "samples_by_observation_kind": dict(point_kinds),
         "counts_by_split_and_label": counts,
         "source_counts": dict(assembler.stats),
         "issues_by_code": dict(Counter(issue["code"] for issue in assembler.issues)),
