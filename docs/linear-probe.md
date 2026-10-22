@@ -194,3 +194,39 @@ python scripts/diagnose_reviewed_probe.py --run-dir artifacts/probe-reviewed-<�
 `trajectory_not_fully_reviewed`로 제외된 행동은 원본 rollout과 대조해 행동 ID 없는 형식 실패,
 검수 파일에 없는 행동, 미확정 라벨을 구분합니다. 형식 실패를 자동으로 정상 판정하거나
 제외 데이터를 복구하지 않습니다. 필요하면 `--output <새 JSON 경로>`로 진단을 저장할 수 있습니다.
+
+## 8. 같은 표본으로 레이어·규제 강도 비교
+
+학습 AUROC가 높고 검증 성능이 낮으면 기존 실행의 manifest를 고정한 비교를 먼저 합니다.
+`weight_decay`는 가중치가 커지는 것을 억제하는 규제 강도이며, 평균·표준편차를 계산하는
+표준화 방식과는 다릅니다. 모델은 같은 선형층이고 train 전용 표준화도 유지합니다.
+
+```bash
+python scripts/compare_reviewed_probes.py --run-dir artifacts/probe-reviewed-<실행-ID>
+```
+
+기본 비교는 단일 레이어 0·11·23 × `weight_decay` 0.001·0.01·0.1·1·10의 **15개 조합**입니다.
+기존 학습 결과에서 epochs·학습률·seed·오탐 예산을 가져오고 규제 강도만 바꿉니다.
+0.001은 기존 설정의 재현 기준입니다. 새 GPU 추론이나 activation 재수집은 필요 없습니다.
+모든 조합은 동일한 train/validation snapshot·라벨·관측 위치를 사용합니다.
+레이어가 없는 표본을 임의로 빼거나 라벨·기존 제외 결정을 바꾸지 않으며, test activation은 열지 않습니다.
+
+선택 순서는 비교 전에 고정됩니다: 같은 정상 trajectory 오탐 예산에서 검증 snapshot recall이
+가장 높은 구성, 동률이면 검증 average precision, 낮은 오탐률, 강한 규제, 낮은 레이어 번호 순서입니다.
+검증 데이터로 선택한 결과이므로 새로운 test 성능이 입증된 것은 아닙니다.
+모든 구성의 recall이 0이면 `no_candidate_detects_under_budget`를 명시합니다.
+
+새 `artifacts/probe-comparison-<시각>-<ID>/` 폴더에 다음이 저장됩니다.
+
+- `plan.json`: 기존 manifest 해시·비교 설정·선택 기준.
+- `comparison.csv`: 모든 성공 구성의 학습/검증 AUROC·검증 AP·탐지율·오탐률·임계값.
+- `comparison.json`: 선택된 후보 경로, 전체 결과, 실패 구성, 기존 표본·라벨 수.
+- `models/`: 각 구성의 저장/로드 점수 일치를 확인한 모델.
+- 구성별 validation 점수와 레이어별 중간 결과.
+
+기존 실행 폴더·모델은 보존합니다. 필요하면 `--layers 0 11 23`,
+`--weight-decays 0.001 0.01 0.1 1 10`, `--output <새 폴더>`를 명시할 수 있습니다.
+현재 제외된 행동을 복구한 실험은 데이터 revision이 달라지므로 이 고정 비교와 별도로 수행합니다.
+특히 형식 실패의 원문은 해당 rollout의 `steps/step_NNN/step.json`에서 검수하고,
+금지 행동 제안 여부와 관찰 구간 전체의 trajectory 판정을 확정한 뒤 복구 여부를 결정합니다.
+형식 실패를 자동으로 정상 라벨로 바꾸지는 않습니다.
