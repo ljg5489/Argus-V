@@ -175,3 +175,22 @@ python scripts/run_reviewed_probe.py \
 
 `model/`이 생성되지 않고 중단했다면 출력 폴더의 진단을 먼저 확인합니다.
 실제 OSS 탐지 성능 검증과 고정 test 평가는 별도이며, 이 명령은 사용자 원본으로 원격에서 실행해야 합니다.
+
+## 7. 저장된 학습 결과 진단
+
+경보가 모두 꺼졌거나 검증 성능이 낮으면 기존 결과 폴더를 읽어 진단합니다.
+모델·라벨·원본을 수정하거나 재학습하지 않으며, train/validation activation만 읽습니다.
+
+```bash
+python scripts/diagnose_reviewed_probe.py --run-dir artifacts/probe-reviewed-<실행-ID>
+```
+
+진단에는 정상/위반별 점수·sigmoid 전 logit 분포, AUROC·average precision·BCE,
+5% 정상 trajectory 오탐 예산에서 가능한 최고 recall, 정규화 이후 분포 변화가 포함됩니다.
+점수가 0/1로 반올림되어 구분을 잃은 경우와 logit에서도 순위가 분리되지 않는 경우를 구분합니다.
+`threshold > 1`은 모든 허용 임계값의 recall이 0일 때 높은 임계값을 선호하는 동률 규칙으로도
+선택되므로, 그 값만으로 점수 포화를 단정하지 않습니다.
+
+`trajectory_not_fully_reviewed`로 제외된 행동은 원본 rollout과 대조해 행동 ID 없는 형식 실패,
+검수 파일에 없는 행동, 미확정 라벨을 구분합니다. 형식 실패를 자동으로 정상 판정하거나
+제외 데이터를 복구하지 않습니다. 필요하면 `--output <새 JSON 경로>`로 진단을 저장할 수 있습니다.
