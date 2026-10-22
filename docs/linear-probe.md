@@ -310,3 +310,44 @@ snapshot을 `predict()`에 넣으면 거부합니다. 평균 모델을 적용할
 manifest 메타데이터만 읽으며, 실제 NPY는 train/validation과 정확히 연결된 원본만 엽니다.
 검증 데이터로 임계값을 정한 결과이며, 새로운 기만 탐지 능력이나 독립적인 test 성능의 증거가
 아닙니다.
+
+### 전체 추론 원본이 연결되지 않을 때: 저장된 입력 replay
+
+다른 수동 실행의 `tensor_data`에 전체 activation이 있어도 현재 라벨링된 행동과 run·입력 토큰이
+다르면 사용할 수 없습니다. `scripts/replay_reasoning_activations.py`는 원래 train/validation의
+`c01-input.json`을 **같은 로컬 모델에 다시 입력**해 23번 블록의 전체 prefix 출력만 저장합니다.
+`generate()` 호출, 행동 생성, 샌드박스 실행, 라벨 변경은 하지 않습니다. 이 단계에는 원래 모델을
+실행할 CUDA GPU와 모델 파일이 필요하며, 이후 두 probe의 학습은 CPU에서 수행합니다.
+
+원래 시나리오 실행기의 `load_full_model_CUDA.py`와 같은 로컬 전용 로딩 설정을 사용합니다.
+모델 config 해시와 기존 C-01의 **모든 저장 관측 위치 값의 정확한 일치**를 요구합니다.
+다르면 새 원본을 채택하지 않고 중단하므로 원래 checkpoint와 runtime을 사용해야 합니다.
+
+먼저 3개 행동으로 실행 환경과 재현 여부를 점검합니다.
+
+```bash
+python scripts/replay_reasoning_activations.py --run-dir artifacts/probe-reviewed-<실행-ID> --model-dir gpt-oss-20b --output artifacts/reasoning-replay-L23 --max-actions 3
+```
+
+통과하면 같은 output으로 나머지를 이어서 추출합니다. 완료된 텐서·레코드의 해시를 검사한 뒤
+건너뛰며, 다른 manifest·레이어·모델 경로의 실험은 같은 output에 섞지 않습니다.
+
+```bash
+python scripts/replay_reasoning_activations.py --run-dir artifacts/probe-reviewed-<실행-ID> --model-dir gpt-oss-20b --output artifacts/reasoning-replay-L23
+```
+
+`replay-summary.json`에 완료·남은 행동 수를, `replay-exclusions.json`에 추론 구간이 없는 행동을
+기록합니다. 완료된 행동마다 `block.npy`, `records.jsonl`, `manifest.json`이 있으며 위 비교
+스크립트가 해당 output을 Hook 원본으로 읽을 수 있습니다. 전체 모듈의 모든 중간값 대신
+선택 블록의 `[1,T,D]` 하나만 저장하지만 긴 prefix가 많으면 저장 공간이 커질 수 있습니다.
+
+그 후 재추출 결과를 지정해 두 방식을 학습·검증합니다. 추론 구간이 없는 행동이 있다면
+`--allow-partial`로 해당 trajectory들을 양쪽에서 동일하게 제외합니다.
+
+```bash
+python scripts/compare_reasoning_mean.py --run-dir artifacts/probe-reviewed-<실행-ID> --hook-roots artifacts/reasoning-replay-L23 --allow-partial
+```
+
+`--allow-partial`은 추론 구간을 만들거나 sparse 벡터를 평균내는 옵션이 아닙니다. 추출 실패로
+원본이 하나도 없다면 여전히 학습할 수 없습니다. 어떤 행동·trajectory가 제외됐는지는 비교의
+`coverage.json`에서 확인합니다. test metadata/activation은 replay 대상에 포함하지 않습니다.
