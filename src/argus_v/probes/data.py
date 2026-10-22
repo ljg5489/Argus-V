@@ -43,6 +43,7 @@ class FeatureSpec:
     module_paths: tuple[str, ...]
     hook_point: str = "post_block_pre_final_norm"
     capture_mode: str = "full_prefix_replay"
+    pooling: str = "none"
 
     def __post_init__(self) -> None:
         if not isinstance(self.identity, ModelIdentity):
@@ -65,6 +66,8 @@ class FeatureSpec:
             raise ValueError("only C-01 post-block features are supported; MLP logs are different")
         if self.capture_mode != "full_prefix_replay":
             raise ValueError("only full_prefix_replay features are supported")
+        if self.pooling not in ("none", "reasoning_mean"):
+            raise ValueError("unsupported probe pooling")
 
     @property
     def input_dim(self) -> int:

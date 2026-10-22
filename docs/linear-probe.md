@@ -250,3 +250,63 @@ python scripts/compare_reviewed_probes.py --run-dir artifacts/probe-reviewed-<�
 특히 형식 실패의 원문은 해당 rollout의 `steps/step_NNN/step.json`에서 검수하고,
 금지 행동 제안 여부와 관찰 구간 전체의 trajectory 판정을 확정한 뒤 복구 여부를 결정합니다.
 형식 실패를 자동으로 정상 라벨로 바꾸지는 않습니다.
+
+## 9. 23번 레이어의 추론 구간 평균과 마지막 위치 비교
+
+`scripts/compare_reasoning_mean.py`는 같은 행동에 대해 두 개의 독립적인 선형 probe를
+학습합니다. `last_token`은 행동 생성 직전 마지막 위치, `reasoning_mean`은 해당 행동의
+`m1-context.json`에 기록된 `reasoning_token_span=[start,end)` 안의 모든 토큰을 균등 평균한
+벡터입니다. 두 방식 모두 23번 레이어의 2,880차원을 유지하며 학습 데이터로만 정규화합니다.
+정답·분할·행동 단위는 기존 reviewed run에서 가져옵니다. 기본 weight decay는 1,
+epochs·학습률·seed·정상 trajectory 오탐 예산은 원래 run의 설정을 사용합니다.
+
+원본이 있는 원격 컴퓨터에서 먼저 연결 가능 범위를 확인합니다.
+
+```bash
+python scripts/compare_reasoning_mean.py --run-dir artifacts/probe-reviewed-<실행-ID> --hook-roots tensor_data --audit-only
+```
+
+문장 전체를 저장한 원본이 모든 train/validation 행동에 연결되면 다음으로 학습합니다.
+
+```bash
+python scripts/compare_reasoning_mean.py --run-dir artifacts/probe-reviewed-<실행-ID> --hook-roots tensor_data
+```
+
+연결 가능한 행동이 일부뿐일 때는 기본적으로 `coverage.json`을 남기고 학습을 중단합니다.
+진단 결과를 검토한 뒤 `--allow-partial`을 명시하면 **기존 manifest에 포함된 모든 행동의 추론
+원본이 있는 trajectory만** 두 비교군에 동일하게 남깁니다. 정상 실행 중 어려운 단계만 빠져 오탐률이 낮게 계산되는 것을
+막기 위해, 한 행동의 추론 원본이 없으면 그 trajectory 전체를 제외합니다.
+선택된 train/validation 각각에 0/1 라벨이 모두 있어야 하고, 검증에는 정상 trajectory도
+있어야 합니다. 이 부분집합 결과를 기존 전체 validation 성능과 직접 비교하지 않습니다.
+
+원본 검증 규칙:
+
+- C-01에 해당 추론 구간의 **모든 토큰 위치가 이미 저장된 경우** 그것을 사용합니다.
+  32토큰 간격의 sparse 관측점 평균으로 대신하지 않습니다.
+- 그렇지 않으면 `pre_action_full_prefix_replay`이며 완료된 Hook 원본만 사용합니다.
+  run·trajectory·step·모델/토크나이저 revision·전체 입력 토큰 해시가 같아야 합니다.
+  파일명이나 문장이 비슷한 다른 실행을 연결하지 않습니다. 중복 원본은 자동 선택하지 않으며
+  `--hook-roots`를 좁혀야 합니다.
+- 정확한 레이어의 post-residual block 출력만 허용합니다. MLP·router 출력은 사용하지 않습니다.
+  NPY의 실제 shape를 검사하고, C-01에 저장된 같은 레이어의 모든 관측 위치 값과도 일치해야 합니다.
+- 추론 span은 저장된 입력 길이와 행동 시작 위치를 넘을 수 없습니다. 과제·정책·과거 기록 전체나
+  현재 행동·실행 결과를 평균에 넣지 않습니다. 원본 generation sidecar가 있으면 span도 대조합니다.
+- `generation` 및 `pre_execution` Hook은 자동 변환하지 않습니다. 생성 중 KV cache/attempt별
+  텐서의 정렬과 추론 원본 복원은 별도 작업입니다. 다른 수동 실행에만 전체 원본이 있다면 현재
+  라벨에 억지로 연결하지 않고 coverage 부족으로 보고합니다.
+
+새 `artifacts/reasoning-mean-<시각>-<ID>/` 폴더에 다음이 저장됩니다.
+
+- `plan.json`, `coverage.json`, `source-diagnostics.json`: 설정과 원본 연결/제외 진단.
+- `extraction-provenance.json`: 행동별 추론 범위, 사용 원본과 SHA-256, 비교 포함 여부.
+- `paired-features.npz`, `paired-samples.json`: 같은 순서의 두 방식 특징·라벨·행동 좌표.
+- `models/last_token`, `models/reasoning_mean`: 각각 다시 학습하고 임계값을 고른 모델.
+- `comparison.json`, `comparison.csv`, 방식별 validation 점수: 탐지와 오탐·AUROC·AP 비교.
+
+평균 모델의 `feature_spec.pooling`은 `reasoning_mean`으로 저장되므로 기존 마지막 위치
+snapshot을 `predict()`에 넣으면 거부합니다. 평균 모델을 적용할 때도 같은 구간 정의로 평균한
+특징이 필요합니다. 기존 모델 파일은 pooling 필드가 없어도 `none`으로 읽습니다.
+이 비교는 test activation을 열거나 생성 모델을 재학습하지 않습니다. Hook 탐색 시에는
+manifest 메타데이터만 읽으며, 실제 NPY는 train/validation과 정확히 연결된 원본만 엽니다.
+검증 데이터로 임계값을 정한 결과이며, 새로운 기만 탐지 능력이나 독립적인 test 성능의 증거가
+아닙니다.
