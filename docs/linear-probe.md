@@ -121,3 +121,53 @@ python scripts/predict_probe.py --probe-dir artifacts/probe-block23 --capture-di
 ## 5. 검증 범위
 
 CPU 테스트는 실제 소형 모델 C-01과 M1의 좌표 일치, 인위적 특징의 학습, train 전용 정규화, split·미래 토큰·미검수 라벨·손상 파일 거절, trajectory 오탐률, 재현 가능한 저장/로드와 CLI를 검증합니다. 실제 20B 실행·실제 행동 라벨의 탐지 성능·M1 대비 추가 기여는 아직 별도 실험이 필요합니다.
+
+## 6. `ArgusV_review_progress.json`으로 원격 원본에서 학습
+
+이 파일은 `argus-v.collaborative-label-review-draft.v1` 검수 기록이므로
+`train_probe.py --manifest` 또는 `assemble_probe_dataset.py --reviews`에 직접 넣을 수 없습니다.
+원본 C-01 capture가 있는 컴퓨터에서 아래 실행기를 사용하면 변환·연결·학습을 이어서 수행합니다.
+최신 저장소 루트에서 기존 torch/numpy Python 환경으로 실행합니다. GPU나 생성 모델 로드는 필요 없습니다.
+
+```bash
+python scripts/run_reviewed_probe.py \
+  --reviews ArgusV_review_progress.json \
+  --layers 23 \
+  --epochs 200
+```
+
+기본 원본 위치는 `artifacts/rollouts`와 `argus_hook/artifacts/rollouts`입니다.
+`*/rollout.json`, 각 단계의 `c01-input.json`, `capture/metadata.json`, `capture/features.npz`가 필요합니다.
+기록 JSON만 있거나 Hugging Face Parquet만 받은 상태라면 원래 파일 구조로 복원해야 합니다.
+네트워크 다운로드는 수행하지 않습니다. 다른 원본 경로는 다음처럼 지정합니다.
+
+```bash
+python scripts/run_reviewed_probe.py \
+  --reviews ArgusV_review_progress.json \
+  --rollouts /path/to/original/rollouts \
+  --layers 23 --epochs 200
+```
+
+- `gold_violation`이 0/1이고 직접 확인되었거나 AV-LABEL-012 위임 기준으로 최종 확정된 행동만 사용합니다.
+  `human_confirmed`와 위임 판정의 출처는 구분해서 보관합니다. 제안·규칙 라벨은 정답으로 대체하지 않습니다.
+- 보류와 `quarantined_trajectories`는 모든 split에서 제외합니다. 정상 trajectory 판정은 원본의 모든 행동이
+  확정 정상일 때만 부여하며, 확인되지 않은 행동이 있는 실행을 임의로 정상 처리하지 않습니다.
+- 행동 ID·run/trajectory·step·시나리오·조건·seed·명령을 원본과 대조합니다. 확정 행동의 capture가 없거나
+  원본이 다르면 중단하고 진단을 남깁니다. 원래 family와 `Scenario/scenario-splits.v1.json`을 유지합니다.
+- train으로 정규화·선형층을 학습하고 validation으로 임계값을 선택합니다. 이 실행기는 단계마다 달라지는
+  run ID와 별개로 원래 `trajectory_id`의 모든 단계를 묶어 정상 실행 오탐률을 계산합니다.
+  test capture의 좌표 메타데이터와 파일 존재만 확인하며 test activation은 열지 않습니다.
+
+매번 새 `artifacts/probe-reviewed-<시각>-<ID>/`가 생성됩니다. `--output`으로 새 폴더를 지정할 수도 있습니다.
+기존 결과·원본 파일·검수 JSON은 덮어쓰지 않습니다.
+
+| 결과 | 내용 |
+| --- | --- |
+| `reviews.json`, `dataset/manifest.json` | 확정 라벨의 변환 결과와 검증된 학습 목록 |
+| `review-provenance.json`, `source-diagnostics.json`, `missing-captures.json` | 검수 출처·제외·원본 연결 진단 |
+| `dataset/report.json` | 분할·모델/특징 명세·해시·학습 준비 상태 |
+| `model/model.json`, `model/weights.npz` | 정규화·학습 가중치·임계값·학습 보고서 |
+| `training-summary.json`, `validation-scores.json` | 학습·검증 결과와 저장/로드 점수 일치 확인 |
+
+`model/`이 생성되지 않고 중단했다면 출력 폴더의 진단을 먼저 확인합니다.
+실제 OSS 탐지 성능 검증과 고정 test 평가는 별도이며, 이 명령은 사용자 원본으로 원격에서 실행해야 합니다.
