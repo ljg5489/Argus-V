@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1080" viewBox="0 0 1600 1080" role="img" aria-labelledby="title desc">
+  <title id="title">Argus-V Hidden State Dashboard 아키텍처</title>
+  <desc id="desc">실행기에서 생성한 Hook, rollout, capture, detector 산출물을 단일 Python HTTP 서버가 인덱싱하거나 직접 읽어 브라우저에 제공한다. 검수와 신호 분석은 결과 파일을 기록한다.</desc>
+  <defs>
+    <style>
+      text{font-family:Inter,Arial,"Noto Sans KR",sans-serif;fill:#e8eef8}
+      .title{font-size:31px;font-weight:700}.subtitle{font-size:16px;fill:#a9bbd1}
+      .section{font-size:17px;font-weight:700;fill:#8fc8ff;letter-spacing:1px}
+      .head{font-size:17px;font-weight:700}.body{font-size:13px;fill:#b6c6d8}
+      .tiny{font-size:12px;fill:#9db0c5}.line{fill:none;stroke:#6ba7e4;stroke-width:2.4;marker-end:url(#arrow)}
+      .dash{fill:none;stroke:#6ba7e4;stroke-width:2;stroke-dasharray:7 6;marker-end:url(#arrow)}
+      .write{fill:none;stroke:#e3ae6c;stroke-width:2.2;marker-end:url(#arrowWarm)}
+      .panel{fill:#172539;stroke:#385372;stroke-width:1.5}.blue{fill:#183653;stroke:#5199d7;stroke-width:1.5}
+      .green{fill:#193b39;stroke:#55afa2;stroke-width:1.5}.warm{fill:#3b302c;stroke:#bc8a62;stroke-width:1.5}
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#6ba7e4" stroke-width="1.8"/></marker>
+    <marker id="arrowWarm" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#e3ae6c" stroke-width="1.8"/></marker>
+  </defs>
+  <rect width="1600" height="1080" fill="#0d1726"/>
+  <text x="50" y="57" class="title">Argus-V Hidden State Dashboard</text>
+  <text x="50" y="86" class="subtitle">Research/hidden_state_dashboard.py · 로컬 브라우저 + 단일 Python 프로세스 + 파일 기반 연구 산출물</text>
+
+  <text x="55" y="144" class="section">산출물 생성기</text>
+  <text x="458" y="144" class="section">대시보드 프로세스</text>
+  <text x="1218" y="144" class="section">파일 및 저장소</text>
+
+  <rect x="450" y="166" width="690" height="122" rx="16" class="blue"/>
+  <text x="477" y="202" class="head">브라우저 · PAGE 내장 HTML/CSS/JavaScript</text>
+  <text x="477" y="228" class="body">12개 탭 · fetch 기반 조회/수정 · Hook 목록 3초 폴링</text>
+  <text x="477" y="252" class="body">그래프, 토큰/벡터, 실행 기록, 원본 파일, 검수, 신호 분석</text>
+
+  <rect x="450" y="327" width="690" height="126" rx="16" class="blue"/>
+  <text x="477" y="363" class="head">ThreadingHTTPServer + DashboardHandler</text>
+  <text x="477" y="390" class="body">GET/POST 라우팅 · JSON/HTML/파일 스트리밍</text>
+  <text x="477" y="416" class="body">NumPy 통계/히트맵/PCA/비교 · Sandbox subprocess 연결</text>
+  <path d="M795 288 V327" class="line"/>
+  <text x="811" y="312" class="tiny">HTTP /api/*</text>
+
+  <rect x="54" y="334" width="302" height="111" rx="14" class="panel"/>
+  <text x="76" y="369" class="head">agent_loop / scenario_rollout</text>
+  <text x="76" y="394" class="body">HookInspection · 생성 시점 기록</text>
+  <text x="76" y="417" class="body">C-01 capture · step/rollout 기록</text>
+
+  <rect x="54" y="488" width="302" height="101" rx="14" class="panel"/>
+  <text x="76" y="523" class="head">M1 / Probe 탐지기</text>
+  <text x="76" y="548" class="body">위험 점수 · alarm 결과 JSON</text>
+
+  <rect x="54" y="632" width="302" height="112" rx="14" class="panel"/>
+  <text x="76" y="667" class="head">SANDBOX / FakeNet</text>
+  <text x="76" y="692" class="body">격리 파일 조회 · import · 웹 라우트</text>
+  <text x="76" y="715" class="body">설정 편집 · 미리보기 · 채팅 API</text>
+
+  <text x="460" y="492" class="section">조회 · 분석 서비스</text>
+  <rect x="450" y="512" width="330" height="112" rx="13" class="green"/>
+  <text x="472" y="545" class="head">ArtifactIndex</text>
+  <text x="472" y="568" class="body">Hook JSONL 증분 인덱싱</text>
+  <text x="472" y="591" class="body">세션/레코드/탐지 결과 조회</text>
+  <rect x="810" y="512" width="330" height="112" rx="13" class="green"/>
+  <text x="832" y="545" class="head">RolloutIndex</text>
+  <text x="832" y="568" class="body">rollout/step 상세·transcript</text>
+  <text x="832" y="591" class="body">시나리오 은닉 상태 추세</text>
+
+  <rect x="450" y="646" width="330" height="112" rx="13" class="green"/>
+  <text x="472" y="679" class="head">CaptureIndex + RawDataIndex</text>
+  <text x="472" y="702" class="body">C-01 벡터/토큰 · 원본 파일</text>
+  <text x="472" y="725" class="body">미리보기 · tar 다운로드</text>
+  <rect x="810" y="646" width="330" height="112" rx="13" class="green"/>
+  <text x="832" y="679" class="head">LogitLens</text>
+  <text x="832" y="702" class="body">최종 norm + lm_head 투영</text>
+  <text x="832" y="725" class="body">토큰별 어휘 logit/순위</text>
+
+  <rect x="450" y="780" width="330" height="112" rx="13" class="green"/>
+  <text x="472" y="813" class="head">ReviewDesk</text>
+  <text x="472" y="836" class="body">검수 큐 · 투표 · PCA · 내보내기</text>
+  <text x="472" y="859" class="body">argus_v.probes.review 사용</text>
+  <rect x="810" y="780" width="330" height="112" rx="13" class="green"/>
+  <text x="832" y="813" class="head">SignalDesk</text>
+  <text x="832" y="836" class="body">라벨 표 · 신호 스캔 작업</text>
+  <text x="832" y="859" class="body">argus_v.probes.analysis 사용</text>
+
+  <rect x="1210" y="332" width="336" height="118" rx="14" class="warm"/>
+  <text x="1232" y="367" class="head">tensor_data/</text>
+  <text x="1232" y="392" class="body">hook_inspection/manifest.json</text>
+  <text x="1232" y="415" class="body">records.jsonl + 원본 .npy</text>
+  <rect x="1210" y="476" width="336" height="108" rx="14" class="warm"/>
+  <text x="1232" y="511" class="head">Research/hook_research.sqlite3</text>
+  <text x="1232" y="536" class="body">sessions · records · detector_results</text>
+  <text x="1232" y="559" class="body">ingest_errors · WAL · 읽기용 색인</text>
+  <rect x="1210" y="610" width="336" height="113" rx="14" class="warm"/>
+  <text x="1232" y="645" class="head">artifacts/</text>
+  <text x="1232" y="670" class="body">rollouts/ · capture metadata/.npz</text>
+  <text x="1232" y="693" class="body">M1/Probe 탐지 JSON</text>
+  <rect x="1210" y="750" width="336" height="111" rx="14" class="warm"/>
+  <text x="1232" y="785" class="head">검수 · 분석 출력</text>
+  <text x="1232" y="810" class="body">probe-reviews/review-log.jsonl</text>
+  <text x="1232" y="833" class="body">probe-analysis/analysis-*/</text>
+  <rect x="1210" y="888" width="336" height="112" rx="14" class="warm"/>
+  <text x="1232" y="923" class="head">모델 · Sandbox 설정</text>
+  <text x="1232" y="948" class="body">gpt-oss-20b/ 가중치 · tokenizer</text>
+  <text x="1232" y="971" class="body">SANDBOX/fakenet/routes.json · sites/</text>
+
+  <path d="M356 389 H402 V305 H1174 V390 H1210" class="write"/>
+  <text x="1088" y="297" class="tiny">Hook 파일 기록</text>
+  <path d="M356 538 H400 V637 H1184 V668 H1210" class="write"/>
+  <path d="M780 608 V633 H1188 V530 H1210" class="dash"/>
+  <text x="1048" y="626" class="tiny">SQLite 색인 저장</text>
+  <path d="M1124 453 V474 H975 V512" class="line"/>
+  <path d="M795 453 V474 H615 V512" class="line"/>
+  <path d="M795 453 V635 H615 V646" class="line"/>
+  <path d="M795 453 V635 H975 V646" class="line"/>
+  <path d="M795 453 V769 H615 V780" class="line"/>
+  <path d="M795 453 V769 H975 V780" class="line"/>
+  <path d="M356 690 H406 V941 H450" class="dash"/>
+  <text x="459" y="946" class="body">Sandbox API 어댑터 · DashboardHandler 내부</text>
+  <path d="M1210 450 H1168 V465 H794 V496 H615 V512" class="dash"/>
+  <path d="M1140 567 H1198 V670 H1210" class="dash"/>
+  <path d="M780 744 V767 H1178 V697 H1210" class="dash"/>
+  <path d="M1140 710 H1186 V930 H1210" class="dash"/>
+  <path d="M780 874 V906 H1188 V810 H1210" class="write"/>
+  <path d="M1140 836 H1192 V839 H1210" class="write"/>
+  <path d="M795 916 H1180 V972 H1210" class="dash"/>
+  <rect x="54" y="1007" width="1492" height="51" rx="10" fill="#15263b"/>
+  <text x="78" y="1039" class="body">범례  <tspan fill="#6ba7e4">→</tspan> 요청/읽기  <tspan fill="#e3ae6c">→</tspan> 파일 기록  ·  점선: 주기 동기화, 직접 파일 읽기 또는 subprocess 연결</text>
+</svg>
