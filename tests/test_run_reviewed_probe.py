@@ -210,3 +210,36 @@ def test_partial_normal_trajectory_cannot_be_declared_compliant(sources):  # noq
         and row["status"] == "trajectory_not_fully_reviewed"
         for row in provenance["excluded"]
     )
+
+
+@pytest.mark.parametrize("completion_field", ["finished_at", "report"])
+def test_unfinished_trajectory_is_excluded_without_editing_source(sources, completion_field):  # noqa: F811
+    path, samples = prepare(sources)
+    case = sources["cases"][-1]
+    rollout = json.loads(case["rollout"].read_text())
+    rollout.pop(completion_field)
+    # A partially persisted run can contain a reviewed action not yet indexed in
+    # its step list. The entire trajectory must still be excluded.
+    samples.append({**samples[-1], "action_id": "trajectory-4:1", "step_index": 1})
+    path.write_text(
+        json.dumps(
+            {"schema_version": "argus-v.collaborative-label-review-draft.v1", "samples": samples}
+        )
+    )
+    case["rollout"].write_text(json.dumps(rollout))
+    original = case["rollout"].read_bytes()
+    labels_original = path.read_bytes()
+    output = sources["root"] / "unfinished"
+    summary = runner.run(
+        sources["root"], path, output, [sources["rollouts"]], layers=(1,), epochs=3
+    )
+    assert summary["training_report"]["exclusion_counts_by_reason"]["unfinished_rollout"] == 2
+    assert summary["train_count"] == summary["validation_count"] == 2
+    assert case["rollout"].read_bytes() == original
+    assert path.read_bytes() == labels_original
+    assert json.loads((output / "missing-captures.json").read_text()) == []
+    provenance = json.loads((output / "review-provenance.json").read_text())
+    assert provenance["joined_actions"] == 4
+    assert provenance["unfinished_rollouts"][0]["missing_completion_fields"] == [completion_field]
+    manifest = json.loads((output / "dataset/manifest.json").read_text())
+    assert not any(row["trajectory_id"] == "trajectory-4" for row in manifest["samples"])

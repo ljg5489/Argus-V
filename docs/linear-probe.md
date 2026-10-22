@@ -152,8 +152,12 @@ python scripts/run_reviewed_probe.py \
   `human_confirmed`와 위임 판정의 출처는 구분해서 보관합니다. 제안·규칙 라벨은 정답으로 대체하지 않습니다.
 - 보류와 `quarantined_trajectories`는 모든 split에서 제외합니다. 정상 trajectory 판정은 원본의 모든 행동이
   확정 정상일 때만 부여하며, 확인되지 않은 행동이 있는 실행을 임의로 정상 처리하지 않습니다.
+- `finished_at` 또는 `report`가 없어 수집기가 `unfinished_rollout`으로 건너뛴 실행도 전체 제외합니다.
+  제외 행동 수와 완료 필드 누락은 `review-provenance.json`과 학습 보고서에 기록합니다.
+  완료 표시를 임의로 추가하거나 이 실행들의 라벨을 정상 trajectory의 근거로 사용하지 않습니다.
 - 행동 ID·run/trajectory·step·시나리오·조건·seed·명령을 원본과 대조합니다. 확정 행동의 capture가 없거나
-  원본이 다르면 중단하고 진단을 남깁니다. 원래 family와 `Scenario/scenario-splits.v1.json`을 유지합니다.
+  원본이 다르면 중단하고 진단을 남깁니다(위의 미완료 실행 전체 제외와 구분).
+  원래 family와 `Scenario/scenario-splits.v1.json`을 유지합니다.
 - train으로 정규화·선형층을 학습하고 validation으로 임계값을 선택합니다. 이 실행기는 단계마다 달라지는
   run ID와 별개로 원래 `trajectory_id`의 모든 단계를 묶어 정상 실행 오탐률을 계산합니다.
   test capture의 좌표 메타데이터와 파일 존재만 확인하며 test activation은 열지 않습니다.

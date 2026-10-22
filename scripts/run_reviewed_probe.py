@@ -79,7 +79,7 @@ def run(root, review_file, output, rollout_roots, layers=(23,), epochs=200):
         if any(source["kind"] == "rollout" for source in candidate["sources"]):
             candidates[candidate["action_id"]].append(candidate)
 
-    by_trajectory, source_steps, used_paths = {}, {}, set()
+    by_trajectory, source_steps, used_paths, rollout_files = {}, {}, set(), {}
     for directory in rollout_roots:
         for path in sorted(Path(directory).glob("*/rollout.json")):
             path = path.resolve()
@@ -93,12 +93,29 @@ def run(root, review_file, output, rollout_roots, layers=(23,), epochs=200):
                     raise ValueError("Conflicting rollout copies: " + str(trajectory))
                 continue
             by_trajectory[trajectory] = rollout
+            rollout_files[trajectory] = str(path)
             for step in rollout.get("steps", []):
                 action = step.get("action_id")
                 if action:
                     if action in source_steps:
                         raise ValueError("Duplicate source action: " + action)
                     source_steps[action] = (rollout, step)
+
+    # SourceAssembler intentionally does not index captures from unfinished runs.
+    # Exclude the whole run instead of misreporting its labels as missing tensors.
+    unfinished = {
+        trajectory: {
+            "trajectory_id": trajectory,
+            "path": rollout_files[trajectory],
+            "missing_completion_fields": [
+                field
+                for field in ("finished_at", "report")
+                if (not rollout.get(field) if field == "finished_at" else field not in rollout)
+            ],
+        }
+        for trajectory, rollout in by_trajectory.items()
+        if not rollout.get("finished_at") or "report" not in rollout
+    }
 
     # A normal label requires every original action to be confirmed normal.
     trajectory_labels = {}
@@ -115,6 +132,15 @@ def run(root, review_file, output, rollout_roots, layers=(23,), epochs=200):
 
     reviews, missing = [], []
     for action, row in accepted.items():
+        if row["trajectory_id"] in unfinished:
+            excluded.append(
+                {
+                    "action_id": action,
+                    "status": "unfinished_rollout",
+                    **unfinished[row["trajectory_id"]],
+                }
+            )
+            continue
         matches = candidates.get(action, [])
         if len(matches) != 1 or action not in source_steps:
             missing.append({"action_id": action, "capture_matches": len(matches)})
@@ -154,6 +180,13 @@ def run(root, review_file, output, rollout_roots, layers=(23,), epochs=200):
             }
         )
     write(output / "missing-captures.json", missing)
+    exclusion_counts = dict(Counter(row["status"] for row in excluded))
+    if exclusion_counts.get("unfinished_rollout"):
+        print(
+            f"Excluded {exclusion_counts['unfinished_rollout']} confirmed action(s) "
+            "from unfinished rollouts; see review-provenance.json",
+            flush=True,
+        )
     write(
         output / "review-provenance.json",
         {
@@ -167,7 +200,9 @@ def run(root, review_file, output, rollout_roots, layers=(23,), epochs=200):
                 r.get("human_confirmed") is not True for r in accepted.values()
             ),
             "quarantined_trajectories": sorted(quarantine),
+            "unfinished_rollouts": list(unfinished.values()),
             "excluded": excluded,
+            "exclusion_counts_by_reason": exclusion_counts,
             "missing_captures": len(missing),
             "joined_actions": len(reviews),
         },
@@ -229,6 +264,7 @@ def run(root, review_file, output, rollout_roots, layers=(23,), epochs=200):
         "normal_trajectory_grouping": "original trajectory_id (all steps together)",
         "alarms_disabled": threshold > 1,
         "review_progress_sha256": label_hash,
+        "exclusion_counts_by_reason": exclusion_counts,
     }
     probe = replace(probe, threshold=threshold, training_report=training_report)
     save_probe(probe, output / "model")
