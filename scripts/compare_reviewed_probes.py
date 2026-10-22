@@ -33,6 +33,41 @@ def rank(row):
     )
 
 
+def discover_layers(manifest):
+    """Require the same full capture layout on every train/validation snapshot."""
+    from argus_v.probes.data import read_manifest
+
+    document = read_manifest(manifest)
+    expected = None
+    seen = set()
+    for record in document["samples"]:
+        if record["split"] not in ("train", "validation"):
+            continue
+        path = (manifest.parent / record["capture_dir"] / "metadata.json").resolve()
+        if path in seen:
+            continue
+        seen.add(path)
+        metadata = json.loads(path.read_text(encoding="utf-8"))
+        indexes = [block["layer_index"] for block in metadata["blocks"]]
+        if (
+            not indexes
+            or len(set(indexes)) != len(indexes)
+            or any(type(index) is not int or index < 0 for index in indexes)
+        ):
+            raise ValueError(f"Invalid captured layer indexes: {path}")
+        captured = tuple(sorted(indexes))
+        if expected is None:
+            expected = captured
+        elif captured != expected:
+            raise ValueError(
+                "All-layers comparison requires the same captured layers on every "
+                f"train/validation snapshot: expected {expected}, found {captured}: {path}"
+            )
+    if expected is None:
+        raise ValueError("No train/validation capture metadata available for layer discovery")
+    return expected
+
+
 def compare(root, run_dir, output, layers=(0, 11, 23), weight_decays=(0.001, 0.01, 0.1, 1, 10)):
     sys.path.insert(0, str(root / "src"))
     import numpy as np
@@ -43,12 +78,6 @@ def compare(root, run_dir, output, layers=(0, 11, 23), weight_decays=(0.001, 0.0
     from argus_v.probes.data import file_sha256
     from argus_v.probes.linear import select_threshold
 
-    if (
-        not layers
-        or len(set(layers)) != len(layers)
-        or any(type(layer) is not int or layer < 0 for layer in layers)
-    ):
-        raise ValueError("layers must be distinct nonnegative integers")
     if not weight_decays or len(set(weight_decays)) != len(weight_decays):
         raise ValueError("weight decays must be a nonempty distinct list")
     baseline = load_probe(run_dir / "model")
@@ -58,6 +87,15 @@ def compare(root, run_dir, output, layers=(0, 11, 23), weight_decays=(0.001, 0.0
     manifest = run_dir / "dataset/manifest.json"
     if file_sha256(manifest) != baseline.training_report["manifest_sha256"]:
         raise ValueError("Source manifest changed since the original training run")
+    layer_mode = "all_captured" if layers is None else "explicit"
+    if layers is None:
+        layers = discover_layers(manifest)
+    if (
+        not layers
+        or len(set(layers)) != len(layers)
+        or any(type(layer) is not int or layer < 0 for layer in layers)
+    ):
+        raise ValueError("layers must be distinct nonnegative integers")
     output.mkdir(parents=True, exist_ok=False)
     torch.set_num_threads(1)
     expected = {
@@ -76,6 +114,7 @@ def compare(root, run_dir, output, layers=(0, 11, 23), weight_decays=(0.001, 0.0
             "source_manifest": str(manifest),
             "manifest_sha256": file_sha256(manifest),
             "layers": list(layers),
+            "layer_mode": layer_mode,
             "weight_decays": list(weight_decays),
             "base_training_config": asdict(base_config),
             "selection_rule": selection_rule,
@@ -84,6 +123,11 @@ def compare(root, run_dir, output, layers=(0, 11, 23), weight_decays=(0.001, 0.0
         },
     )
     print(f"Output: {output}", flush=True)
+    print(
+        f"Comparing {len(layers)} layer(s) × {len(weight_decays)} strengths = "
+        f"{len(layers) * len(weight_decays)} configurations",
+        flush=True,
+    )
     for layer in layers:
         print(f"Loading layer {layer}: train/validation only...", flush=True)
         views = {
@@ -182,6 +226,11 @@ def compare(root, run_dir, output, layers=(0, 11, 23), weight_decays=(0.001, 0.0
         # Write a checkpoint before moving to the next layer.
         save_json(output / f"L{layer:02d}-results.json", {"results": rows, "failed": failed})
     selected = max(rows, key=rank) if rows else None
+    best_by_layer = [
+        max((row for row in rows if row["layer"] == layer), key=rank)
+        for layer in layers
+        if any(row["layer"] == layer for row in rows)
+    ]
     status = (
         "all_candidates_failed"
         if selected is None
@@ -195,6 +244,9 @@ def compare(root, run_dir, output, layers=(0, 11, 23), weight_decays=(0.001, 0.0
         "selected_candidate": selected,
         "selection_rule": selection_rule,
         "source_run": str(run_dir),
+        "layers": list(layers),
+        "layer_mode": layer_mode,
+        "best_by_layer": best_by_layer,
         "manifest_sha256": file_sha256(manifest),
         "sample_counts": {split: len(views[split].labels) for split in ("train", "validation")},
         "label_counts": {
@@ -212,14 +264,23 @@ def compare(root, run_dir, output, layers=(0, 11, 23), weight_decays=(0.001, 0.0
         ),
     }
     save_json(output / "comparison.json", summary)
+    save_json(output / "layer-summary.json", best_by_layer)
     if rows:
         with (output / "comparison.csv").open("x", encoding="utf-8", newline="") as handle:
             writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
             writer.writeheader()
             writer.writerows(sorted(rows, key=rank, reverse=True))
+        with (output / "layer-summary.csv").open("x", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+            writer.writeheader()
+            writer.writerows(best_by_layer)
     print(
         json.dumps(
-            {key: value for key, value in summary.items() if key != "results"},
+            {
+                key: value
+                for key, value in summary.items()
+                if key not in ("results", "best_by_layer")
+            },
             ensure_ascii=False,
             indent=2,
         )
@@ -231,7 +292,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-root", type=Path, default=Path.cwd())
     parser.add_argument("--run-dir", type=Path, required=True)
-    parser.add_argument("--layers", type=int, nargs="+", default=[0, 11, 23])
+    layer_group = parser.add_mutually_exclusive_group()
+    layer_group.add_argument(
+        "--layers", type=int, nargs="+", help="single-layer indexes; default: 0 11 23"
+    )
+    layer_group.add_argument(
+        "--all-layers",
+        action="store_true",
+        help="discover all layers from train/validation capture metadata only",
+    )
     parser.add_argument("--weight-decays", type=float, nargs="+", default=[0.001, 0.01, 0.1, 1, 10])
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
@@ -241,7 +310,8 @@ def main():
         args.output or root / "artifacts" / f"probe-comparison-{stamp}-{uuid4().hex[:6]}"
     ).resolve()
     try:
-        compare(root, args.run_dir.resolve(), output, tuple(args.layers), tuple(args.weight_decays))
+        layers = None if args.all_layers else tuple(args.layers or (0, 11, 23))
+        compare(root, args.run_dir.resolve(), output, layers, tuple(args.weight_decays))
     except (OSError, ValueError, KeyError, TypeError) as error:
         parser.exit(2, f"Comparison stopped: {error}\nOutput: {output}\n")
 

@@ -76,3 +76,36 @@ def test_selection_prioritizes_detection_under_the_fixed_budget():
     b = {**a, "validation_recall": 0.25, "validation_average_precision": 0.9}
     assert comparison.rank(a) > comparison.rank(b)
     assert comparison.rank({**a, "validation_average_precision": 0.2}) > comparison.rank(a)
+
+
+def test_all_layers_uses_train_validation_metadata_only(sources):  # noqa: F811
+    path, _ = prepare(sources)
+    original = sources["root"] / "original"
+    runner.run(sources["root"], path, original, [sources["rollouts"]], layers=(1,), epochs=3)
+    test_capture = sources["cases"][-1]["capture"]
+    (test_capture / "metadata.json").write_text("sealed test metadata")
+    (test_capture / "features.npz").write_bytes(b"sealed test vectors")
+    output = sources["root"] / "all-layers"
+    result = comparison.compare(ROOT, original, output, layers=None, weight_decays=(1,))
+    assert result["layers"] == [0, 1]
+    assert result["layer_mode"] == "all_captured"
+    assert result["successful_configurations"] == 2
+    assert not result["test_features_opened"]
+    assert [row["layer"] for row in result["best_by_layer"]] == [0, 1]
+    assert json.loads((output / "plan.json").read_text())["layers"] == [0, 1]
+    assert (output / "layer-summary.csv").is_file()
+    assert len(json.loads((output / "layer-summary.json").read_text())) == 2
+
+
+def test_all_layers_rejects_mixed_capture_layouts(sources):  # noqa: F811
+    path, _ = prepare(sources)
+    original = sources["root"] / "original"
+    runner.run(sources["root"], path, original, [sources["rollouts"]], layers=(1,), epochs=3)
+    metadata_path = sources["cases"][2]["capture"] / "metadata.json"
+    metadata = json.loads(metadata_path.read_text())
+    metadata["blocks"] = [block for block in metadata["blocks"] if block["layer_index"] == 1]
+    metadata_path.write_text(json.dumps(metadata))
+    output = sources["root"] / "mixed-layers"
+    with pytest.raises(ValueError, match="same captured layers"):
+        comparison.compare(ROOT, original, output, layers=None, weight_decays=(1,))
+    assert not output.exists()

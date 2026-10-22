@@ -211,6 +211,25 @@ python scripts/compare_reviewed_probes.py --run-dir artifacts/probe-reviewed-<�
 모든 조합은 동일한 train/validation snapshot·라벨·관측 위치를 사용합니다.
 레이어가 없는 표본을 임의로 빼거나 라벨·기존 제외 결정을 바꾸지 않으며, test activation은 열지 않습니다.
 
+전체 레이어를 각각 비교하려면 `--all-layers`를 추가합니다.
+
+```bash
+python scripts/compare_reviewed_probes.py --run-dir artifacts/probe-reviewed-<실행-ID> --all-layers
+```
+
+train/validation의 capture 메타데이터에서 레이어 목록을 확인합니다. gpt-oss-20b의 24블록을
+모두 저장했다면 **0~23번 × 규제 강도 5개 = 120개 조합**입니다. 레이어마다 별도의 선형 모델을
+학습하며, 전체 레이어를 하나의 벡터로 연결하는 방식은 아닙니다.
+모든 train/validation capture의 레이어 구성이 같아야 하며, 서로 다르면 명시적으로 중단합니다.
+이 과정에서도 test capture 메타데이터와 activation은 열지 않습니다.
+선택 범위가 커질수록 validation 최고 성능이 우연히 높아질 수 있으므로 최종 검증과 구분합니다.
+
+규제 강도 1로 고정하고 전체 레이어만 먼저 보려면 다음처럼 실행합니다.
+
+```bash
+python scripts/compare_reviewed_probes.py --run-dir artifacts/probe-reviewed-<실행-ID> --all-layers --weight-decays 1
+```
+
 선택 순서는 비교 전에 고정됩니다: 같은 정상 trajectory 오탐 예산에서 검증 snapshot recall이
 가장 높은 구성, 동률이면 검증 average precision, 낮은 오탐률, 강한 규제, 낮은 레이어 번호 순서입니다.
 검증 데이터로 선택한 결과이므로 새로운 test 성능이 입증된 것은 아닙니다.
@@ -221,6 +240,7 @@ python scripts/compare_reviewed_probes.py --run-dir artifacts/probe-reviewed-<�
 - `plan.json`: 기존 manifest 해시·비교 설정·선택 기준.
 - `comparison.csv`: 모든 성공 구성의 학습/검증 AUROC·검증 AP·탐지율·오탐률·임계값.
 - `comparison.json`: 선택된 후보 경로, 전체 결과, 실패 구성, 기존 표본·라벨 수.
+- `layer-summary.csv`, `layer-summary.json`: 각 레이어에서 선택 기준이 가장 높은 구성 한 개씩.
 - `models/`: 각 구성의 저장/로드 점수 일치를 확인한 모델.
 - 구성별 validation 점수와 레이어별 중간 결과.
 
