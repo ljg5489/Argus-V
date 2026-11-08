@@ -1,5 +1,7 @@
 # 반복 12 — 4090 PC rollout 인계서 (새 v2 시나리오 20개 + v1 재실행 72개)
 
+> **캡처 설정 변경 (2026-11-09, 사용자 결정 A안)**: 모든 rollout 명령에 `--observe-every 8`을 넣었다(층은 기본값 `--layers all` = 24개 전부). 추론 8토큰마다 관측하므로 저장량은 기존(32토큰) 대비 약 **3.1배**(새 v2 약 7~8GB → 약 22~25GB, v1 재실행 약 1.2GB → 약 3.7GB, 압축 전). 8토큰 격자는 32토큰 격자를 포함하므로 기존 10월·11월 데이터와 호환된다. 근거: `iter-13/debate/r1-systems.md`. 업로드 시간도 약 3배로 잡는다. 관측 간격은 rollout.json의 `observe_every`에 기록된다.
+
 작성 2026-11-09. 근거 계획: 같은 폴더 `data_plan.md`(사용자 승인 2026-11-08 "그대로 작성 시작"). 이 PC에서는 시나리오 파일 작성과 CPU 검증만 했다. **rollout, gpt-oss 로드, GPU 사용, HF 쓰기, 기존 파일 수정·삭제, git 커밋은 하지 않았다.**
 
 ## 0. 한눈에
@@ -114,17 +116,17 @@ cd Scenario && python3 -m scenario_suite.v2 lint --ids $NEW && python3 -m scenar
 먼저 계획만 출력해 개수를 확인한다(모델을 올리지 않음).
 
 ```bash
-python argus_hook/scenario_rollout.py plan --harness v2 --scenarios $NEW --conditions pilotD --seeds 6 --settings $S --output artifacts/rollouts-v2 --dry-run | head -1
+python argus_hook/scenario_rollout.py plan --harness v2 --observe-every 8 --scenarios $NEW --conditions pilotD --seeds 6 --settings $S --output artifacts/rollouts-v2 --dry-run | head -1
 #   [plan] 120 rollouts to run (... already finished in artifacts/rollouts-v2)
-python argus_hook/scenario_rollout.py plan --harness v2 --scenarios $NEW --conditions pilotX --seeds 2 --settings $S --output artifacts/rollouts-v2 --dry-run | head -1
+python argus_hook/scenario_rollout.py plan --harness v2 --observe-every 8 --scenarios $NEW --conditions pilotX --seeds 2 --settings $S --output artifacts/rollouts-v2 --dry-run | head -1
 #   [plan] 40 rollouts to run
 ```
 
 실행:
 
 ```bash
-python argus_hook/scenario_rollout.py plan --harness v2 --scenarios $NEW --conditions pilotD --seeds 6 --settings $S --output artifacts/rollouts-v2 --yes
-python argus_hook/scenario_rollout.py plan --harness v2 --scenarios $NEW --conditions pilotX --seeds 2 --settings $S --output artifacts/rollouts-v2 --yes
+python argus_hook/scenario_rollout.py plan --harness v2 --observe-every 8 --scenarios $NEW --conditions pilotD --seeds 6 --settings $S --output artifacts/rollouts-v2 --yes
+python argus_hook/scenario_rollout.py plan --harness v2 --observe-every 8 --scenarios $NEW --conditions pilotX --seeds 2 --settings $S --output artifacts/rollouts-v2 --yes
 ```
 
 v1 상위 8개 재실행(seed 3·4·5만, 72개). `plan --seeds N`은 seed 0..N-1을 만들기 때문에(`build_plan`) seed 3~5만 고르도록 아래처럼 한 프로세스에서 돌린다. 모델을 한 번만 올린다(권장).
@@ -135,11 +137,11 @@ import sys; sys.path.insert(0, 'argus_hook'); import scenario_rollout as r
 base = r.build_plan
 r.build_plan = lambda spec, conditions, seeds: [item for item in base(spec, conditions, seeds) if item[2] >= 3]
 sys.exit(r.main(sys.argv[1:]))
-" plan --harness v2 --scenarios AV-S55,AV-S27,AV-S10,AV-S59,AV-S07,AV-S36,AV-S01,AV-S31 --conditions C0,C1,C2 --seeds 6 --output artifacts/rollouts-dec-v1 --yes
+" plan --harness v2 --observe-every 8 --scenarios AV-S55,AV-S27,AV-S10,AV-S59,AV-S07,AV-S36,AV-S01,AV-S31 --conditions C0,C1,C2 --seeds 6 --output artifacts/rollouts-dec-v1 --yes
 ```
 
 - 먼저 끝의 `--yes`를 `--dry-run`으로 바꿔 돌리면 `[plan] 72 rollouts to run`과 `AV-S55/C0 seed 3`… 목록이 나와야 한다(이 PC에서 확인함).
-- 대안(data_plan.md §4.2 그대로): `for s in AV-S55 AV-S27 AV-S10 AV-S59 AV-S07 AV-S36 AV-S01 AV-S31; do for c in C0 C1 C2; do for k in 3 4 5; do python argus_hook/scenario_rollout.py run --harness v2 --scenario $s --condition $c --seed $k --output artifacts/rollouts-dec-v1 --yes; done; done; done` — 결과는 같지만 rollout마다 모델을 다시 올려서 72번 로드 시간이 더 든다.
+- 대안(data_plan.md §4.2 그대로): `for s in AV-S55 AV-S27 AV-S10 AV-S59 AV-S07 AV-S36 AV-S01 AV-S31; do for c in C0 C1 C2; do for k in 3 4 5; do python argus_hook/scenario_rollout.py run --harness v2 --observe-every 8 --scenario $s --condition $c --seed $k --output artifacts/rollouts-dec-v1 --yes; done; done; done` — 결과는 같지만 rollout마다 모델을 다시 올려서 72번 로드 시간이 더 든다.
 - v1 재실행은 기본 설정 파일(`Scenario/rollout/settings.json`, 하네스 v2 기본 max_steps 20)로 돈다. 11월 v1 재실행이 어떤 설정이었는지는 **확인 못 함**.
 
 기대 출력: `artifacts/rollouts-v2/` 아래 rollout 폴더 160개, `artifacts/rollouts-dec-v1/` 아래 72개. 폴더마다 `rollout.json`, `transcript.md`, `steps/step_NNN/capture/features.npz`(24개 층). 중간에 끊겨도 같은 명령을 다시 돌리면 끝난 (시나리오/셀, seed)는 건너뛴다(`completed_rollouts`).
@@ -190,9 +192,9 @@ PASSED=AVv2-F03-OPS-03,...
 
 ```bash
 PASSED=<pilot_check.py 마지막 줄의 PASSED= 값>
-python argus_hook/scenario_rollout.py plan --harness v2 --scenarios $PASSED --conditions cell1,cell2,cell3,cell4,cell5,cell6 --seeds 2 --settings $S --output artifacts/rollouts-v2 --dry-run | head -1
+python argus_hook/scenario_rollout.py plan --harness v2 --observe-every 8 --scenarios $PASSED --conditions cell1,cell2,cell3,cell4,cell5,cell6 --seeds 2 --settings $S --output artifacts/rollouts-v2 --dry-run | head -1
 #   [plan] <12 × 통과 수> rollouts to run   (20개 모두 통과면 240)
-python argus_hook/scenario_rollout.py plan --harness v2 --scenarios $PASSED --conditions cell1,cell2,cell3,cell4,cell5,cell6 --seeds 2 --settings $S --output artifacts/rollouts-v2 --yes
+python argus_hook/scenario_rollout.py plan --harness v2 --observe-every 8 --scenarios $PASSED --conditions cell1,cell2,cell3,cell4,cell5,cell6 --seeds 2 --settings $S --output artifacts/rollouts-v2 --yes
 python scripts/upload_raw_data_to_hf.py --source scenario_rollout --rollouts artifacts/rollouts-v2 --yes
 ```
 
