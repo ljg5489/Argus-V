@@ -1,0 +1,657 @@
+{
+ "iteration": 1,
+ "evaluator": "independent recompute",
+ "evaluate_sha256": "924facf31f68d15b4c16cc3b03b8db168ca8cea34406cfbb9c40a42c1a502882",
+ "validation_touched": false,
+ "test_touched": false,
+ "rows": {
+  "filter": "iter01_common.headline_filter",
+  "train_rows": 9278,
+  "positives": 79
+ },
+ "candidate": "H1-2r-L23-max",
+ "recomputed": {
+  "within_tool": 0.657171034094111,
+  "per_seed": [
+   0.6415539588616512,
+   0.6738095238095239,
+   0.656149619611158
+  ],
+  "by_source": {
+   "oct": 0.6362519612038225,
+   "nov": 0.5436507936507936
+  },
+  "ci95": {
+   "ci_low": 0.4686554601209774,
+   "ci_high": 0.7662112850478527,
+   "n_valid": 2000,
+   "reps": 2000,
+   "seed": 0
+  },
+  "pooled_auroc": 0.8184124306301869,
+  "shuffle_source_mean": 0.5516753545599701,
+  "shuffle_source_family_mean": 0.633868695407157,
+  "shuffle_family_margin": 0.023302338686954083,
+  "per_tool": [
+   {
+    "tool": "bash",
+    "positives": 5,
+    "auroc": 0.812991452991453
+   },
+   {
+    "tool": "classify_requests",
+    "positives": 4,
+    "auroc": 0.2916666666666667
+   },
+   {
+    "tool": "deliver_approved_report",
+    "positives": 4,
+    "auroc": 0.8055555555555555
+   },
+   {
+    "tool": "fetch_replacement_reviewer",
+    "positives": 3,
+    "auroc": 0.7777777777777778
+   },
+   {
+    "tool": "grant_review_access",
+    "positives": 9,
+    "auroc": 0.8465608465608465
+   },
+   {
+    "tool": "issue_payment",
+    "positives": 3,
+    "auroc": 0.8518518518518517
+   },
+   {
+    "tool": "record_independent_review",
+    "positives": 4,
+    "auroc": 0.9166666666666666
+   },
+   {
+    "tool": "run_aggregation",
+    "positives": 7,
+    "auroc": 0.5142857142857142
+   },
+   {
+    "tool": "run_program",
+    "positives": 6,
+    "auroc": 0.3425925925925926
+   },
+   {
+    "tool": "select_model",
+    "positives": 7,
+    "auroc": 0.5555555555555555
+   }
+  ]
+ },
+ "researcher_reported": {
+  "within_tool": 0.657171034094111,
+  "per_seed": [
+   0.6415539588616512,
+   0.6738095238095239,
+   0.656149619611158
+  ],
+  "by_source": {
+   "oct": 0.6362519612038225,
+   "nov": 0.5436507936507936
+  },
+  "ci95": {
+   "ci_low": 0.4686554601209774,
+   "ci_high": 0.7662112850478527,
+   "n_valid": 2000,
+   "reps": 2000,
+   "seed": 0
+  }
+ },
+ "max_abs_mismatch": 0.0,
+ "mismatch_flag_gt_0.005": false,
+ "source_shortcut_check_oct_only": {
+  "C1": {
+   "bash|oct": {
+    "n": 46,
+    "pos": 5
+   },
+   "bash|nov": {
+    "n": 154,
+    "pos": 0
+   },
+   "bash": {
+    "oct_only_per_seed": [
+     0.6,
+     0.32682926829268294,
+     0.6780487804878049
+    ],
+    "all_sources_per_seed": [
+     0.8502564102564103,
+     0.72,
+     0.8687179487179486
+    ]
+   },
+   "grant_review_access|oct": {
+    "n": 17,
+    "pos": 9
+   },
+   "grant_review_access|nov": {
+    "n": 20,
+    "pos": 0
+   },
+   "grant_review_access": {
+    "oct_only_per_seed": [
+     0.7361111111111112,
+     0.7361111111111112,
+     0.7361111111111112
+    ],
+    "all_sources_per_seed": [
+     0.8214285714285714,
+     0.8968253968253967,
+     0.8214285714285714
+    ]
+   }
+  },
+  "H1-0a": {
+   "bash|oct": {
+    "n": 46,
+    "pos": 5
+   },
+   "bash|nov": {
+    "n": 154,
+    "pos": 0
+   },
+   "bash": {
+    "oct_only_per_seed": [
+     0.975609756097561,
+     0.8878048780487806,
+     0.9365853658536587
+    ],
+    "all_sources_per_seed": [
+     0.9948717948717949,
+     0.9764102564102564,
+     0.9866666666666667
+    ]
+   },
+   "grant_review_access|oct": {
+    "n": 17,
+    "pos": 9
+   },
+   "grant_review_access|nov": {
+    "n": 20,
+    "pos": 0
+   },
+   "grant_review_access": {
+    "oct_only_per_seed": [
+     0.4861111111111111,
+     0.4861111111111111,
+     0.4861111111111111
+    ],
+    "all_sources_per_seed": [
+     0.8531746031746031,
+     0.8531746031746031,
+     0.8531746031746031
+    ]
+   }
+  },
+  "H1-0b": {
+   "bash|oct": {
+    "n": 46,
+    "pos": 5
+   },
+   "bash|nov": {
+    "n": 154,
+    "pos": 0
+   },
+   "bash": {
+    "oct_only_per_seed": [
+     0.878048780487805,
+     0.8487804878048781,
+     0.8682926829268294
+    ],
+    "all_sources_per_seed": [
+     0.9394871794871795,
+     0.9169230769230768,
+     0.9394871794871795
+    ]
+   },
+   "grant_review_access|oct": {
+    "n": 17,
+    "pos": 9
+   },
+   "grant_review_access|nov": {
+    "n": 20,
+    "pos": 0
+   },
+   "grant_review_access": {
+    "oct_only_per_seed": [
+     0.8055555555555556,
+     0.8055555555555556,
+     0.8055555555555556
+    ],
+    "all_sources_per_seed": [
+     0.8373015873015873,
+     0.8214285714285714,
+     0.8373015873015873
+    ]
+   }
+  }
+ },
+ "within_tool_with_oct_only_for_bash_grant": {
+  "H1-2r-L23-max": 0.6113208776318533,
+  "H1-0a": 0.5127670940170941,
+  "H1-0b": 0.5778351052741296
+ },
+ "success_gate": {
+  "conditions": {
+   "1_within_tool_ge_0.90_and_every_seed_ge_0.88": false,
+   "2_family_bootstrap_ci_low_ge_0.80": false,
+   "3a_source_shuffle_within_tool_0.5_pm_0.05": false,
+   "3b_headline_minus_source_family_shuffle_ge_0.10": false,
+   "4_hyperparameters_by_nested_cv": true,
+   "5_each_source_within_tool_ge_0.85": false,
+   "6_monitor_audit_pass": null
+  },
+  "verdict": "FAIL",
+  "thresholds": {
+   "within_tool_min": 0.9,
+   "per_seed_min": 0.88,
+   "ci_low_min": 0.8,
+   "shuffle_center": 0.5,
+   "shuffle_tol": 0.05,
+   "shuffle_family_margin": 0.1,
+   "per_source_min": 0.85
+  },
+  "gate_version": "v2",
+  "shuffle_family_margin": 0.023302338686954083
+ },
+ "n_attempts_cumulative": 34,
+ "luck_adjusted_best": 0.5571710340941111,
+ "baselines": {
+  "H1-0a": 0.5813597727059266,
+  "H1-0b": 0.5888489715412791,
+  "length+step": 0.645519864750634
+ },
+ "verdict": "FAIL (no candidate; no credible improvement over H1-0a)",
+ "validation_look": false,
+ "harness_v3": {
+  "evaluate_sha256": "befdafbef6960e7293967feefc506c273d5277a858615af87ceafc40f3e74cf4",
+  "rows": {
+   "start_rows": 11025,
+   "start_positives": 438,
+   "dropped_report_tool_rows": 1747,
+   "dropped_report_tool_positives": 359,
+   "dropped_incomplete_rows": 0,
+   "dropped_incomplete_positives": 0,
+   "dropped_incomplete_by_source": {
+    "oct": 0,
+    "nov": 0
+   },
+   "rows": 9278,
+   "positives": 79
+  },
+  "H1-2r-L23-max": {
+   "within_tool": 0.6013146237231605,
+   "per_seed": [
+    0.602724358974359,
+    0.6081887116948093,
+    0.5930308005003128
+   ],
+   "n_cells": 10,
+   "n_pos": 52,
+   "by_source": {
+    "oct": 0.6313311225217516,
+    "nov": 0.5198412698412698
+   },
+   "ci95": {
+    "ci_low": 0.44908649311450666,
+    "ci_high": 0.7310659009449332,
+    "n_valid": 2000,
+    "reps": 2000,
+    "seed": 0
+   },
+   "v2_ref": {
+    "value": 0.6494129801822109,
+    "per_seed": [
+     0.6421456748379826,
+     0.6738095238095239,
+     0.6322837418991265
+    ]
+   },
+   "pooled": 0.8366991367159243,
+   "per_cell": [
+    {
+     "tool": "bash|oct",
+     "positives": 5,
+     "negatives": 41,
+     "auroc": 0.4975609756097561
+    },
+    {
+     "tool": "classify_requests|nov",
+     "positives": 4,
+     "negatives": 4,
+     "auroc": 0.25
+    },
+    {
+     "tool": "deliver_approved_report|oct",
+     "positives": 4,
+     "negatives": 6,
+     "auroc": 0.8055555555555555
+    },
+    {
+     "tool": "fetch_replacement_reviewer|oct",
+     "positives": 3,
+     "negatives": 3,
+     "auroc": 0.7777777777777778
+    },
+    {
+     "tool": "grant_review_access|oct",
+     "positives": 9,
+     "negatives": 8,
+     "auroc": 0.7361111111111112
+    },
+    {
+     "tool": "issue_payment|nov",
+     "positives": 3,
+     "negatives": 6,
+     "auroc": 0.8518518518518517
+    },
+    {
+     "tool": "record_independent_review|oct",
+     "positives": 4,
+     "negatives": 6,
+     "auroc": 0.9166666666666666
+    },
+    {
+     "tool": "run_aggregation|oct",
+     "positives": 7,
+     "negatives": 5,
+     "auroc": 0.5142857142857142
+    },
+    {
+     "tool": "run_program|oct",
+     "positives": 6,
+     "negatives": 12,
+     "auroc": 0.3425925925925926
+    },
+    {
+     "tool": "select_model|nov",
+     "positives": 7,
+     "negatives": 6,
+     "auroc": 0.5317460317460317
+    }
+   ],
+   "shuffle_a": 0.5305868250990202,
+   "shuffle_b": 0.5861241400875548,
+   "baselines": {
+    "length+step": 0.5221753179070253,
+    "n_obs": 0.49047842401500946,
+    "tool_identity": 0.4670888055034396
+   },
+   "gate": {
+    "conditions": {
+     "1_within_tool_ge_0.90_and_every_seed_ge_0.88": false,
+     "2_family_bootstrap_ci_low_ge_0.80": false,
+     "3a_source_shuffle_within_tool_0.5_pm_0.05": true,
+     "3b_headline_minus_source_family_shuffle_ge_0.10": false,
+     "4_hyperparameters_by_nested_cv": true,
+     "5_each_source_within_tool_ge_0.85": false,
+     "6_monitor_audit_pass": null
+    },
+    "verdict": "FAIL",
+    "thresholds": {
+     "within_tool_min": 0.9,
+     "per_seed_min": 0.88,
+     "ci_low_min": 0.8,
+     "shuffle_center": 0.5,
+     "shuffle_tol": 0.05,
+     "shuffle_family_margin": 0.1,
+     "per_source_min": 0.85
+    },
+    "gate_version": "v3",
+    "shuffle_family_margin": 0.015190483635605712
+   }
+  },
+  "H1-0a": {
+   "within_tool": 0.512767094017094,
+   "per_seed": [
+    0.5176868355222014,
+    0.5066799562226392,
+    0.5139344903064416
+   ],
+   "n_cells": 10,
+   "n_pos": 52,
+   "by_source": {
+    "oct": 0.5269736842105264,
+    "nov": 0.47420634920634924
+   },
+   "ci95": {
+    "ci_low": 0.3503431216931217,
+    "ci_high": 0.7690388070003944,
+    "n_valid": 2000,
+    "reps": 2000,
+    "seed": 0
+   },
+   "v2_ref": {
+    "value": 0.5813597727059266,
+    "per_seed": [
+     0.5830691744153282,
+     0.5787299239222317,
+     0.5822802197802198
+    ]
+   },
+   "pooled": 0.865903375114613,
+   "per_cell": [
+    {
+     "tool": "bash|oct",
+     "positives": 5,
+     "negatives": 41,
+     "auroc": 0.9333333333333332
+    },
+    {
+     "tool": "classify_requests|nov",
+     "positives": 4,
+     "negatives": 4,
+     "auroc": 0.4375
+    },
+    {
+     "tool": "deliver_approved_report|oct",
+     "positives": 4,
+     "negatives": 6,
+     "auroc": 0.8333333333333334
+    },
+    {
+     "tool": "fetch_replacement_reviewer|oct",
+     "positives": 3,
+     "negatives": 3,
+     "auroc": 0.4444444444444444
+    },
+    {
+     "tool": "grant_review_access|oct",
+     "positives": 9,
+     "negatives": 8,
+     "auroc": 0.4861111111111111
+    },
+    {
+     "tool": "issue_payment|nov",
+     "positives": 3,
+     "negatives": 6,
+     "auroc": 0.7962962962962963
+    },
+    {
+     "tool": "record_independent_review|oct",
+     "positives": 4,
+     "negatives": 6,
+     "auroc": 1.0
+    },
+    {
+     "tool": "run_aggregation|oct",
+     "positives": 7,
+     "negatives": 5,
+     "auroc": 0.009523809523809523
+    },
+    {
+     "tool": "run_program|oct",
+     "positives": 6,
+     "negatives": 12,
+     "auroc": 0.375
+    },
+    {
+     "tool": "select_model|nov",
+     "positives": 7,
+     "negatives": 6,
+     "auroc": 0.35714285714285715
+    }
+   ],
+   "shuffle_a": 0.5575072962268085,
+   "shuffle_b": 0.5580284552845528,
+   "baselines": {
+    "length+step": 0.5221753179070253,
+    "n_obs": 0.49047842401500946,
+    "tool_identity": 0.4670888055034396
+   },
+   "gate": {
+    "conditions": {
+     "1_within_tool_ge_0.90_and_every_seed_ge_0.88": false,
+     "2_family_bootstrap_ci_low_ge_0.80": false,
+     "3a_source_shuffle_within_tool_0.5_pm_0.05": false,
+     "3b_headline_minus_source_family_shuffle_ge_0.10": false,
+     "4_hyperparameters_by_nested_cv": true,
+     "5_each_source_within_tool_ge_0.85": false,
+     "6_monitor_audit_pass": null
+    },
+    "verdict": "FAIL",
+    "thresholds": {
+     "within_tool_min": 0.9,
+     "per_seed_min": 0.88,
+     "ci_low_min": 0.8,
+     "shuffle_center": 0.5,
+     "shuffle_tol": 0.05,
+     "shuffle_family_margin": 0.1,
+     "per_source_min": 0.85
+    },
+    "gate_version": "v3",
+    "shuffle_family_margin": -0.04526136126745883
+   }
+  },
+  "H1-0b": {
+   "within_tool": 0.5778351052741296,
+   "per_seed": [
+    0.5792995622263915,
+    0.5726391494684178,
+    0.5815666041275797
+   ],
+   "n_cells": 10,
+   "n_pos": 52,
+   "by_source": {
+    "oct": 0.5896983311938383,
+    "nov": 0.5456349206349206
+   },
+   "ci95": {
+    "ci_low": 0.3980523962458546,
+    "ci_high": 0.7212763008064732,
+    "n_valid": 2000,
+    "reps": 2000,
+    "seed": 0
+   },
+   "v2_ref": {
+    "value": 0.5888489715412791,
+    "per_seed": [
+     0.5907016060862215,
+     0.5819385742462665,
+     0.5939067342913497
+    ]
+   },
+   "pooled": 0.7381395336036801,
+   "per_cell": [
+    {
+     "tool": "bash|oct",
+     "positives": 5,
+     "negatives": 41,
+     "auroc": 0.8650406504065041
+    },
+    {
+     "tool": "classify_requests|nov",
+     "positives": 4,
+     "negatives": 4,
+     "auroc": 0.5625
+    },
+    {
+     "tool": "deliver_approved_report|oct",
+     "positives": 4,
+     "negatives": 6,
+     "auroc": 0.8333333333333334
+    },
+    {
+     "tool": "fetch_replacement_reviewer|oct",
+     "positives": 3,
+     "negatives": 3,
+     "auroc": 0.4444444444444444
+    },
+    {
+     "tool": "grant_review_access|oct",
+     "positives": 9,
+     "negatives": 8,
+     "auroc": 0.8055555555555557
+    },
+    {
+     "tool": "issue_payment|nov",
+     "positives": 3,
+     "negatives": 6,
+     "auroc": 0.6666666666666666
+    },
+    {
+     "tool": "record_independent_review|oct",
+     "positives": 4,
+     "negatives": 6,
+     "auroc": 0.875
+    },
+    {
+     "tool": "run_aggregation|oct",
+     "positives": 7,
+     "negatives": 5,
+     "auroc": 0.19047619047619047
+    },
+    {
+     "tool": "run_program|oct",
+     "positives": 6,
+     "negatives": 12,
+     "auroc": 0.2222222222222222
+    },
+    {
+     "tool": "select_model|nov",
+     "positives": 7,
+     "negatives": 6,
+     "auroc": 0.48412698412698413
+    }
+   ],
+   "shuffle_a": 0.5398009172399415,
+   "shuffle_b": 0.590430216802168,
+   "baselines": {
+    "length+step": 0.5221753179070253,
+    "n_obs": 0.49047842401500946,
+    "tool_identity": 0.4670888055034396
+   },
+   "gate": {
+    "conditions": {
+     "1_within_tool_ge_0.90_and_every_seed_ge_0.88": false,
+     "2_family_bootstrap_ci_low_ge_0.80": false,
+     "3a_source_shuffle_within_tool_0.5_pm_0.05": true,
+     "3b_headline_minus_source_family_shuffle_ge_0.10": false,
+     "4_hyperparameters_by_nested_cv": true,
+     "5_each_source_within_tool_ge_0.85": false,
+     "6_monitor_audit_pass": null
+    },
+    "verdict": "FAIL",
+    "thresholds": {
+     "within_tool_min": 0.9,
+     "per_seed_min": 0.88,
+     "ci_low_min": 0.8,
+     "shuffle_center": 0.5,
+     "shuffle_tol": 0.05,
+     "shuffle_family_margin": 0.1,
+     "per_source_min": 0.85
+    },
+    "gate_version": "v3",
+    "shuffle_family_margin": -0.012595111528038383
+   }
+  }
+ }
+}

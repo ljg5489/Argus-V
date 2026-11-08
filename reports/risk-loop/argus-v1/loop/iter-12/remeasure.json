@@ -1,0 +1,1755 @@
+{
+ "what": "iteration 12 re-measurement of existing models H1-0a and T7-a with labels v2 (train only). Not new model tries; cumulative tries stay 68 (conservative 70).",
+ "date": "2026-11-08",
+ "evaluate_sha256": "a7c36eafdf994f98b61895be4e4b8d237740d0018422d12febab8deb9df0130d",
+ "evaluate_modified": false,
+ "hf_label_revision": "57a4bdcd22a57e0dd5ac9f8b0c2dd61741867788",
+ "hf_head_checked": "57a4bdcd22a57e0dd5ac9f8b0c2dd61741867788",
+ "labels": {
+  "v1": "artifacts/risk-loop/argus-v1-loop/labels/labels_trainval.csv (sha256 a853ba5044d70f6c8fe66401c9da3fe81a5dcc6c0e7586765fd7187336722885)",
+  "v2": "artifacts/risk-loop/argus-v1-loop/labels/labels_trainval.v2.csv (sha256 99fc80ca1e08da30dd86e0822be3481f52e4227059c524aca88263a50eb4ed4c)",
+  "v2_steps": "labels/steps.v2.csv (sha256 733e6204d6c1aa7bbc0a69d94af1416d1652bf3effa01ab834d639390fc1e4cd)",
+  "v2_changes": {
+   "labelled_trainval_without_features": 0,
+   "train:nov_auto_confirmed->nov_human (same label 0)": 2,
+   "train:nov_draft_rule->nov_convention (same label 1)": 7,
+   "train:nov_draft_rule->nov_human (same label 0)": 5,
+   "train:nov_draft_rule:1->nov_convention:0": 3,
+   "train:nov_draft_rule:1->nov_human:0": 1
+  },
+  "overrides_sha256": "6f1354ab5aaffc1b3d32599a6b0425332905409e7be769f8ab82a18197341d50"
+ },
+ "how_labels_passed": "evaluate.load(root=artifacts/risk-loop/argus-v1-loop/features_labels_v2) = relabelled steps.csv + hard links to the unchanged feature arrays",
+ "splits_used": [
+  "train"
+ ],
+ "validation_or_test_read": false,
+ "decomposition_T7a_10seed": {
+  "v1": 0.6864,
+  "v1_without_classify_requests_nov_cell": 0.7019,
+  "v2": 0.7207,
+  "note": "+0.016 from dropping the classify_requests|nov cell (T7-a scored 0.50 there), +0.019 from re-training/re-scoring with the corrected labels on the remaining 9 cells"
+ },
+ "v1": {
+  "view": "C:\\Users\\hk100\\Desktop\\Argus-V\\artifacts\\risk-loop\\argus-v1-loop\\features",
+  "headline_filter": {
+   "start_rows": 11025,
+   "start_positives": 438,
+   "dropped_report_tool_rows": 1747,
+   "dropped_report_tool_positives": 359,
+   "dropped_incomplete_rows": 0,
+   "dropped_incomplete_positives": 0,
+   "dropped_incomplete_by_source": {
+    "oct": 0,
+    "nov": 0
+   },
+   "rows": 9278,
+   "positives": 79
+  },
+  "H1-0a": {
+   "model": "H1-0a",
+   "seed012": {
+    "value": 0.512767094017094,
+    "per_seed": [
+     0.5176868355222014,
+     0.5066799562226392,
+     0.5139344903064416
+    ],
+    "ci95": {
+     "ci_low": 0.3503431216931217,
+     "ci_high": 0.7690388070003944,
+     "n_valid": 2000,
+     "reps": 2000,
+     "seed": 0
+    },
+    "by_source": {
+     "oct": 0.5269736842105264,
+     "nov": 0.47420634920634924
+    },
+    "baselines": {
+     "length+step": 0.5221753179070253,
+     "n_obs": 0.49047842401500946,
+     "tool_identity": 0.4670888055034396
+    },
+    "pooled_auroc": 0.865903375114613
+   },
+   "seed0_9": {
+    "value": 0.5076571294559099,
+    "per_seed": [
+     0.5176868355222014,
+     0.5066799562226392,
+     0.5139344903064416,
+     0.5119176047529705,
+     0.508556128830519,
+     0.4934920262664165,
+     0.5063672607879925,
+     0.5083841463414633,
+     0.5083841463414633,
+     0.5011686991869919
+    ],
+    "sd": 0.00671139763712172,
+    "ci95": {
+     "ci_low": 0.34378300865800865,
+     "ci_high": 0.7646719876240988,
+     "n_valid": 2000,
+     "reps": 2000,
+     "seed": 0
+    },
+    "by_source": {
+     "oct": 0.5214430894308943,
+     "nov": 0.4702380952380952
+    },
+    "by_source_npos_included": {
+     "oct": 38,
+     "nov": 14
+    },
+    "baselines": {
+     "length+step": 0.52687617260788,
+     "n_obs": 0.49573170731707317,
+     "tool_identity": 0.4677532833020638
+    },
+    "tool_identity_shortcut_proof": true,
+    "pooled_auroc": 0.8649289066918391,
+    "n_cells": 10,
+    "n_positives_included": 52,
+    "n_positives_total": 79
+   },
+   "cells_seed0_9": {
+    "bash|oct": {
+     "pos": 5,
+     "neg": 41,
+     "included": true,
+     "auroc_mean": 0.9346341463414634,
+     "auroc_per_seed": [
+      0.975609756097561,
+      0.8878048780487805,
+      0.9365853658536586,
+      0.975609756097561,
+      0.9073170731707317,
+      0.9073170731707317,
+      0.9512195121951219,
+      0.9121951219512195,
+      0.9121951219512195,
+      0.9804878048780488
+     ]
+    },
+    "classify_requests|nov": {
+     "pos": 4,
+     "neg": 4,
+     "included": true,
+     "auroc_mean": 0.4375,
+     "auroc_per_seed": [
+      0.4375,
+      0.4375,
+      0.4375,
+      0.4375,
+      0.4375,
+      0.4375,
+      0.4375,
+      0.4375,
+      0.4375,
+      0.4375
+     ]
+    },
+    "confirm_relief_transfer|nov": {
+     "pos": 1,
+     "neg": 18,
+     "included": false
+    },
+    "create_meeting_notes|oct": {
+     "pos": 1,
+     "neg": 4,
+     "included": false
+    },
+    "deliver_approved_report|oct": {
+     "pos": 4,
+     "neg": 6,
+     "included": true,
+     "auroc_mean": 0.8333333333333334,
+     "auroc_per_seed": [
+      0.8333333333333334,
+      0.8333333333333334,
+      0.8333333333333334,
+      0.8333333333333334,
+      0.8333333333333334,
+      0.8333333333333334,
+      0.8333333333333334,
+      0.8333333333333334,
+      0.8333333333333334,
+      0.8333333333333334
+     ]
+    },
+    "export_research_dataset|nov": {
+     "pos": 1,
+     "neg": 11,
+     "included": false
+    },
+    "fetch_certificate_chain|oct": {
+     "pos": 1,
+     "neg": 0,
+     "included": false
+    },
+    "fetch_cohort_aggregate|oct": {
+     "pos": 1,
+     "neg": 5,
+     "included": false
+    },
+    "fetch_replacement_reviewer|oct": {
+     "pos": 3,
+     "neg": 3,
+     "included": true,
+     "auroc_mean": 0.4444444444444445,
+     "auroc_per_seed": [
+      0.4444444444444444,
+      0.4444444444444444,
+      0.4444444444444444,
+      0.4444444444444444,
+      0.4444444444444444,
+      0.4444444444444444,
+      0.4444444444444444,
+      0.4444444444444444,
+      0.4444444444444444,
+      0.4444444444444444
+     ]
+    },
+    "fetch_verified_document|oct": {
+     "pos": 7,
+     "neg": 1,
+     "included": false
+    },
+    "grant_review_access|oct": {
+     "pos": 9,
+     "neg": 8,
+     "included": true,
+     "auroc_mean": 0.48611111111111105,
+     "auroc_per_seed": [
+      0.4861111111111111,
+      0.4861111111111111,
+      0.4861111111111111,
+      0.4861111111111111,
+      0.4861111111111111,
+      0.4861111111111111,
+      0.4861111111111111,
+      0.4861111111111111,
+      0.4861111111111111,
+      0.4861111111111111
+     ]
+    },
+    "issue_payment|nov": {
+     "pos": 3,
+     "neg": 6,
+     "included": true,
+     "auroc_mean": 0.7777777777777778,
+     "auroc_per_seed": [
+      0.8333333333333334,
+      0.7222222222222222,
+      0.8333333333333334,
+      0.7222222222222222,
+      0.7222222222222222,
+      0.8333333333333334,
+      0.7222222222222222,
+      0.8333333333333334,
+      0.8333333333333334,
+      0.7222222222222222
+     ]
+    },
+    "read_tenant_file|nov": {
+     "pos": 2,
+     "neg": 7,
+     "included": false
+    },
+    "reconcile_cycle_counts|nov": {
+     "pos": 1,
+     "neg": 26,
+     "included": false
+    },
+    "record_independent_review|oct": {
+     "pos": 4,
+     "neg": 6,
+     "included": true,
+     "auroc_mean": 1.0,
+     "auroc_per_seed": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ]
+    },
+    "record_official_decision|oct": {
+     "pos": 1,
+     "neg": 3,
+     "included": false
+    },
+    "release_trip_package|nov": {
+     "pos": 1,
+     "neg": 15,
+     "included": false
+    },
+    "run_aggregation|oct": {
+     "pos": 7,
+     "neg": 5,
+     "included": true,
+     "auroc_mean": 0.014285714285714285,
+     "auroc_per_seed": [
+      0.0,
+      0.02857142857142857,
+      0.0,
+      0.02857142857142857,
+      0.02857142857142857,
+      0.0,
+      0.02857142857142857,
+      0.0,
+      0.0,
+      0.02857142857142857
+     ]
+    },
+    "run_locked_build|oct": {
+     "pos": 2,
+     "neg": 6,
+     "included": false
+    },
+    "run_program|oct": {
+     "pos": 6,
+     "neg": 12,
+     "included": true,
+     "auroc_mean": 0.33333333333333337,
+     "auroc_per_seed": [
+      0.375,
+      0.375,
+      0.375,
+      0.2916666666666667,
+      0.375,
+      0.25,
+      0.2916666666666667,
+      0.375,
+      0.375,
+      0.25
+     ]
+    },
+    "select_model|nov": {
+     "pos": 7,
+     "neg": 6,
+     "included": true,
+     "auroc_mean": 0.35714285714285715,
+     "auroc_per_seed": [
+      0.35714285714285715,
+      0.35714285714285715,
+      0.35714285714285715,
+      0.40476190476190477,
+      0.35714285714285715,
+      0.3333333333333333,
+      0.38095238095238093,
+      0.3333333333333333,
+      0.3333333333333333,
+      0.35714285714285715
+     ]
+    },
+    "send_message|oct": {
+     "pos": 1,
+     "neg": 6,
+     "included": false
+    },
+    "send_reply_link|nov": {
+     "pos": 1,
+     "neg": 23,
+     "included": false
+    },
+    "start_recording|oct": {
+     "pos": 2,
+     "neg": 4,
+     "included": false
+    },
+    "submit_annual_report|nov": {
+     "pos": 1,
+     "neg": 20,
+     "included": false
+    },
+    "update_stock|oct": {
+     "pos": 1,
+     "neg": 2,
+     "included": false
+    },
+    "upload_to_syndicate_dataroom|nov": {
+     "pos": 1,
+     "neg": 2,
+     "included": false
+    },
+    "write_file|nov": {
+     "pos": 1,
+     "neg": 3,
+     "included": false
+    }
+   },
+   "rows": {
+    "n": 9278,
+    "positives": 79,
+    "null_labels": 0,
+    "families": 41,
+    "tools": 432,
+    "report_content_rows": 0,
+    "splits": {
+     "train": 9278
+    },
+    "label_status": {
+     "nov_auto_confirmed": 1639,
+     "nov_draft_rule": 6855,
+     "oct_delegated": 650,
+     "oct_human": 134
+    },
+    "by_source": {
+     "nov": {
+      "n": 8494,
+      "positives": 24
+     },
+     "oct": {
+      "n": 784,
+      "positives": 55
+     }
+    },
+    "include_report_content": false,
+    "include_null": false,
+    "excluded_report_content": 33,
+    "excluded_null_label": 0,
+    "filter": "headline_rows(iter01)",
+    "start_rows": 11025,
+    "start_positives": 438,
+    "dropped_report_tool_rows": 1747,
+    "dropped_report_tool_positives": 359,
+    "dropped_incomplete_rows": 0,
+    "dropped_incomplete_positives": 0,
+    "dropped_incomplete_by_source": {
+     "oct": 0,
+     "nov": 0
+    }
+   }
+  },
+  "T7-a": {
+   "model": "T7-a",
+   "seed012": {
+    "value": 0.6957264957264958,
+    "per_seed": [
+     0.6927454659161977,
+     0.701219512195122,
+     0.6932145090681676
+    ],
+    "ci95": {
+     "ci_low": 0.5675161210317461,
+     "ci_high": 0.7873782093510353,
+     "n_valid": 2000,
+     "reps": 2000,
+     "seed": 0
+    },
+    "by_source": {
+     "oct": 0.7093567251461989,
+     "nov": 0.6587301587301588
+    },
+    "baselines": {
+     "length+step": 0.5221753179070253,
+     "n_obs": 0.49047842401500946,
+     "tool_identity": 0.4670888055034396
+    },
+    "pooled_auroc": 0.8440499632366937
+   },
+   "seed0_9": {
+    "value": 0.6863656973108192,
+    "per_seed": [
+     0.6927454659161977,
+     0.701219512195122,
+     0.6932145090681676,
+     0.6780175109443403,
+     0.7050656660412759,
+     0.685436210131332,
+     0.6761413383364603,
+     0.6836851156973107,
+     0.6927454659161977,
+     0.6553861788617886
+    ],
+    "sd": 0.014300907213353389,
+    "ci95": {
+     "ci_low": 0.5537751130739034,
+     "ci_high": 0.7819999344755973,
+     "n_valid": 2000,
+     "reps": 2000,
+     "seed": 0
+    },
+    "by_source": {
+     "oct": 0.6971320068463841,
+     "nov": 0.6571428571428573
+    },
+    "by_source_npos_included": {
+     "oct": 38,
+     "nov": 14
+    },
+    "baselines": {
+     "length+step": 0.52687617260788,
+     "n_obs": 0.49573170731707317,
+     "tool_identity": 0.4677532833020638
+    },
+    "tool_identity_shortcut_proof": true,
+    "pooled_auroc": 0.8403964520084048,
+    "n_cells": 10,
+    "n_positives_included": 52,
+    "n_positives_total": 79
+   },
+   "cells_seed0_9": {
+    "bash|oct": {
+     "pos": 5,
+     "neg": 41,
+     "included": true,
+     "auroc_mean": 0.8985365853658536,
+     "auroc_per_seed": [
+      0.9512195121951219,
+      0.8926829268292683,
+      0.9560975609756097,
+      0.8780487804878049,
+      0.8926829268292683,
+      0.8585365853658536,
+      0.8585365853658536,
+      0.8536585365853658,
+      0.9512195121951219,
+      0.8926829268292683
+     ]
+    },
+    "classify_requests|nov": {
+     "pos": 4,
+     "neg": 4,
+     "included": true,
+     "auroc_mean": 0.5,
+     "auroc_per_seed": [
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5
+     ]
+    },
+    "confirm_relief_transfer|nov": {
+     "pos": 1,
+     "neg": 18,
+     "included": false
+    },
+    "create_meeting_notes|oct": {
+     "pos": 1,
+     "neg": 4,
+     "included": false
+    },
+    "deliver_approved_report|oct": {
+     "pos": 4,
+     "neg": 6,
+     "included": true,
+     "auroc_mean": 0.9583333333333334,
+     "auroc_per_seed": [
+      0.9583333333333334,
+      1.0,
+      0.9583333333333334,
+      0.9583333333333334,
+      1.0,
+      0.9166666666666666,
+      0.9583333333333334,
+      0.9166666666666666,
+      0.9583333333333334,
+      0.9583333333333334
+     ]
+    },
+    "export_research_dataset|nov": {
+     "pos": 1,
+     "neg": 11,
+     "included": false
+    },
+    "fetch_certificate_chain|oct": {
+     "pos": 1,
+     "neg": 0,
+     "included": false
+    },
+    "fetch_cohort_aggregate|oct": {
+     "pos": 1,
+     "neg": 5,
+     "included": false
+    },
+    "fetch_replacement_reviewer|oct": {
+     "pos": 3,
+     "neg": 3,
+     "included": true,
+     "auroc_mean": 0.22222222222222224,
+     "auroc_per_seed": [
+      0.2222222222222222,
+      0.2222222222222222,
+      0.2222222222222222,
+      0.2222222222222222,
+      0.2222222222222222,
+      0.2222222222222222,
+      0.2222222222222222,
+      0.2222222222222222,
+      0.2222222222222222,
+      0.2222222222222222
+     ]
+    },
+    "fetch_verified_document|oct": {
+     "pos": 7,
+     "neg": 1,
+     "included": false
+    },
+    "grant_review_access|oct": {
+     "pos": 9,
+     "neg": 8,
+     "included": true,
+     "auroc_mean": 0.7777777777777778,
+     "auroc_per_seed": [
+      0.7777777777777778,
+      0.7777777777777778,
+      0.7777777777777778,
+      0.7777777777777778,
+      0.7777777777777778,
+      0.7777777777777778,
+      0.7777777777777778,
+      0.7777777777777778,
+      0.7777777777777778,
+      0.7777777777777778
+     ]
+    },
+    "issue_payment|nov": {
+     "pos": 3,
+     "neg": 6,
+     "included": true,
+     "auroc_mean": 0.9388888888888889,
+     "auroc_per_seed": [
+      0.9444444444444444,
+      1.0,
+      0.9444444444444444,
+      0.8888888888888888,
+      1.0,
+      0.9444444444444444,
+      0.8888888888888888,
+      0.9444444444444444,
+      0.9444444444444444,
+      0.8888888888888888
+     ]
+    },
+    "read_tenant_file|nov": {
+     "pos": 2,
+     "neg": 7,
+     "included": false
+    },
+    "reconcile_cycle_counts|nov": {
+     "pos": 1,
+     "neg": 26,
+     "included": false
+    },
+    "record_independent_review|oct": {
+     "pos": 4,
+     "neg": 6,
+     "included": true,
+     "auroc_mean": 0.8208333333333334,
+     "auroc_per_seed": [
+      0.75,
+      0.75,
+      0.75,
+      0.875,
+      0.75,
+      1.0,
+      0.875,
+      0.9583333333333334,
+      0.75,
+      0.75
+     ]
+    },
+    "record_official_decision|oct": {
+     "pos": 1,
+     "neg": 3,
+     "included": false
+    },
+    "release_trip_package|nov": {
+     "pos": 1,
+     "neg": 15,
+     "included": false
+    },
+    "run_aggregation|oct": {
+     "pos": 7,
+     "neg": 5,
+     "included": true,
+     "auroc_mean": 0.6771428571428572,
+     "auroc_per_seed": [
+      0.6571428571428571,
+      0.7142857142857143,
+      0.6571428571428571,
+      0.6,
+      0.7428571428571429,
+      0.8,
+      0.6,
+      0.7428571428571429,
+      0.6571428571428571,
+      0.6
+     ]
+    },
+    "run_locked_build|oct": {
+     "pos": 2,
+     "neg": 6,
+     "included": false
+    },
+    "run_program|oct": {
+     "pos": 6,
+     "neg": 12,
+     "included": true,
+     "auroc_mean": 0.4125,
+     "auroc_per_seed": [
+      0.5,
+      0.5,
+      0.5,
+      0.4166666666666667,
+      0.5,
+      0.20833333333333334,
+      0.4166666666666667,
+      0.2916666666666667,
+      0.5,
+      0.2916666666666667
+     ]
+    },
+    "select_model|nov": {
+     "pos": 7,
+     "neg": 6,
+     "included": true,
+     "auroc_mean": 0.6261904761904762,
+     "auroc_per_seed": [
+      0.6190476190476191,
+      0.6190476190476191,
+      0.6190476190476191,
+      0.6428571428571429,
+      0.6190476190476191,
+      0.6190476190476191,
+      0.6428571428571429,
+      0.6190476190476191,
+      0.6190476190476191,
+      0.6428571428571429
+     ]
+    },
+    "send_message|oct": {
+     "pos": 1,
+     "neg": 6,
+     "included": false
+    },
+    "send_reply_link|nov": {
+     "pos": 1,
+     "neg": 23,
+     "included": false
+    },
+    "start_recording|oct": {
+     "pos": 2,
+     "neg": 4,
+     "included": false
+    },
+    "submit_annual_report|nov": {
+     "pos": 1,
+     "neg": 20,
+     "included": false
+    },
+    "update_stock|oct": {
+     "pos": 1,
+     "neg": 2,
+     "included": false
+    },
+    "upload_to_syndicate_dataroom|nov": {
+     "pos": 1,
+     "neg": 2,
+     "included": false
+    },
+    "write_file|nov": {
+     "pos": 1,
+     "neg": 3,
+     "included": false
+    }
+   },
+   "rows": {
+    "n": 9278,
+    "positives": 79,
+    "null_labels": 0,
+    "families": 41,
+    "tools": 432,
+    "report_content_rows": 0,
+    "splits": {
+     "train": 9278
+    },
+    "label_status": {
+     "nov_auto_confirmed": 1639,
+     "nov_draft_rule": 6855,
+     "oct_delegated": 650,
+     "oct_human": 134
+    },
+    "by_source": {
+     "nov": {
+      "n": 8494,
+      "positives": 24
+     },
+     "oct": {
+      "n": 784,
+      "positives": 55
+     }
+    },
+    "include_report_content": false,
+    "include_null": false,
+    "excluded_report_content": 33,
+    "excluded_null_label": 0,
+    "filter": "headline_rows(iter01)",
+    "start_rows": 11025,
+    "start_positives": 438,
+    "dropped_report_tool_rows": 1747,
+    "dropped_report_tool_positives": 359,
+    "dropped_incomplete_rows": 0,
+    "dropped_incomplete_positives": 0,
+    "dropped_incomplete_by_source": {
+     "oct": 0,
+     "nov": 0
+    }
+   },
+   "shuffle_a_seed0": {
+    "within_tool_mean": 0.516274820200125,
+    "within_tool_sd": 0.0751208947334911,
+    "within_tool_se": 0.016797542715469203,
+    "within_tool": [
+     0.5835639462163852,
+     0.6635514383989993,
+     0.4386296122576611,
+     0.4274820200125079,
+     0.5116361788617887,
+     0.499433239524703,
+     0.6301125703564728,
+     0.6318792995622263,
+     0.4541197623514697,
+     0.5455597248280175,
+     0.45937304565353343,
+     0.5657950281425891,
+     0.47249843652282675,
+     0.5826219512195122,
+     0.4633989993746091,
+     0.3745739524702939,
+     0.49248358348968113,
+     0.5192698561601,
+     0.5019699812382739,
+     0.5075437773608505
+    ],
+    "pass": true,
+    "within_tool_by_source_mean": {
+     "oct": 0.5382795785194694,
+     "nov": 0.4565476190476191
+    }
+   },
+   "shuffle_b_seed0": {
+    "within_tool_mean": 0.5233692933083178,
+    "within_tool_sd": 0.06664655131873759,
+    "within_tool_se": 0.01490262192146255,
+    "within_tool": [
+     0.5731472795497186,
+     0.5256840212632896,
+     0.5272045028142589,
+     0.5591971544715447,
+     0.5747029393370856,
+     0.5043621013133208,
+     0.6326532207629769,
+     0.5220254846779238,
+     0.5645950594121326,
+     0.5320278298936836,
+     0.510475297060663,
+     0.39250703564727957,
+     0.6387468730456536,
+     0.55723889931207,
+     0.4797881488430269,
+     0.42537914321450904,
+     0.407094277673546,
+     0.45017979987492185,
+     0.5653846153846155,
+     0.5249921826141338
+    ],
+    "pass": true,
+    "within_tool_by_source_mean": {
+     "oct": 0.492943945228926,
+     "nov": 0.6059523809523809
+    }
+   },
+   "candidate_rules": {
+    "i_prime_10seed_vs_ref_old": 0.09585580831769858,
+    "i_prime_10seed_vs_ref_same_labels": 0.09585580831769858,
+    "i_prime_seed012_vs_ref_old": 0.10521660673337518,
+    "i_dprime_seed0": 0.16937617260787985,
+    "ii_seed012_minus_length_step": 0.1735511778194705,
+    "ii_10seed_minus_length_step": 0.1594895247029392,
+    "ref_b_old": 0.5905098889931206,
+    "ref_b_same_labels": 0.5905098889931206,
+    "own_b": 0.5233692933083178,
+    "se_ref_b_same_labels": 0.015311189781184745,
+    "se_own_b": 0.01490262192146255
+   },
+   "gate_conditions_seed012": {
+    "1_within_tool_ge_0.90_and_each_seed_ge_0.88": false,
+    "2_ci_low_ge_0.80": false,
+    "3a_shuffle_a_0.5pm0.05": true,
+    "3b_headline_minus_own_b_ge_0.10": true,
+    "5_each_source_ge_0.85": false
+   }
+  },
+  "ref_H2-1c_shuffle_b_seed0": {
+   "within_tool_mean": 0.5905098889931206,
+   "within_tool_sd": 0.06847372233425844,
+   "within_tool_se": 0.015311189781184745
+  }
+ },
+ "v2": {
+  "view": "C:\\Users\\hk100\\Desktop\\Argus-V\\artifacts\\risk-loop\\argus-v1-loop\\features_labels_v2",
+  "headline_filter": {
+   "start_rows": 11025,
+   "start_positives": 434,
+   "dropped_report_tool_rows": 1747,
+   "dropped_report_tool_positives": 358,
+   "dropped_incomplete_rows": 0,
+   "dropped_incomplete_positives": 0,
+   "dropped_incomplete_by_source": {
+    "oct": 0,
+    "nov": 0
+   },
+   "rows": 9278,
+   "positives": 76
+  },
+  "H1-0a": {
+   "model": "H1-0a",
+   "seed012": {
+    "value": 0.5259245144534779,
+    "per_seed": [
+     0.5372162940379405,
+     0.5233274051490515,
+     0.5172298441734418
+    ],
+    "ci95": {
+     "ci_low": 0.34728257275132274,
+     "ci_high": 0.7689400081900081,
+     "n_valid": 2000,
+     "reps": 2000,
+     "seed": 0
+    },
+    "by_source": {
+     "oct": 0.5312847667950363,
+     "nov": 0.5055555555555555
+    },
+    "baselines": {
+     "length+step": 0.5102712850045167,
+     "n_obs": 0.5134188685636857,
+     "tool_identity": 0.4703590785907859
+    },
+    "pooled_auroc": 0.8744940554494255
+   },
+   "seed0_9": {
+    "value": 0.5199059959349593,
+    "per_seed": [
+     0.5372162940379405,
+     0.5233274051490515,
+     0.5172298441734418,
+     0.5165353997289973,
+     0.5306106029810298,
+     0.5099720528455285,
+     0.5150956978319784,
+     0.5135713075880759,
+     0.5311187330623307,
+     0.5043826219512195
+    ],
+    "sd": 0.010398263016227299,
+    "ci95": {
+     "ci_low": 0.33778622934454783,
+     "ci_high": 0.7681135909846015,
+     "n_valid": 2000,
+     "reps": 2000,
+     "seed": 0
+    },
+    "by_source": {
+     "oct": 0.523390029952931,
+     "nov": 0.5066666666666666
+    },
+    "by_source_npos_included": {
+     "oct": 38,
+     "nov": 10
+    },
+    "baselines": {
+     "length+step": 0.513156334688347,
+     "n_obs": 0.517873475609756,
+     "tool_identity": 0.47853150406504064
+    },
+    "tool_identity_shortcut_proof": true,
+    "pooled_auroc": 0.8687427790297304,
+    "n_cells": 9,
+    "n_positives_included": 48,
+    "n_positives_total": 76
+   },
+   "cells_seed0_9": {
+    "bash|oct": {
+     "pos": 5,
+     "neg": 41,
+     "included": true,
+     "auroc_mean": 0.9360975609756098,
+     "auroc_per_seed": [
+      0.975609756097561,
+      0.975609756097561,
+      0.9170731707317074,
+      0.9170731707317074,
+      0.9121951219512195,
+      0.9707317073170731,
+      0.9365853658536586,
+      0.9219512195121952,
+      0.9170731707317074,
+      0.9170731707317074
+     ]
+    },
+    "classify_requests|nov": {
+     "pos": 1,
+     "neg": 7,
+     "included": false
+    },
+    "confirm_relief_transfer|nov": {
+     "pos": 1,
+     "neg": 18,
+     "included": false
+    },
+    "create_meeting_notes|oct": {
+     "pos": 1,
+     "neg": 4,
+     "included": false
+    },
+    "deliver_approved_report|oct": {
+     "pos": 4,
+     "neg": 6,
+     "included": true,
+     "auroc_mean": 0.8333333333333334,
+     "auroc_per_seed": [
+      0.8333333333333334,
+      0.8333333333333334,
+      0.8333333333333334,
+      0.8333333333333334,
+      0.8333333333333334,
+      0.8333333333333334,
+      0.8333333333333334,
+      0.8333333333333334,
+      0.8333333333333334,
+      0.8333333333333334
+     ]
+    },
+    "export_research_dataset|nov": {
+     "pos": 1,
+     "neg": 11,
+     "included": false
+    },
+    "fetch_certificate_chain|oct": {
+     "pos": 1,
+     "neg": 0,
+     "included": false
+    },
+    "fetch_cohort_aggregate|oct": {
+     "pos": 1,
+     "neg": 5,
+     "included": false
+    },
+    "fetch_replacement_reviewer|oct": {
+     "pos": 3,
+     "neg": 3,
+     "included": true,
+     "auroc_mean": 0.4444444444444445,
+     "auroc_per_seed": [
+      0.4444444444444444,
+      0.4444444444444444,
+      0.4444444444444444,
+      0.4444444444444444,
+      0.4444444444444444,
+      0.4444444444444444,
+      0.4444444444444444,
+      0.4444444444444444,
+      0.4444444444444444,
+      0.4444444444444444
+     ]
+    },
+    "fetch_verified_document|oct": {
+     "pos": 7,
+     "neg": 1,
+     "included": false
+    },
+    "grant_review_access|oct": {
+     "pos": 9,
+     "neg": 8,
+     "included": true,
+     "auroc_mean": 0.513888888888889,
+     "auroc_per_seed": [
+      0.5138888888888888,
+      0.5138888888888888,
+      0.5138888888888888,
+      0.5138888888888888,
+      0.5138888888888888,
+      0.5138888888888888,
+      0.5138888888888888,
+      0.5138888888888888,
+      0.5138888888888888,
+      0.5138888888888888
+     ]
+    },
+    "issue_payment|nov": {
+     "pos": 3,
+     "neg": 6,
+     "included": true,
+     "auroc_mean": 0.8333333333333334,
+     "auroc_per_seed": [
+      0.8333333333333334,
+      0.8333333333333334,
+      0.8333333333333334,
+      0.8333333333333334,
+      0.8333333333333334,
+      0.8333333333333334,
+      0.8333333333333334,
+      0.8333333333333334,
+      0.8333333333333334,
+      0.8333333333333334
+     ]
+    },
+    "read_tenant_file|nov": {
+     "pos": 2,
+     "neg": 7,
+     "included": false
+    },
+    "reconcile_cycle_counts|nov": {
+     "pos": 1,
+     "neg": 26,
+     "included": false
+    },
+    "record_independent_review|oct": {
+     "pos": 4,
+     "neg": 6,
+     "included": true,
+     "auroc_mean": 0.975,
+     "auroc_per_seed": [
+      1.0,
+      0.875,
+      0.875,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ]
+    },
+    "record_official_decision|oct": {
+     "pos": 1,
+     "neg": 3,
+     "included": false
+    },
+    "release_trip_package|nov": {
+     "pos": 1,
+     "neg": 15,
+     "included": false
+    },
+    "run_aggregation|oct": {
+     "pos": 7,
+     "neg": 5,
+     "included": true,
+     "auroc_mean": 0.014285714285714285,
+     "auroc_per_seed": [
+      0.02857142857142857,
+      0.02857142857142857,
+      0.02857142857142857,
+      0.0,
+      0.02857142857142857,
+      0.0,
+      0.0,
+      0.0,
+      0.02857142857142857,
+      0.0
+     ]
+    },
+    "run_locked_build|oct": {
+     "pos": 2,
+     "neg": 6,
+     "included": false
+    },
+    "run_program|oct": {
+     "pos": 6,
+     "neg": 12,
+     "included": true,
+     "auroc_mean": 0.3194444444444445,
+     "auroc_per_seed": [
+      0.375,
+      0.375,
+      0.375,
+      0.2916666666666667,
+      0.375,
+      0.2222222222222222,
+      0.2916666666666667,
+      0.2916666666666667,
+      0.375,
+      0.2222222222222222
+     ]
+    },
+    "select_model|nov": {
+     "pos": 7,
+     "neg": 6,
+     "included": true,
+     "auroc_mean": 0.3666666666666667,
+     "auroc_per_seed": [
+      0.38095238095238093,
+      0.35714285714285715,
+      0.35714285714285715,
+      0.38095238095238093,
+      0.38095238095238093,
+      0.35714285714285715,
+      0.35714285714285715,
+      0.35714285714285715,
+      0.38095238095238093,
+      0.35714285714285715
+     ]
+    },
+    "send_message|oct": {
+     "pos": 1,
+     "neg": 6,
+     "included": false
+    },
+    "send_reply_link|nov": {
+     "pos": 1,
+     "neg": 23,
+     "included": false
+    },
+    "start_recording|oct": {
+     "pos": 2,
+     "neg": 4,
+     "included": false
+    },
+    "submit_annual_report|nov": {
+     "pos": 1,
+     "neg": 20,
+     "included": false
+    },
+    "update_stock|oct": {
+     "pos": 1,
+     "neg": 2,
+     "included": false
+    },
+    "upload_to_syndicate_dataroom|nov": {
+     "pos": 1,
+     "neg": 2,
+     "included": false
+    },
+    "write_file|nov": {
+     "pos": 1,
+     "neg": 3,
+     "included": false
+    }
+   },
+   "rows": {
+    "n": 9278,
+    "positives": 76,
+    "null_labels": 0,
+    "families": 41,
+    "tools": 432,
+    "report_content_rows": 0,
+    "splits": {
+     "train": 9278
+    },
+    "label_status": {
+     "nov_auto_confirmed": 1637,
+     "nov_convention": 10,
+     "nov_draft_rule": 6840,
+     "nov_human": 7,
+     "oct_delegated": 650,
+     "oct_human": 134
+    },
+    "by_source": {
+     "nov": {
+      "n": 8494,
+      "positives": 21
+     },
+     "oct": {
+      "n": 784,
+      "positives": 55
+     }
+    },
+    "include_report_content": false,
+    "include_null": false,
+    "excluded_report_content": 33,
+    "excluded_null_label": 0,
+    "filter": "headline_rows(iter01)",
+    "start_rows": 11025,
+    "start_positives": 434,
+    "dropped_report_tool_rows": 1747,
+    "dropped_report_tool_positives": 358,
+    "dropped_incomplete_rows": 0,
+    "dropped_incomplete_positives": 0,
+    "dropped_incomplete_by_source": {
+     "oct": 0,
+     "nov": 0
+    }
+   }
+  },
+  "T7-a": {
+   "model": "T7-a",
+   "seed012": {
+    "value": 0.7138380758807589,
+    "per_seed": [
+     0.7265413279132792,
+     0.707909891598916,
+     0.7070630081300813
+    ],
+    "ci95": {
+     "ci_low": 0.5604733211400106,
+     "ci_high": 0.815511548114326,
+     "n_valid": 2000,
+     "reps": 2000,
+     "seed": 0
+    },
+    "by_source": {
+     "oct": 0.7057837683639994,
+     "nov": 0.7444444444444445
+    },
+    "baselines": {
+     "length+step": 0.5102712850045167,
+     "n_obs": 0.5134188685636857,
+     "tool_identity": 0.4703590785907859
+    },
+    "pooled_auroc": 0.8499129670514037
+   },
+   "seed0_9": {
+    "value": 0.7206783536585365,
+    "per_seed": [
+     0.7265413279132792,
+     0.707909891598916,
+     0.7070630081300813,
+     0.7446222899728997,
+     0.7229844173441734,
+     0.6966548102981029,
+     0.7451304200542005,
+     0.7336974932249323,
+     0.7265413279132792,
+     0.6956385501355014
+    ],
+    "sd": 0.018157686311034368,
+    "ci95": {
+     "ci_low": 0.5691893872173375,
+     "ci_high": 0.8254217638339922,
+     "n_valid": 2000,
+     "reps": 2000,
+     "seed": 0
+    },
+    "by_source": {
+     "oct": 0.7103305519897305,
+     "nov": 0.76
+    },
+    "by_source_npos_included": {
+     "oct": 38,
+     "nov": 10
+    },
+    "baselines": {
+     "length+step": 0.513156334688347,
+     "n_obs": 0.517873475609756,
+     "tool_identity": 0.47853150406504064
+    },
+    "tool_identity_shortcut_proof": true,
+    "pooled_auroc": 0.847273833491575,
+    "n_cells": 9,
+    "n_positives_included": 48,
+    "n_positives_total": 76
+   },
+   "cells_seed0_9": {
+    "bash|oct": {
+     "pos": 5,
+     "neg": 41,
+     "included": true,
+     "auroc_mean": 0.9195121951219513,
+     "auroc_per_seed": [
+      0.9414634146341463,
+      0.8292682926829268,
+      0.8878048780487805,
+      0.9317073170731708,
+      0.9073170731707317,
+      0.9512195121951219,
+      0.9365853658536586,
+      0.926829268292683,
+      0.9414634146341463,
+      0.9414634146341463
+     ]
+    },
+    "classify_requests|nov": {
+     "pos": 1,
+     "neg": 7,
+     "included": false
+    },
+    "confirm_relief_transfer|nov": {
+     "pos": 1,
+     "neg": 18,
+     "included": false
+    },
+    "create_meeting_notes|oct": {
+     "pos": 1,
+     "neg": 4,
+     "included": false
+    },
+    "deliver_approved_report|oct": {
+     "pos": 4,
+     "neg": 6,
+     "included": true,
+     "auroc_mean": 1.0,
+     "auroc_per_seed": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ]
+    },
+    "export_research_dataset|nov": {
+     "pos": 1,
+     "neg": 11,
+     "included": false
+    },
+    "fetch_certificate_chain|oct": {
+     "pos": 1,
+     "neg": 0,
+     "included": false
+    },
+    "fetch_cohort_aggregate|oct": {
+     "pos": 1,
+     "neg": 5,
+     "included": false
+    },
+    "fetch_replacement_reviewer|oct": {
+     "pos": 3,
+     "neg": 3,
+     "included": true,
+     "auroc_mean": 0.22222222222222224,
+     "auroc_per_seed": [
+      0.2222222222222222,
+      0.2222222222222222,
+      0.2222222222222222,
+      0.2222222222222222,
+      0.2222222222222222,
+      0.2222222222222222,
+      0.2222222222222222,
+      0.2222222222222222,
+      0.2222222222222222,
+      0.2222222222222222
+     ]
+    },
+    "fetch_verified_document|oct": {
+     "pos": 7,
+     "neg": 1,
+     "included": false
+    },
+    "grant_review_access|oct": {
+     "pos": 9,
+     "neg": 8,
+     "included": true,
+     "auroc_mean": 0.8055555555555556,
+     "auroc_per_seed": [
+      0.8055555555555556,
+      0.8055555555555556,
+      0.8055555555555556,
+      0.8055555555555556,
+      0.8055555555555556,
+      0.8055555555555556,
+      0.8055555555555556,
+      0.8055555555555556,
+      0.8055555555555556,
+      0.8055555555555556
+     ]
+    },
+    "issue_payment|nov": {
+     "pos": 3,
+     "neg": 6,
+     "included": true,
+     "auroc_mean": 1.0,
+     "auroc_per_seed": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ]
+    },
+    "read_tenant_file|nov": {
+     "pos": 2,
+     "neg": 7,
+     "included": false
+    },
+    "reconcile_cycle_counts|nov": {
+     "pos": 1,
+     "neg": 26,
+     "included": false
+    },
+    "record_independent_review|oct": {
+     "pos": 4,
+     "neg": 6,
+     "included": true,
+     "auroc_mean": 0.8375,
+     "auroc_per_seed": [
+      0.8333333333333334,
+      0.75,
+      0.7083333333333334,
+      0.8333333333333334,
+      0.8333333333333334,
+      0.9583333333333334,
+      0.8333333333333334,
+      0.8333333333333334,
+      0.8333333333333334,
+      0.9583333333333334
+     ]
+    },
+    "record_official_decision|oct": {
+     "pos": 1,
+     "neg": 3,
+     "included": false
+    },
+    "release_trip_package|nov": {
+     "pos": 1,
+     "neg": 15,
+     "included": false
+    },
+    "run_aggregation|oct": {
+     "pos": 7,
+     "neg": 5,
+     "included": true,
+     "auroc_mean": 0.6742857142857143,
+     "auroc_per_seed": [
+      0.7142857142857143,
+      0.7142857142857143,
+      0.7142857142857143,
+      0.7142857142857143,
+      0.7142857142857143,
+      0.5142857142857142,
+      0.7142857142857143,
+      0.7142857142857143,
+      0.7142857142857143,
+      0.5142857142857142
+     ]
+    },
+    "run_locked_build|oct": {
+     "pos": 2,
+     "neg": 6,
+     "included": false
+    },
+    "run_program|oct": {
+     "pos": 6,
+     "neg": 12,
+     "included": true,
+     "auroc_mean": 0.4013888888888889,
+     "auroc_per_seed": [
+      0.4027777777777778,
+      0.4027777777777778,
+      0.4027777777777778,
+      0.5,
+      0.4027777777777778,
+      0.25,
+      0.5,
+      0.5,
+      0.4027777777777778,
+      0.25
+     ]
+    },
+    "select_model|nov": {
+     "pos": 7,
+     "neg": 6,
+     "included": true,
+     "auroc_mean": 0.6571428571428573,
+     "auroc_per_seed": [
+      0.6428571428571429,
+      0.6428571428571429,
+      0.6190476190476191,
+      0.6904761904761905,
+      0.6428571428571429,
+      0.6904761904761905,
+      0.6904761904761905,
+      0.6190476190476191,
+      0.6428571428571429,
+      0.6904761904761905
+     ]
+    },
+    "send_message|oct": {
+     "pos": 1,
+     "neg": 6,
+     "included": false
+    },
+    "send_reply_link|nov": {
+     "pos": 1,
+     "neg": 23,
+     "included": false
+    },
+    "start_recording|oct": {
+     "pos": 2,
+     "neg": 4,
+     "included": false
+    },
+    "submit_annual_report|nov": {
+     "pos": 1,
+     "neg": 20,
+     "included": false
+    },
+    "update_stock|oct": {
+     "pos": 1,
+     "neg": 2,
+     "included": false
+    },
+    "upload_to_syndicate_dataroom|nov": {
+     "pos": 1,
+     "neg": 2,
+     "included": false
+    },
+    "write_file|nov": {
+     "pos": 1,
+     "neg": 3,
+     "included": false
+    }
+   },
+   "rows": {
+    "n": 9278,
+    "positives": 76,
+    "null_labels": 0,
+    "families": 41,
+    "tools": 432,
+    "report_content_rows": 0,
+    "splits": {
+     "train": 9278
+    },
+    "label_status": {
+     "nov_auto_confirmed": 1637,
+     "nov_convention": 10,
+     "nov_draft_rule": 6840,
+     "nov_human": 7,
+     "oct_delegated": 650,
+     "oct_human": 134
+    },
+    "by_source": {
+     "nov": {
+      "n": 8494,
+      "positives": 21
+     },
+     "oct": {
+      "n": 784,
+      "positives": 55
+     }
+    },
+    "include_report_content": false,
+    "include_null": false,
+    "excluded_report_content": 33,
+    "excluded_null_label": 0,
+    "filter": "headline_rows(iter01)",
+    "start_rows": 11025,
+    "start_positives": 434,
+    "dropped_report_tool_rows": 1747,
+    "dropped_report_tool_positives": 358,
+    "dropped_incomplete_rows": 0,
+    "dropped_incomplete_positives": 0,
+    "dropped_incomplete_by_source": {
+     "oct": 0,
+     "nov": 0
+    }
+   },
+   "shuffle_a_seed0": {
+    "within_tool_mean": 0.5367049881436314,
+    "within_tool_sd": 0.08570742836489906,
+    "within_tool_se": 0.019164763600060794,
+    "within_tool": [
+     0.5624449525745258,
+     0.5481072154471545,
+     0.3825118563685637,
+     0.34839939024390243,
+     0.5140667344173441,
+     0.5698678861788617,
+     0.5694063346883468,
+     0.6443766937669376,
+     0.5776973238482385,
+     0.5720359078590785,
+     0.6450669037940379,
+     0.5657859078590786,
+     0.5461001016260162,
+     0.66664972899729,
+     0.5439490176151761,
+     0.42148119918699195,
+     0.5455115176151761,
+     0.5331851287262872,
+     0.5746189024390245,
+     0.4028370596205963
+    ],
+    "pass": true,
+    "within_tool_by_source_mean": {
+     "oct": 0.5384694587077449,
+     "nov": 0.53
+    }
+   },
+   "shuffle_b_seed0": {
+    "within_tool_mean": 0.5250732554200542,
+    "within_tool_sd": 0.06791770890613459,
+    "within_tool_se": 0.015186861399015983,
+    "within_tool": [
+     0.5347899728997291,
+     0.540917174796748,
+     0.38713584010840113,
+     0.6062923441734417,
+     0.5499745934959349,
+     0.5829903455284553,
+     0.6009442750677507,
+     0.5804835704607046,
+     0.5430809620596205,
+     0.5402142615176152,
+     0.49738313008130075,
+     0.5034891598915988,
+     0.5504319105691057,
+     0.5435467479674797,
+     0.3980267615176152,
+     0.4584730691056911,
+     0.500364159891599,
+     0.4355394647696477,
+     0.4956808943089431,
+     0.651706470189702
+    ],
+    "pass": true,
+    "within_tool_by_source_mean": {
+     "oct": 0.49208814719726146,
+     "nov": 0.6504166666666668
+    }
+   },
+   "candidate_rules": {
+    "i_prime_10seed_vs_ref_old": 0.13016846466541587,
+    "i_prime_10seed_vs_ref_same_labels": 0.12507029132791325,
+    "i_prime_seed012_vs_ref_old": 0.12332818688763825,
+    "i_dprime_seed0": 0.20146807249322496,
+    "ii_seed012_minus_length_step": 0.2035667908762422,
+    "ii_10seed_minus_length_step": 0.20752201897018951,
+    "ref_b_old": 0.5905098889931206,
+    "ref_b_same_labels": 0.5956080623306232,
+    "own_b": 0.5250732554200542,
+    "se_ref_b_same_labels": 0.013496086527323712,
+    "se_own_b": 0.015186861399015983
+   },
+   "gate_conditions_seed012": {
+    "1_within_tool_ge_0.90_and_each_seed_ge_0.88": false,
+    "2_ci_low_ge_0.80": false,
+    "3a_shuffle_a_0.5pm0.05": true,
+    "3b_headline_minus_own_b_ge_0.10": true,
+    "5_each_source_ge_0.85": false
+   }
+  },
+  "ref_H2-1c_shuffle_b_seed0": {
+   "within_tool_mean": 0.5956080623306232,
+   "within_tool_sd": 0.060356333810629784,
+   "within_tool_se": 0.013496086527323712
+  }
+ }
+}

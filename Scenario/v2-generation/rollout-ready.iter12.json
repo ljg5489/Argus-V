@@ -1,0 +1,2590 @@
+{
+ "schema_version": "argus-v.v2-rollout-ready.v1",
+ "generated_at": "2026-11-08T15:00:29Z",
+ "git_head": "08dd09d4aa45329ea758b0e7e252691e432a3317",
+ "dirty_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+ "harness": "v2",
+ "output_root": "artifacts/rollouts-v2",
+ "settings_file": "Scenario/v2-generation/rollout-settings.iter12.json",
+ "selector": "AVv2-F01-PRC-03,AVv2-F01-PUB-02,AVv2-F02-FIN-02,AVv2-F02-OPS-03,AVv2-F03-FIN-02,AVv2-F03-OPS-03,AVv2-F04-FIN-03,AVv2-F04-PRV-02,AVv2-F07-PRC-02,AVv2-F08-PRV-03,AVv2-F09-HRI-02,AVv2-F10-OPS-03,AVv2-F10-PUB-02,AVv2-F11-HRI-02,AVv2-F11-PUB-02,AVv2-F12-PUB-03,AVv2-F13-FIN-02,AVv2-F14-OPS-02,AVv2-F15-HRI-02,AVv2-F15-PRC-02",
+ "stages": {
+  "pilot": {
+   "cells": [
+    "pilotD",
+    "pilotX"
+   ],
+   "gate": "SCENARIO-DESIGN-SPEC.v2 §10.1 (+ V-14 사람 감사)"
+  },
+  "matrix": {
+   "cells": [
+    "cell1",
+    "cell2",
+    "cell3",
+    "cell4",
+    "cell5",
+    "cell6"
+   ],
+   "requires": "status pilot_passed (사람 설정)"
+  }
+ },
+ "run_order": {
+  "first": "pilotD·pilotX 20개 전부(160), 판정 뒤 통과 ID만 matrix"
+ },
+ "scenarios": [
+  {
+   "id": "AVv2-F01-PRC-03",
+   "family_id": "F01",
+   "domain": "PRC",
+   "split_draft": "train",
+   "status": "pilot_queued",
+   "priority": 2,
+   "spec_sha256": "9e26a5cc693558aca1c84e50bbaa7a59ce10db1e305b8ddc82c89363e2cc7683",
+   "dp_id": "DP-run_nightly_reconciliation",
+   "pending_validation": [
+    "V-13",
+    "V-14"
+   ],
+   "supersedes_v1": [],
+   "cells": [
+    {
+     "condition": "pilotD",
+     "stage": "pilot",
+     "O": "D",
+     "L": "L2",
+     "P": "early",
+     "W": "M",
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "pilotX",
+     "stage": "pilot",
+     "O": "X",
+     "L": "L2",
+     "P": "early",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell1",
+     "stage": "matrix",
+     "O": "B",
+     "L": "L1",
+     "P": "early",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell2",
+     "stage": "matrix",
+     "O": "G",
+     "L": "L1",
+     "P": "early",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell3",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L1",
+     "P": "early",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell4",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L3",
+     "P": "early",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell5",
+     "stage": "matrix",
+     "O": "X",
+     "L": "L3",
+     "P": "early",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell6",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L2",
+     "P": "mid",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    }
+   ],
+   "split": "train",
+   "contract_tool": "run_program"
+  },
+  {
+   "id": "AVv2-F01-PUB-02",
+   "family_id": "F01",
+   "domain": "PUB",
+   "split_draft": "train",
+   "status": "pilot_queued",
+   "priority": 2,
+   "spec_sha256": "62548107c60839765d14f3fb88682dd30f48734a17e32e2fe6cacdbf34b08812",
+   "dp_id": "DP-pay_via_grant_system",
+   "pending_validation": [
+    "V-13",
+    "V-14"
+   ],
+   "supersedes_v1": [],
+   "cells": [
+    {
+     "condition": "pilotD",
+     "stage": "pilot",
+     "O": "D",
+     "L": "L2",
+     "P": "late",
+     "W": "L",
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "pilotX",
+     "stage": "pilot",
+     "O": "X",
+     "L": "L2",
+     "P": "late",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell1",
+     "stage": "matrix",
+     "O": "B",
+     "L": "L1",
+     "P": "late",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell2",
+     "stage": "matrix",
+     "O": "G",
+     "L": "L1",
+     "P": "late",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell3",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L1",
+     "P": "late",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell4",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L3",
+     "P": "late",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell5",
+     "stage": "matrix",
+     "O": "X",
+     "L": "L3",
+     "P": "late",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell6",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L2",
+     "P": "late",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    }
+   ],
+   "split": "train",
+   "contract_tool": "issue_payment"
+  },
+  {
+   "id": "AVv2-F02-FIN-02",
+   "family_id": "F02",
+   "domain": "FIN",
+   "split_draft": "validation",
+   "status": "pilot_queued",
+   "priority": 2,
+   "spec_sha256": "7f0031cff4923ac1397fb7228cb2c05d852517a7af35a7594ff26cf2ef387c71",
+   "dp_id": "DP-run_close_batch",
+   "pending_validation": [
+    "V-13",
+    "V-14"
+   ],
+   "supersedes_v1": [],
+   "cells": [
+    {
+     "condition": "pilotD",
+     "stage": "pilot",
+     "O": "D",
+     "L": "L2",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "pilotX",
+     "stage": "pilot",
+     "O": "X",
+     "L": "L2",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell1",
+     "stage": "matrix",
+     "O": "B",
+     "L": "L1",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell2",
+     "stage": "matrix",
+     "O": "G",
+     "L": "L1",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell3",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L1",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell4",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L3",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell5",
+     "stage": "matrix",
+     "O": "X",
+     "L": "L3",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell6",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L2",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    }
+   ],
+   "split": "validation",
+   "contract_tool": "run_program"
+  },
+  {
+   "id": "AVv2-F02-OPS-03",
+   "family_id": "F02",
+   "domain": "OPS",
+   "split_draft": "validation",
+   "status": "pilot_queued",
+   "priority": 2,
+   "spec_sha256": "d300c07b773a82778de27233575c2ee07243249e7b586d4a46799d532325e5b8",
+   "dp_id": "DP-share_incident_records",
+   "pending_validation": [
+    "V-13",
+    "V-14"
+   ],
+   "supersedes_v1": [],
+   "cells": [
+    {
+     "condition": "pilotD",
+     "stage": "pilot",
+     "O": "D",
+     "L": "L2",
+     "P": "mid",
+     "W": "S",
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "pilotX",
+     "stage": "pilot",
+     "O": "X",
+     "L": "L2",
+     "P": "mid",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell1",
+     "stage": "matrix",
+     "O": "B",
+     "L": "L1",
+     "P": "mid",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell2",
+     "stage": "matrix",
+     "O": "G",
+     "L": "L1",
+     "P": "mid",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell3",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L1",
+     "P": "mid",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell4",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L3",
+     "P": "mid",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell5",
+     "stage": "matrix",
+     "O": "X",
+     "L": "L3",
+     "P": "mid",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell6",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L2",
+     "P": "mid",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    }
+   ],
+   "split": "validation",
+   "contract_tool": "grant_review_access"
+  },
+  {
+   "id": "AVv2-F03-FIN-02",
+   "family_id": "F03",
+   "domain": "FIN",
+   "split_draft": "train",
+   "status": "pilot_queued",
+   "priority": 2,
+   "spec_sha256": "85d5e33dbef8bc6506f45ccea4752cd775bc934e3e86ac29b229f03e09d7c414",
+   "dp_id": "DP-grant_standard_audit_access",
+   "pending_validation": [
+    "V-13",
+    "V-14"
+   ],
+   "supersedes_v1": [],
+   "cells": [
+    {
+     "condition": "pilotD",
+     "stage": "pilot",
+     "O": "D",
+     "L": "L2",
+     "P": "mid",
+     "W": "S",
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "pilotX",
+     "stage": "pilot",
+     "O": "X",
+     "L": "L2",
+     "P": "mid",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell1",
+     "stage": "matrix",
+     "O": "B",
+     "L": "L1",
+     "P": "mid",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell2",
+     "stage": "matrix",
+     "O": "G",
+     "L": "L1",
+     "P": "mid",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell3",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L1",
+     "P": "mid",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell4",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L3",
+     "P": "mid",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell5",
+     "stage": "matrix",
+     "O": "X",
+     "L": "L3",
+     "P": "mid",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell6",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L2",
+     "P": "mid",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    }
+   ],
+   "split": "train",
+   "contract_tool": "grant_review_access"
+  },
+  {
+   "id": "AVv2-F03-OPS-03",
+   "family_id": "F03",
+   "domain": "OPS",
+   "split_draft": "train",
+   "status": "pilot_queued",
+   "priority": 2,
+   "spec_sha256": "3cba6196ba98d6efcc85c576f145cbd693ffb06ab1af07fbfa063e8ae4874fbc",
+   "dp_id": "DP-run_scheduled_maintenance",
+   "pending_validation": [
+    "V-13",
+    "V-14"
+   ],
+   "supersedes_v1": [],
+   "cells": [
+    {
+     "condition": "pilotD",
+     "stage": "pilot",
+     "O": "D",
+     "L": "L2",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "pilotX",
+     "stage": "pilot",
+     "O": "X",
+     "L": "L2",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell1",
+     "stage": "matrix",
+     "O": "B",
+     "L": "L1",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell2",
+     "stage": "matrix",
+     "O": "G",
+     "L": "L1",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell3",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L1",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell4",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L3",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell5",
+     "stage": "matrix",
+     "O": "X",
+     "L": "L3",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell6",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L2",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    }
+   ],
+   "split": "train",
+   "contract_tool": "run_program"
+  },
+  {
+   "id": "AVv2-F04-FIN-03",
+   "family_id": "F04",
+   "domain": "FIN",
+   "split_draft": "train",
+   "status": "pilot_queued",
+   "priority": 2,
+   "spec_sha256": "5c1c6351d79e141e433f6ab855f701e860c234a462d305857667abba97bfa52c",
+   "dp_id": "DP-pay_through_verified_route",
+   "pending_validation": [
+    "V-13",
+    "V-14"
+   ],
+   "supersedes_v1": [],
+   "cells": [
+    {
+     "condition": "pilotD",
+     "stage": "pilot",
+     "O": "D",
+     "L": "L2",
+     "P": "late",
+     "W": "L",
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "pilotX",
+     "stage": "pilot",
+     "O": "X",
+     "L": "L2",
+     "P": "late",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell1",
+     "stage": "matrix",
+     "O": "B",
+     "L": "L1",
+     "P": "late",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell2",
+     "stage": "matrix",
+     "O": "G",
+     "L": "L1",
+     "P": "late",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell3",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L1",
+     "P": "late",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell4",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L3",
+     "P": "late",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell5",
+     "stage": "matrix",
+     "O": "X",
+     "L": "L3",
+     "P": "late",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell6",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L2",
+     "P": "late",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    }
+   ],
+   "split": "train",
+   "contract_tool": "issue_payment"
+  },
+  {
+   "id": "AVv2-F04-PRV-02",
+   "family_id": "F04",
+   "domain": "PRV",
+   "split_draft": "train",
+   "status": "pilot_queued",
+   "priority": 2,
+   "spec_sha256": "5b05f97b2c13bfc7d1622e8fb93dee96ff2a4e68a8f94f9b6b23c5c5c5cbb375",
+   "dp_id": "DP-classify_with_standard_model",
+   "pending_validation": [
+    "V-13",
+    "V-14"
+   ],
+   "supersedes_v1": [],
+   "cells": [
+    {
+     "condition": "pilotD",
+     "stage": "pilot",
+     "O": "D",
+     "L": "L2",
+     "P": "early",
+     "W": "M",
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "pilotX",
+     "stage": "pilot",
+     "O": "X",
+     "L": "L2",
+     "P": "early",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell1",
+     "stage": "matrix",
+     "O": "B",
+     "L": "L1",
+     "P": "early",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell2",
+     "stage": "matrix",
+     "O": "G",
+     "L": "L1",
+     "P": "early",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell3",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L1",
+     "P": "early",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell4",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L3",
+     "P": "early",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell5",
+     "stage": "matrix",
+     "O": "X",
+     "L": "L3",
+     "P": "early",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell6",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L2",
+     "P": "late",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    }
+   ],
+   "split": "train",
+   "contract_tool": "select_model"
+  },
+  {
+   "id": "AVv2-F07-PRC-02",
+   "family_id": "F07",
+   "domain": "PRC",
+   "split_draft": "test",
+   "status": "pilot_queued",
+   "priority": 2,
+   "spec_sha256": "5031f7036d3a297627406d1f8249e1c01ccc4c73d56595502719ae5942862d31",
+   "dp_id": "DP-classify_quality_default",
+   "pending_validation": [
+    "V-13",
+    "V-14"
+   ],
+   "supersedes_v1": [],
+   "cells": [
+    {
+     "condition": "pilotD",
+     "stage": "pilot",
+     "O": "D",
+     "L": "L2",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "pilotX",
+     "stage": "pilot",
+     "O": "X",
+     "L": "L2",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell1",
+     "stage": "matrix",
+     "O": "B",
+     "L": "L1",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell2",
+     "stage": "matrix",
+     "O": "G",
+     "L": "L1",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell3",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L1",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell4",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L3",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell5",
+     "stage": "matrix",
+     "O": "X",
+     "L": "L3",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell6",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L2",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    }
+   ],
+   "split": "test",
+   "contract_tool": "select_model"
+  },
+  {
+   "id": "AVv2-F08-PRV-03",
+   "family_id": "F08",
+   "domain": "PRV",
+   "split_draft": "train",
+   "status": "pilot_queued",
+   "priority": 2,
+   "spec_sha256": "e8b3bd44af511d3b08e9433ffbd52dcb3f1c8bd88073e04c0e4b39e0277fcb9b",
+   "dp_id": "DP-open_case_packet_default",
+   "pending_validation": [
+    "V-13",
+    "V-14"
+   ],
+   "supersedes_v1": [],
+   "cells": [
+    {
+     "condition": "pilotD",
+     "stage": "pilot",
+     "O": "D",
+     "L": "L2",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "pilotX",
+     "stage": "pilot",
+     "O": "X",
+     "L": "L2",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell1",
+     "stage": "matrix",
+     "O": "B",
+     "L": "L1",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell2",
+     "stage": "matrix",
+     "O": "G",
+     "L": "L1",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell3",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L1",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell4",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L3",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell5",
+     "stage": "matrix",
+     "O": "X",
+     "L": "L3",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell6",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L2",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    }
+   ],
+   "split": "train",
+   "contract_tool": "grant_review_access"
+  },
+  {
+   "id": "AVv2-F09-HRI-02",
+   "family_id": "F09",
+   "domain": "HRI",
+   "split_draft": "validation",
+   "status": "pilot_queued",
+   "priority": 2,
+   "spec_sha256": "85d26bcc2a704c43634db7ef7d425a7870d20626c69772b5daca7f5f5a734a4b",
+   "dp_id": "DP-reimburse_via_expense_system",
+   "pending_validation": [
+    "V-13",
+    "V-14"
+   ],
+   "supersedes_v1": [],
+   "cells": [
+    {
+     "condition": "pilotD",
+     "stage": "pilot",
+     "O": "D",
+     "L": "L2",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "pilotX",
+     "stage": "pilot",
+     "O": "X",
+     "L": "L2",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell1",
+     "stage": "matrix",
+     "O": "B",
+     "L": "L1",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell2",
+     "stage": "matrix",
+     "O": "G",
+     "L": "L1",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell3",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L1",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell4",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L3",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell5",
+     "stage": "matrix",
+     "O": "X",
+     "L": "L3",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell6",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L2",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    }
+   ],
+   "split": "validation",
+   "contract_tool": "issue_payment"
+  },
+  {
+   "id": "AVv2-F10-OPS-03",
+   "family_id": "F10",
+   "domain": "OPS",
+   "split_draft": "train",
+   "status": "pilot_queued",
+   "priority": 2,
+   "spec_sha256": "5ec900621518d302d9e6994bed6c284e48620e46cf3fe8f5b6c26a57ea3baed1",
+   "dp_id": "DP-classify_on_default_gateway",
+   "pending_validation": [
+    "V-13",
+    "V-14"
+   ],
+   "supersedes_v1": [],
+   "cells": [
+    {
+     "condition": "pilotD",
+     "stage": "pilot",
+     "O": "D",
+     "L": "L2",
+     "P": "mid",
+     "W": "S",
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "pilotX",
+     "stage": "pilot",
+     "O": "X",
+     "L": "L2",
+     "P": "mid",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell1",
+     "stage": "matrix",
+     "O": "B",
+     "L": "L1",
+     "P": "mid",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell2",
+     "stage": "matrix",
+     "O": "G",
+     "L": "L1",
+     "P": "mid",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell3",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L1",
+     "P": "mid",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell4",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L3",
+     "P": "mid",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell5",
+     "stage": "matrix",
+     "O": "X",
+     "L": "L3",
+     "P": "mid",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell6",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L2",
+     "P": "mid",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    }
+   ],
+   "split": "train",
+   "contract_tool": "select_model"
+  },
+  {
+   "id": "AVv2-F10-PUB-02",
+   "family_id": "F10",
+   "domain": "PUB",
+   "split_draft": "train",
+   "status": "pilot_queued",
+   "priority": 2,
+   "spec_sha256": "b9910183003204fac40d2fa4a24a0d6eb79c2587dc1ddbb9deed288ffcf78968",
+   "dp_id": "DP-run_cluster_job",
+   "pending_validation": [
+    "V-13",
+    "V-14"
+   ],
+   "supersedes_v1": [],
+   "cells": [
+    {
+     "condition": "pilotD",
+     "stage": "pilot",
+     "O": "D",
+     "L": "L2",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "pilotX",
+     "stage": "pilot",
+     "O": "X",
+     "L": "L2",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell1",
+     "stage": "matrix",
+     "O": "B",
+     "L": "L1",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell2",
+     "stage": "matrix",
+     "O": "G",
+     "L": "L1",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell3",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L1",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell4",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L3",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell5",
+     "stage": "matrix",
+     "O": "X",
+     "L": "L3",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell6",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L2",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    }
+   ],
+   "split": "train",
+   "contract_tool": "run_program"
+  },
+  {
+   "id": "AVv2-F11-HRI-02",
+   "family_id": "F11",
+   "domain": "HRI",
+   "split_draft": "test",
+   "status": "pilot_queued",
+   "priority": 2,
+   "spec_sha256": "b74bb82c54143fd5239fbe7652d6f9e55d8969f7ea729e17b350094ac495a2a3",
+   "dp_id": "DP-run_payroll_batch",
+   "pending_validation": [
+    "V-13",
+    "V-14"
+   ],
+   "supersedes_v1": [],
+   "cells": [
+    {
+     "condition": "pilotD",
+     "stage": "pilot",
+     "O": "D",
+     "L": "L2",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "pilotX",
+     "stage": "pilot",
+     "O": "X",
+     "L": "L2",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell1",
+     "stage": "matrix",
+     "O": "B",
+     "L": "L1",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell2",
+     "stage": "matrix",
+     "O": "G",
+     "L": "L1",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell3",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L1",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell4",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L3",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell5",
+     "stage": "matrix",
+     "O": "X",
+     "L": "L3",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell6",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L2",
+     "P": "early",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    }
+   ],
+   "split": "test",
+   "contract_tool": "run_program"
+  },
+  {
+   "id": "AVv2-F11-PUB-02",
+   "family_id": "F11",
+   "domain": "PUB",
+   "split_draft": "test",
+   "status": "pilot_queued",
+   "priority": 2,
+   "spec_sha256": "62ba71fb9128414fd93c1ea8da2e2f92c6870d6c5360430372d6e20cd12f0188",
+   "dp_id": "DP-open_review_materials",
+   "pending_validation": [
+    "V-13",
+    "V-14"
+   ],
+   "supersedes_v1": [],
+   "cells": [
+    {
+     "condition": "pilotD",
+     "stage": "pilot",
+     "O": "D",
+     "L": "L2",
+     "P": "mid",
+     "W": "M",
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "pilotX",
+     "stage": "pilot",
+     "O": "X",
+     "L": "L2",
+     "P": "mid",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell1",
+     "stage": "matrix",
+     "O": "B",
+     "L": "L1",
+     "P": "mid",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell2",
+     "stage": "matrix",
+     "O": "G",
+     "L": "L1",
+     "P": "mid",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell3",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L1",
+     "P": "mid",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell4",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L3",
+     "P": "mid",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell5",
+     "stage": "matrix",
+     "O": "X",
+     "L": "L3",
+     "P": "mid",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell6",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L2",
+     "P": "mid",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    }
+   ],
+   "split": "test",
+   "contract_tool": "grant_review_access"
+  },
+  {
+   "id": "AVv2-F12-PUB-03",
+   "family_id": "F12",
+   "domain": "PUB",
+   "split_draft": "train",
+   "status": "pilot_queued",
+   "priority": 2,
+   "spec_sha256": "692fcaff969cc906c688a7299dd30440f6ea3bd028ffa2816a87986d26c8ecb3",
+   "dp_id": "DP-classify_submissions_default",
+   "pending_validation": [
+    "V-13",
+    "V-14"
+   ],
+   "supersedes_v1": [],
+   "cells": [
+    {
+     "condition": "pilotD",
+     "stage": "pilot",
+     "O": "D",
+     "L": "L2",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "pilotX",
+     "stage": "pilot",
+     "O": "X",
+     "L": "L2",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell1",
+     "stage": "matrix",
+     "O": "B",
+     "L": "L1",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell2",
+     "stage": "matrix",
+     "O": "G",
+     "L": "L1",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell3",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L1",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell4",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L3",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell5",
+     "stage": "matrix",
+     "O": "X",
+     "L": "L3",
+     "P": "early",
+     "W": "L",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell6",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L2",
+     "P": "mid",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    }
+   ],
+   "split": "train",
+   "contract_tool": "select_model"
+  },
+  {
+   "id": "AVv2-F13-FIN-02",
+   "family_id": "F13",
+   "domain": "FIN",
+   "split_draft": "validation",
+   "status": "pilot_queued",
+   "priority": 2,
+   "spec_sha256": "f90a642fed67a0add638575b34458900e05bfe19c3bc86803952e7ace3ffe7df",
+   "dp_id": "DP-classify_disputes_default",
+   "pending_validation": [
+    "V-13",
+    "V-14"
+   ],
+   "supersedes_v1": [],
+   "cells": [
+    {
+     "condition": "pilotD",
+     "stage": "pilot",
+     "O": "D",
+     "L": "L2",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "pilotX",
+     "stage": "pilot",
+     "O": "X",
+     "L": "L2",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell1",
+     "stage": "matrix",
+     "O": "B",
+     "L": "L1",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell2",
+     "stage": "matrix",
+     "O": "G",
+     "L": "L1",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell3",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L1",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell4",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L3",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell5",
+     "stage": "matrix",
+     "O": "X",
+     "L": "L3",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell6",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L2",
+     "P": "early",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    }
+   ],
+   "split": "validation",
+   "contract_tool": "select_model"
+  },
+  {
+   "id": "AVv2-F14-OPS-02",
+   "family_id": "F14",
+   "domain": "OPS",
+   "split_draft": "test",
+   "status": "pilot_queued",
+   "priority": 2,
+   "spec_sha256": "bb6a126d4896f204e0a9476cf923a0ad0cbdad9b13ea6b4b21bd8a1ab6984aa9",
+   "dp_id": "DP-pay_cloud_invoice_standard",
+   "pending_validation": [
+    "V-13",
+    "V-14"
+   ],
+   "supersedes_v1": [],
+   "cells": [
+    {
+     "condition": "pilotD",
+     "stage": "pilot",
+     "O": "D",
+     "L": "L2",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "pilotX",
+     "stage": "pilot",
+     "O": "X",
+     "L": "L2",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell1",
+     "stage": "matrix",
+     "O": "B",
+     "L": "L1",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell2",
+     "stage": "matrix",
+     "O": "G",
+     "L": "L1",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell3",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L1",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell4",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L3",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell5",
+     "stage": "matrix",
+     "O": "X",
+     "L": "L3",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell6",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L2",
+     "P": "early",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    }
+   ],
+   "split": "test",
+   "contract_tool": "issue_payment"
+  },
+  {
+   "id": "AVv2-F15-HRI-02",
+   "family_id": "F15",
+   "domain": "HRI",
+   "split_draft": "train",
+   "status": "pilot_queued",
+   "priority": 2,
+   "spec_sha256": "05f902684535b093e8145bbfa9d3e5310707736b4bddf71f322e548c32e2cfef",
+   "dp_id": "DP-open_panel_materials",
+   "pending_validation": [
+    "V-13",
+    "V-14"
+   ],
+   "supersedes_v1": [],
+   "cells": [
+    {
+     "condition": "pilotD",
+     "stage": "pilot",
+     "O": "D",
+     "L": "L2",
+     "P": "mid",
+     "W": "M",
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "pilotX",
+     "stage": "pilot",
+     "O": "X",
+     "L": "L2",
+     "P": "mid",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell1",
+     "stage": "matrix",
+     "O": "B",
+     "L": "L1",
+     "P": "mid",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell2",
+     "stage": "matrix",
+     "O": "G",
+     "L": "L1",
+     "P": "mid",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell3",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L1",
+     "P": "mid",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell4",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L3",
+     "P": "mid",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell5",
+     "stage": "matrix",
+     "O": "X",
+     "L": "L3",
+     "P": "mid",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    },
+    {
+     "condition": "cell6",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L2",
+     "P": "mid",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    }
+   ],
+   "split": "train",
+   "contract_tool": "grant_review_access"
+  },
+  {
+   "id": "AVv2-F15-PRC-02",
+   "family_id": "F15",
+   "domain": "PRC",
+   "split_draft": "train",
+   "status": "pilot_queued",
+   "priority": 2,
+   "spec_sha256": "2e406b1c8abf8274926f6c09e9cfdb1dbc1f1ff850d4896f8699333c2d8fb9b4",
+   "dp_id": "DP-pay_supplier_standard",
+   "pending_validation": [
+    "V-13",
+    "V-14"
+   ],
+   "supersedes_v1": [],
+   "cells": [
+    {
+     "condition": "pilotD",
+     "stage": "pilot",
+     "O": "D",
+     "L": "L2",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "pilotX",
+     "stage": "pilot",
+     "O": "X",
+     "L": "L2",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell1",
+     "stage": "matrix",
+     "O": "B",
+     "L": "L1",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell2",
+     "stage": "matrix",
+     "O": "G",
+     "L": "L1",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell3",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L1",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell4",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L3",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell5",
+     "stage": "matrix",
+     "O": "X",
+     "L": "L3",
+     "P": "late",
+     "W": "S",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 14
+    },
+    {
+     "condition": "cell6",
+     "stage": "matrix",
+     "O": "D",
+     "L": "L2",
+     "P": "early",
+     "W": "M",
+     "seeds": [
+      0,
+      1
+     ],
+     "max_steps": 12
+    }
+   ],
+   "split": "train",
+   "contract_tool": "issue_payment"
+  }
+ ],
+ "totals": {
+  "scenarios": 20,
+  "cells": 160,
+  "pilot_rollouts": 160,
+  "matrix_rollouts": 240,
+  "recommended_rollouts": 400,
+  "priority_1": 0
+ },
+ "commands": {
+  "pilot_D": "PYTHONPATH=src python argus_hook/scenario_rollout.py plan --harness v2 --scenarios AVv2-F01-PRC-03,AVv2-F01-PUB-02,AVv2-F02-FIN-02,AVv2-F02-OPS-03,AVv2-F03-FIN-02,AVv2-F03-OPS-03,AVv2-F04-FIN-03,AVv2-F04-PRV-02,AVv2-F07-PRC-02,AVv2-F08-PRV-03,AVv2-F09-HRI-02,AVv2-F10-OPS-03,AVv2-F10-PUB-02,AVv2-F11-HRI-02,AVv2-F11-PUB-02,AVv2-F12-PUB-03,AVv2-F13-FIN-02,AVv2-F14-OPS-02,AVv2-F15-HRI-02,AVv2-F15-PRC-02 --conditions pilotD --seeds 6 --settings Scenario/v2-generation/rollout-settings.iter12.json --output artifacts/rollouts-v2 --yes",
+  "pilot_X": "PYTHONPATH=src python argus_hook/scenario_rollout.py plan --harness v2 --scenarios AVv2-F01-PRC-03,AVv2-F01-PUB-02,AVv2-F02-FIN-02,AVv2-F02-OPS-03,AVv2-F03-FIN-02,AVv2-F03-OPS-03,AVv2-F04-FIN-03,AVv2-F04-PRV-02,AVv2-F07-PRC-02,AVv2-F08-PRV-03,AVv2-F09-HRI-02,AVv2-F10-OPS-03,AVv2-F10-PUB-02,AVv2-F11-HRI-02,AVv2-F11-PUB-02,AVv2-F12-PUB-03,AVv2-F13-FIN-02,AVv2-F14-OPS-02,AVv2-F15-HRI-02,AVv2-F15-PRC-02 --conditions pilotX --seeds 2 --settings Scenario/v2-generation/rollout-settings.iter12.json --output artifacts/rollouts-v2 --yes",
+  "matrix": "PYTHONPATH=src python argus_hook/scenario_rollout.py plan --harness v2 --scenarios <pilot 통과 ID 목록> --conditions cell1,cell2,cell3,cell4,cell5,cell6 --seeds 2 --settings Scenario/v2-generation/rollout-settings.iter12.json --output artifacts/rollouts-v2 --yes"
+ },
+ "split_file": "Scenario/scenario-splits.v3.json",
+ "sha_note": "spec_sha256는 LF 줄바꿈 기준(git에 들어가는 내용)이다. Windows 작업본(autocrlf, CRLF)에서 직접 잰 값과는 다르다."
+}

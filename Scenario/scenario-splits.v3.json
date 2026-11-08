@@ -1,0 +1,174 @@
+{
+ "schema_version": "argus-v.scenario-splits.v3",
+ "status": "FIXED_BEFORE_GENERATION",
+ "decided_at": "2026-11-08",
+ "approval": "사용자 승인 2026-11-08 (reports/risk-loop/argus-v1/loop/iter-12/data_plan.md, '그대로 작성 시작'). git 커밋은 사용자 결정.",
+ "source": "data_plan.md §3.5 S1~S6: 새 시나리오의 split = 그 family의 split(registry.FAMILIES, scenario-splits.v2.json 초안과 같음). rollout 전에 고정한다.",
+ "note": "반복 12 데이터 추가 20개(공유 도구 계약 4개 x family). v1·v2 split 파일과 ID가 겹치지 않는다(봉인 범위 AV-S61~S80과도 무관). test 4개는 봉인: 루프는 이 ID들의 rollout·라벨·텐서·시나리오 내용을 읽지 않는다. build_features.py SPLITS에 이 파일이 추가되기 전까지 20개 모두 split 미지정 = 봉인으로 처리된다(build_features.py splits.get(..., 'sealed')).",
+ "families": {
+  "F01": "train",
+  "F02": "validation",
+  "F03": "train",
+  "F04": "train",
+  "F07": "test",
+  "F08": "train",
+  "F09": "validation",
+  "F10": "train",
+  "F11": "test",
+  "F12": "train",
+  "F13": "validation",
+  "F14": "test",
+  "F15": "train"
+ },
+ "splits": {
+  "train": [
+   "AVv2-F01-PRC-03",
+   "AVv2-F01-PUB-02",
+   "AVv2-F03-FIN-02",
+   "AVv2-F03-OPS-03",
+   "AVv2-F04-FIN-03",
+   "AVv2-F04-PRV-02",
+   "AVv2-F08-PRV-03",
+   "AVv2-F10-OPS-03",
+   "AVv2-F10-PUB-02",
+   "AVv2-F12-PUB-03",
+   "AVv2-F15-HRI-02",
+   "AVv2-F15-PRC-02"
+  ],
+  "validation": [
+   "AVv2-F02-FIN-02",
+   "AVv2-F02-OPS-03",
+   "AVv2-F09-HRI-02",
+   "AVv2-F13-FIN-02"
+  ],
+  "test": [
+   "AVv2-F07-PRC-02",
+   "AVv2-F11-HRI-02",
+   "AVv2-F11-PUB-02",
+   "AVv2-F14-OPS-02"
+  ]
+ },
+ "contracts": {
+  "AVv2-F01-PRC-03": {
+   "contract": "T1",
+   "tool": "run_program",
+   "family_id": "F01",
+   "spec_sha256": "9e26a5cc693558aca1c84e50bbaa7a59ce10db1e305b8ddc82c89363e2cc7683"
+  },
+  "AVv2-F01-PUB-02": {
+   "contract": "T3",
+   "tool": "issue_payment",
+   "family_id": "F01",
+   "spec_sha256": "62548107c60839765d14f3fb88682dd30f48734a17e32e2fe6cacdbf34b08812"
+  },
+  "AVv2-F02-FIN-02": {
+   "contract": "T1",
+   "tool": "run_program",
+   "family_id": "F02",
+   "spec_sha256": "7f0031cff4923ac1397fb7228cb2c05d852517a7af35a7594ff26cf2ef387c71"
+  },
+  "AVv2-F02-OPS-03": {
+   "contract": "T4",
+   "tool": "grant_review_access",
+   "family_id": "F02",
+   "spec_sha256": "d300c07b773a82778de27233575c2ee07243249e7b586d4a46799d532325e5b8"
+  },
+  "AVv2-F03-FIN-02": {
+   "contract": "T4",
+   "tool": "grant_review_access",
+   "family_id": "F03",
+   "spec_sha256": "85d5e33dbef8bc6506f45ccea4752cd775bc934e3e86ac29b229f03e09d7c414"
+  },
+  "AVv2-F03-OPS-03": {
+   "contract": "T1",
+   "tool": "run_program",
+   "family_id": "F03",
+   "spec_sha256": "3cba6196ba98d6efcc85c576f145cbd693ffb06ab1af07fbfa063e8ae4874fbc"
+  },
+  "AVv2-F04-FIN-03": {
+   "contract": "T3",
+   "tool": "issue_payment",
+   "family_id": "F04",
+   "spec_sha256": "5c1c6351d79e141e433f6ab855f701e860c234a462d305857667abba97bfa52c"
+  },
+  "AVv2-F04-PRV-02": {
+   "contract": "T2",
+   "tool": "select_model",
+   "family_id": "F04",
+   "spec_sha256": "5b05f97b2c13bfc7d1622e8fb93dee96ff2a4e68a8f94f9b6b23c5c5c5cbb375"
+  },
+  "AVv2-F07-PRC-02": {
+   "contract": "T2",
+   "tool": "select_model",
+   "family_id": "F07",
+   "spec_sha256": "5031f7036d3a297627406d1f8249e1c01ccc4c73d56595502719ae5942862d31"
+  },
+  "AVv2-F08-PRV-03": {
+   "contract": "T4",
+   "tool": "grant_review_access",
+   "family_id": "F08",
+   "spec_sha256": "e8b3bd44af511d3b08e9433ffbd52dcb3f1c8bd88073e04c0e4b39e0277fcb9b"
+  },
+  "AVv2-F09-HRI-02": {
+   "contract": "T3",
+   "tool": "issue_payment",
+   "family_id": "F09",
+   "spec_sha256": "85d26bcc2a704c43634db7ef7d425a7870d20626c69772b5daca7f5f5a734a4b"
+  },
+  "AVv2-F10-OPS-03": {
+   "contract": "T2",
+   "tool": "select_model",
+   "family_id": "F10",
+   "spec_sha256": "5ec900621518d302d9e6994bed6c284e48620e46cf3fe8f5b6c26a57ea3baed1"
+  },
+  "AVv2-F10-PUB-02": {
+   "contract": "T1",
+   "tool": "run_program",
+   "family_id": "F10",
+   "spec_sha256": "b9910183003204fac40d2fa4a24a0d6eb79c2587dc1ddbb9deed288ffcf78968"
+  },
+  "AVv2-F11-HRI-02": {
+   "contract": "T1",
+   "tool": "run_program",
+   "family_id": "F11",
+   "spec_sha256": "b74bb82c54143fd5239fbe7652d6f9e55d8969f7ea729e17b350094ac495a2a3"
+  },
+  "AVv2-F11-PUB-02": {
+   "contract": "T4",
+   "tool": "grant_review_access",
+   "family_id": "F11",
+   "spec_sha256": "62ba71fb9128414fd93c1ea8da2e2f92c6870d6c5360430372d6e20cd12f0188"
+  },
+  "AVv2-F12-PUB-03": {
+   "contract": "T2",
+   "tool": "select_model",
+   "family_id": "F12",
+   "spec_sha256": "692fcaff969cc906c688a7299dd30440f6ea3bd028ffa2816a87986d26c8ecb3"
+  },
+  "AVv2-F13-FIN-02": {
+   "contract": "T2",
+   "tool": "select_model",
+   "family_id": "F13",
+   "spec_sha256": "f90a642fed67a0add638575b34458900e05bfe19c3bc86803952e7ace3ffe7df"
+  },
+  "AVv2-F14-OPS-02": {
+   "contract": "T3",
+   "tool": "issue_payment",
+   "family_id": "F14",
+   "spec_sha256": "bb6a126d4896f204e0a9476cf923a0ad0cbdad9b13ea6b4b21bd8a1ab6984aa9"
+  },
+  "AVv2-F15-HRI-02": {
+   "contract": "T4",
+   "tool": "grant_review_access",
+   "family_id": "F15",
+   "spec_sha256": "05f902684535b093e8145bbfa9d3e5310707736b4bddf71f322e548c32e2cfef"
+  },
+  "AVv2-F15-PRC-02": {
+   "contract": "T3",
+   "tool": "issue_payment",
+   "family_id": "F15",
+   "spec_sha256": "2e406b1c8abf8274926f6c09e9cfdb1dbc1f1ff850d4896f8699333c2d8fb9b4"
+  }
+ },
+ "sha_note": "spec_sha256는 LF 줄바꿈 기준(git에 들어가는 내용)이다. Windows 작업본(autocrlf, CRLF)에서 직접 잰 값과는 다르다."
+}

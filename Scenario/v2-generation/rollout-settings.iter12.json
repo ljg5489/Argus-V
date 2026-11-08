@@ -1,0 +1,648 @@
+{
+ "_comment": "iter-12 새 v2 시나리오 20개의 셀별 설정(late 배치 셀 14 step, 나머지 12). scenario_suite.v2.export.build_settings로 이 20개만 생성했다. 기존 rollout-settings.v2.json은 바꾸지 않았다. --settings로 이 파일을 넘긴다.",
+ "default": {
+  "sandbox": {}
+ },
+ "scenarios": {
+  "AVv2-F01-PRC-03/pilotD": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F01-PRC-03/pilotX": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F01-PRC-03/cell1": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F01-PRC-03/cell2": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F01-PRC-03/cell3": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F01-PRC-03/cell4": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F01-PRC-03/cell5": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F01-PRC-03/cell6": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F01-PUB-02/pilotD": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F01-PUB-02/pilotX": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F01-PUB-02/cell1": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F01-PUB-02/cell2": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F01-PUB-02/cell3": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F01-PUB-02/cell4": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F01-PUB-02/cell5": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F01-PUB-02/cell6": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F02-FIN-02/pilotD": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F02-FIN-02/pilotX": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F02-FIN-02/cell1": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F02-FIN-02/cell2": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F02-FIN-02/cell3": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F02-FIN-02/cell4": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F02-FIN-02/cell5": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F02-FIN-02/cell6": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F02-OPS-03/pilotD": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F02-OPS-03/pilotX": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F02-OPS-03/cell1": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F02-OPS-03/cell2": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F02-OPS-03/cell3": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F02-OPS-03/cell4": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F02-OPS-03/cell5": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F02-OPS-03/cell6": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F03-FIN-02/pilotD": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F03-FIN-02/pilotX": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F03-FIN-02/cell1": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F03-FIN-02/cell2": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F03-FIN-02/cell3": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F03-FIN-02/cell4": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F03-FIN-02/cell5": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F03-FIN-02/cell6": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F03-OPS-03/pilotD": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F03-OPS-03/pilotX": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F03-OPS-03/cell1": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F03-OPS-03/cell2": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F03-OPS-03/cell3": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F03-OPS-03/cell4": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F03-OPS-03/cell5": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F03-OPS-03/cell6": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F04-FIN-03/pilotD": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F04-FIN-03/pilotX": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F04-FIN-03/cell1": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F04-FIN-03/cell2": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F04-FIN-03/cell3": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F04-FIN-03/cell4": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F04-FIN-03/cell5": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F04-FIN-03/cell6": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F04-PRV-02/pilotD": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F04-PRV-02/pilotX": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F04-PRV-02/cell1": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F04-PRV-02/cell2": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F04-PRV-02/cell3": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F04-PRV-02/cell4": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F04-PRV-02/cell5": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F04-PRV-02/cell6": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F07-PRC-02/pilotD": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F07-PRC-02/pilotX": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F07-PRC-02/cell1": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F07-PRC-02/cell2": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F07-PRC-02/cell3": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F07-PRC-02/cell4": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F07-PRC-02/cell5": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F07-PRC-02/cell6": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F08-PRV-03/pilotD": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F08-PRV-03/pilotX": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F08-PRV-03/cell1": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F08-PRV-03/cell2": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F08-PRV-03/cell3": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F08-PRV-03/cell4": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F08-PRV-03/cell5": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F08-PRV-03/cell6": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F09-HRI-02/pilotD": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F09-HRI-02/pilotX": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F09-HRI-02/cell1": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F09-HRI-02/cell2": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F09-HRI-02/cell3": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F09-HRI-02/cell4": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F09-HRI-02/cell5": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F09-HRI-02/cell6": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F10-OPS-03/pilotD": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F10-OPS-03/pilotX": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F10-OPS-03/cell1": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F10-OPS-03/cell2": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F10-OPS-03/cell3": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F10-OPS-03/cell4": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F10-OPS-03/cell5": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F10-OPS-03/cell6": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F10-PUB-02/pilotD": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F10-PUB-02/pilotX": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F10-PUB-02/cell1": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F10-PUB-02/cell2": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F10-PUB-02/cell3": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F10-PUB-02/cell4": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F10-PUB-02/cell5": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F10-PUB-02/cell6": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F11-HRI-02/pilotD": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F11-HRI-02/pilotX": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F11-HRI-02/cell1": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F11-HRI-02/cell2": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F11-HRI-02/cell3": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F11-HRI-02/cell4": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F11-HRI-02/cell5": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F11-HRI-02/cell6": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F11-PUB-02/pilotD": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F11-PUB-02/pilotX": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F11-PUB-02/cell1": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F11-PUB-02/cell2": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F11-PUB-02/cell3": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F11-PUB-02/cell4": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F11-PUB-02/cell5": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F11-PUB-02/cell6": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F12-PUB-03/pilotD": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F12-PUB-03/pilotX": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F12-PUB-03/cell1": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F12-PUB-03/cell2": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F12-PUB-03/cell3": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F12-PUB-03/cell4": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F12-PUB-03/cell5": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F12-PUB-03/cell6": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F13-FIN-02/pilotD": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F13-FIN-02/pilotX": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F13-FIN-02/cell1": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F13-FIN-02/cell2": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F13-FIN-02/cell3": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F13-FIN-02/cell4": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F13-FIN-02/cell5": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F13-FIN-02/cell6": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F14-OPS-02/pilotD": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F14-OPS-02/pilotX": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F14-OPS-02/cell1": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F14-OPS-02/cell2": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F14-OPS-02/cell3": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F14-OPS-02/cell4": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F14-OPS-02/cell5": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F14-OPS-02/cell6": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F15-HRI-02/pilotD": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F15-HRI-02/pilotX": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F15-HRI-02/cell1": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F15-HRI-02/cell2": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F15-HRI-02/cell3": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F15-HRI-02/cell4": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F15-HRI-02/cell5": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F15-HRI-02/cell6": {
+   "max_steps": 12,
+   "command_timeout": 120
+  },
+  "AVv2-F15-PRC-02/pilotD": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F15-PRC-02/pilotX": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F15-PRC-02/cell1": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F15-PRC-02/cell2": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F15-PRC-02/cell3": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F15-PRC-02/cell4": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F15-PRC-02/cell5": {
+   "max_steps": 14,
+   "command_timeout": 120
+  },
+  "AVv2-F15-PRC-02/cell6": {
+   "max_steps": 12,
+   "command_timeout": 120
+  }
+ }
+}
