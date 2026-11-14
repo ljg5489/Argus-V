@@ -1,0 +1,148 @@
+{
+ "evaluate_sha256": "a7c36eafdf994f98b61895be4e4b8d237740d0018422d12febab8deb9df0130d",
+ "seeds": [
+  0,
+  1,
+  2
+ ],
+ "tol": 0.01,
+ "layers": {
+  "16": {
+   "official|P1_pca_logreg_k10": {
+    "orig": 0.5482171862506448,
+    "cache": 0.5588124727707662,
+    "diff_cache_minus_orig": 0.010595286520121427
+   },
+   "official|P1_pca_logreg_k32": {
+    "orig": 0.5766332603162995,
+    "cache": 0.5896143244325635,
+    "diff_cache_minus_orig": 0.012981064116263985
+   },
+   "official|P2_pair_logistic_k10_C0.01": {
+    "orig": 0.5195764866646462,
+    "cache": 0.523347350054001,
+    "diff_cache_minus_orig": 0.0037708633893548393
+   },
+   "headline|P1_pca_logreg_k10": {
+    "orig": 0.6929736901535682,
+    "cache": 0.6431684733514001,
+    "diff_cache_minus_orig": -0.049805216802168095
+   },
+   "headline|P1_pca_logreg_k32": {
+    "orig": 0.3918882678410118,
+    "cache": 0.5132156165311653,
+    "diff_cache_minus_orig": 0.12132734869015355
+   },
+   "headline|P2_pair_logistic_k10_C0.01": {
+    "orig": 0.6479378387533875,
+    "cache": 0.5457952235772358,
+    "diff_cache_minus_orig": -0.10214261517615175
+   },
+   "worst_diff": -0.10214261517615175,
+   "worst_official_rows": 0.0037708633893548393,
+   "worst_official_rows_official_probe": 0.010595286520121427,
+   "range_headline_rows": [
+    -0.10214261517615175,
+    0.12132734869015355
+   ],
+   "verdict_official_procedure": "PASS",
+   "verdict_official_rows_all_probes": "PASS",
+   "verdict_strict_any_rowset_any_probe": "FAIL"
+  },
+  "23": {
+   "official|P1_pca_logreg_k10": {
+    "orig": 0.5055112391270365,
+    "cache": 0.5409074951709997,
+    "diff_cache_minus_orig": 0.035396256043963126
+   },
+   "official|P1_pca_logreg_k32": {
+    "orig": 0.5196660752522447,
+    "cache": 0.5141497418995774,
+    "diff_cache_minus_orig": -0.005516333352667324
+   },
+   "official|P2_pair_logistic_k10_C0.01": {
+    "orig": 0.49557778858505813,
+    "cache": 0.517272338491809,
+    "diff_cache_minus_orig": 0.02169454990675085
+   },
+   "headline|P1_pca_logreg_k10": {
+    "orig": 0.629053748870822,
+    "cache": 0.5598323170731706,
+    "diff_cache_minus_orig": -0.06922143179765139
+   },
+   "headline|P1_pca_logreg_k32": {
+    "orig": 0.495923667570009,
+    "cache": 0.41662008807588075,
+    "diff_cache_minus_orig": -0.07930357949412825
+   },
+   "headline|P2_pair_logistic_k10_C0.01": {
+    "orig": 0.6111506323396568,
+    "cache": 0.6887406842818428,
+    "diff_cache_minus_orig": 0.07759005194218593
+   },
+   "worst_diff": -0.07930357949412825,
+   "worst_official_rows": -0.005516333352667324,
+   "worst_official_rows_official_probe": -0.005516333352667324,
+   "range_headline_rows": [
+    -0.07930357949412825,
+    0.07759005194218593
+   ],
+   "verdict_official_procedure": "PASS",
+   "verdict_official_rows_all_probes": "PASS",
+   "verdict_strict_any_rowset_any_probe": "FAIL"
+  },
+  "20": {
+   "official|P1_pca_logreg_k10": {
+    "orig": 0.535571749533478,
+    "cache": 0.5382418888891172,
+    "diff_cache_minus_orig": 0.0026701393556392006
+   },
+   "official|P1_pca_logreg_k32": {
+    "orig": 0.5306915842671615,
+    "cache": 0.5412415429035394,
+    "diff_cache_minus_orig": 0.010549958636377976
+   },
+   "official|P2_pair_logistic_k10_C0.01": {
+    "orig": 0.5092687870252842,
+    "cache": 0.507686122901609,
+    "diff_cache_minus_orig": -0.0015826641236752481
+   },
+   "headline|P1_pca_logreg_k10": {
+    "orig": 0.664675079042457,
+    "cache": 0.6777551942186087,
+    "diff_cache_minus_orig": 0.013080115176151708
+   },
+   "headline|P1_pca_logreg_k32": {
+    "orig": 0.48718383017163497,
+    "cache": 0.3968114837398374,
+    "diff_cache_minus_orig": -0.09037234643179759
+   },
+   "headline|P2_pair_logistic_k10_C0.01": {
+    "orig": 0.61582119467028,
+    "cache": 0.6442665989159891,
+    "diff_cache_minus_orig": 0.028445404245709183
+   },
+   "worst_diff": -0.09037234643179759,
+   "worst_official_rows": -0.0015826641236752481,
+   "worst_official_rows_official_probe": 0.0026701393556392006,
+   "range_headline_rows": [
+    -0.09037234643179759,
+    0.028445404245709183
+   ],
+   "verdict_official_procedure": "PASS",
+   "verdict_official_rows_all_probes": "PASS",
+   "verdict_strict_any_rowset_any_probe": "FAIL"
+  }
+ },
+ "row_sets": {
+  "official": 11025,
+  "headline": 9278
+ },
+ "seconds": 300.59616017341614,
+ "interpretation": "Official rows (11,025, evaluate.load) with the official probe: L16 PASS (+0.011/+0.013), L23 PASS (+0.035/-0.006), L20 PASS; the pair probe on the same rows also passes for all layers (worst -0.002). On headline rows (9,278; 9 cells, 48 evaluated violations) cache-minus-orig swings -0.10..+0.12 in BOTH directions for EVERY layer, including L20 (k32 -0.090) that the orchestrator passed; probes there sit near 0.4-0.7 with sign flips, i.e. this is the noise floor of the headline metric for a PCA probe, not layer-specific information loss. The earlier L16 -0.102 (pair probe, headline rows) reproduces exactly but is matched by L20 -0.090 and L23 -0.079 on other headline probes. Strict rule (any probe, any row set, >= -0.01) fails every layer and is not informative.",
+ "recommended_verdict": {
+  "16": "PASS",
+  "23": "PASS",
+  "20": "PASS"
+ }
+}

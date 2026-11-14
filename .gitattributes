@@ -1,0 +1,4 @@
+# Hash-locked pre-registration files and their hash records: store the bytes exactly as written
+# (no line-ending conversion), so the recorded sha256 matches on every machine.
+reports/risk-loop/argus-v1/loop/**/prereg*.md -text
+reports/risk-loop/argus-v1/loop/**/*.sha256 -text

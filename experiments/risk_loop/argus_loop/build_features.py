@@ -11,6 +11,11 @@ Pools per layer L (all over the step's observation rows, block-L output = residu
   pre   the ``pre_action`` row (last observation before the action; falls back to the last row, flagged)
   rend  the ``reasoning_end`` row (NaN when the step has none, ``has_rend=0``)
 
+Observation grid: every unit records ``observe_every`` (rollout.json; units recorded before the field = 32).
+Rows are thinned to the 32-token grid (``grid32_keep``: pre_reasoning / reasoning_end / pre_action always kept,
+``reasoning+N`` only when N % 32 == 0) before pooling, so 8-token captures pool exactly like the 32-grid data
+and observe_every=32 outputs are byte-identical to the first build. observe_every per step: features/steps_grid.csv.
+
 Test-split and sealed units (scenario in neither split file) are listed by unit_id + split only. Their
 rollout.json is not read, their tensor rows are never decoded, and row groups are chosen only for train /
 validation rows. A row group that also holds other units' rows is read as one column chunk (the smallest
@@ -22,7 +27,8 @@ Stages (each resumable; ``all`` runs them in order):
   relabel  labels-only rebuild: human > convention > sidecar > draft -> OUT/labels/labels_trainval.v2.csv,
            labels/steps.v2.csv; no tensors, feature files untouched; --make-view links features_labels_v2/
   meta     rollout.json of train/validation units (files table)    -> OUT/meta/rollouts.jsonl (append, per unit)
-  steps    join labels x rollout steps                             -> OUT/features/steps.csv
+  points   observation token_index + observe_every per unit         -> OUT/meta/obs_points.jsonl (append, per unit)
+  steps    join labels x rollout steps                             -> OUT/features/steps.csv, steps_grid.csv
   plan     row-group work list for the wanted tensor rows           -> OUT/plan.json
   build    fetch + pool into preallocated float16 memmaps           -> OUT/features/L{LL}_{pool}.npy, done.txt
   finalize checks + sha256 + stats                                  -> OUT/features/manifest.json
@@ -61,6 +67,8 @@ LAYERS = (8, 11, 14, 16, 20, 23)
 POOLS = ("max", "mean", "pre", "rend")
 HIDDEN = 2880
 REPORT_TOOLS = {"write_report", "stop", "submit_result"}
+GRID = 32           # observation grid every model trains on (old Oct/Nov data were captured on it)
+OLD_OBSERVE_EVERY = 32  # rollout.json without an ``observe_every`` field (all Oct/Nov units)
 OCT_LABELS = ROOT / "ArgusV_review_progress.json"
 NOV_LABELS_DEFAULT = Path(os.environ.get("ARGUS_NOV_LABELS", "")) if os.environ.get("ARGUS_NOV_LABELS") else None
 HF_OCT_LABELS = "label_review/ArgusV_review_progress.json"
@@ -80,6 +88,7 @@ LABEL_COLS = ["unit_id", "scenario_id", "condition", "seed", "trajectory_id", "a
 STEP_COLS = ["row", "unit_id", "scenario_id", "condition", "seed", "trajectory_id", "action_id", "step_index",
              "tool", "kind", "label", "label_status", "source", "family", "split", "report_content", "n_obs",
              "prefix_length", "has_rend", "pre_is_pre_action", "obs_kinds"]
+GRID_COLS = ["row", "unit_id", "step_index", "observe_every", "n_obs_raw", "n_obs_32"]
 
 
 # ---------------------------------------------------------------------- small helpers
@@ -153,6 +162,53 @@ def pool_step(arr: np.ndarray, kinds: list[str]) -> tuple[dict[str, np.ndarray],
     flags = {"has_rend": int(bool(rend_rows)), "pre_is_pre_action": int(bool(pre_rows)),
              "pre_is_last": int(pre_i == a.shape[0] - 1)}
     return out, flags
+
+
+# ---------------------------------------------------------------------- 32-token grid thinning (pure, unit-tested)
+_REASONING = re.compile(r"^reasoning\+(\d+)$")
+
+
+def unit_observe_every(rollout: dict) -> int:
+    """``observe_every`` of a unit's rollout.json; units recorded before the field existed used 32."""
+    v = rollout.get("observe_every")
+    return OLD_OBSERVE_EVERY if v is None else int(v)
+
+
+def grid32_keep(kinds: list[str], every: int, grid: int = GRID) -> list[bool]:
+    """Which observation rows lie on the ``grid``-token grid of argus_hook.scenario_rollout.observation_points.
+
+    observation_points(prompt_length, spans, every) puts ``reasoning+N`` at reasoning offset N for N = every,
+    2*every, ... (strictly before the last reasoning token), plus ``pre_reasoning``, ``reasoning_end`` and
+    ``pre_action``, which do not depend on ``every``. When ``every`` divides ``grid`` the grid points are exactly
+    the ``reasoning+N`` rows with N % grid == 0 (same range bound, same setdefault collisions), so thinning is a
+    pure function of the kind names. For every == grid it keeps every row (old data unchanged)."""
+    if every < 1 or grid % every:
+        raise ValueError(f"observe_every={every} does not divide the {grid}-token grid")
+    keep = []
+    for k in kinds:
+        m = _REASONING.match(k)
+        if m is None:
+            if k not in ("pre_reasoning", "reasoning_end", "pre_action"):
+                raise ValueError(f"unknown observation kind {k!r}")
+            keep.append(True)
+            continue
+        n = int(m.group(1))
+        if n % every:
+            raise ValueError(f"kind {k!r} is not on the observe_every={every} grid")
+        keep.append(n % grid == 0)
+    return keep
+
+
+def thin_to_grid32(arr: np.ndarray | None, kinds: list[str], every: int, token_index: list[int] | None = None):
+    """(rows, kinds, token_index) restricted to the 32-token grid. ``arr`` / ``token_index`` may be None."""
+    keep = grid32_keep(kinds, every)
+    if arr is not None and arr.shape[0] != len(kinds):
+        raise ValueError(f"rows {arr.shape} vs {len(kinds)} observation kinds")
+    if all(keep):  # old (observe_every=32) data: return the inputs untouched -> bit-identical pooling
+        return arr, list(kinds), (None if token_index is None else list(token_index))
+    idx = [i for i, k in enumerate(keep) if k]
+    return (None if arr is None else arr[idx], [kinds[i] for i in idx],
+            None if token_index is None else [token_index[i] for i in idx])
 
 
 # ---------------------------------------------------------------------- labels
@@ -491,6 +547,52 @@ def stage_meta(args) -> None:
             say(f"[meta] {min(i + batch, len(todo))}/{len(todo)} units")
 
 
+POINTS = OUT / "meta/obs_points.jsonl"
+
+
+def stage_points(args) -> None:
+    """Observation positions (token_index) + observe_every of every unit in steps.csv, from rollout.json (files
+    table, train/validation units only). Backfill for units whose meta line predates those fields."""
+    hub = Hub(args.revision)
+    units = sorted({s["unit_id"] for s in read_csv(FEAT / "steps.csv")})
+    POINTS.parent.mkdir(parents=True, exist_ok=True)
+    done = set()
+    if POINTS.is_file():
+        for line in open(POINTS, encoding="utf-8"):
+            try:
+                done.add(json.loads(line)["unit_id"])
+            except (json.JSONDecodeError, KeyError):
+                pass
+    todo = [u for u in units if u not in done]
+    say(f"[points] {len(done)} done, {len(todo)} to fetch")
+    with open(POINTS, "a", encoding="utf-8") as out:
+        for i in range(0, len(todo), 50):
+            rows = hub.sel.select(units=todo[i:i + 50], table="files", path_glob="rollout/rollout.json")
+            for key, data, _ in hub.sel.fetch_values(rows):
+                d = json.loads(data)
+                steps = [{"step_index": st.get("step_index", k), "action_start": st.get("action_start"),
+                          "prompt_length": st.get("prompt_length"), "reasoning_span": st.get("reasoning_span"),
+                          "kinds": [o["kind"] for o in st.get("observations") or []],
+                          "token_index": [o.get("token_index") for o in st.get("observations") or []]}
+                         for k, st in enumerate(d.get("steps") or [])]
+                out.write(json.dumps({"unit_id": key[0], "observe_every": unit_observe_every(d),
+                                      "observe_every_recorded": d.get("observe_every") is not None,
+                                      "steps": steps}, ensure_ascii=False) + "\n")
+            out.flush()
+            say(f"[points] {min(i + 50, len(todo))}/{len(todo)} units")
+
+
+def load_points() -> dict[str, dict]:
+    out = {}
+    for line in open(POINTS, encoding="utf-8"):
+        try:
+            d = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        out[d["unit_id"]] = d
+    return out
+
+
 def load_meta() -> dict[str, dict]:
     out = {}
     for line in open(OUT / "meta/rollouts.jsonl", encoding="utf-8"):
@@ -535,8 +637,10 @@ def stage_steps(args) -> None:
             continue
         tool = s["tool"]
         y = int(r["label"])
-        kinds = s["obs_kinds"]
+        every = unit_observe_every(m)
+        _, kinds, _ = thin_to_grid32(None, s["obs_kinds"], every)  # 32-grid kinds (old data: unchanged)
         rows.append({**{c: r[c] for c in LABEL_COLS}, "tool": tool, "kind": s["kind"],
+                     "_observe_every": every, "_n_obs_raw": len(s["obs_kinds"]),
                      "family": family_of(r["scenario_id"], m.get("family")),
                      "report_content": int(r["source"] == "oct" and y == 1 and tool in REPORT_TOOLS),
                      "n_obs": len(kinds), "prefix_length": s["action_start"],
@@ -546,7 +650,12 @@ def stage_steps(args) -> None:
     for i, x in enumerate(rows):
         x["row"] = i
     write_csv(FEAT / "steps.csv", rows, STEP_COLS)
-    say(f"[steps] {len(rows)} rows, problems {dict(problems)}")
+    # observe_every per step in a sidecar, so steps.csv of observe_every=32 data stays byte-identical
+    write_csv(FEAT / "steps_grid.csv", [{"row": x["row"], "unit_id": x["unit_id"], "step_index": x["step_index"],
+                                         "observe_every": x["_observe_every"], "n_obs_raw": x["_n_obs_raw"],
+                                         "n_obs_32": x["n_obs"]} for x in rows], GRID_COLS)
+    say(f"[steps] {len(rows)} rows, problems {dict(problems)}, observe_every "
+        f"{dict(Counter(x['_observe_every'] for x in rows))}")
 
 
 # ---------------------------------------------------------------------- plan
@@ -626,8 +735,33 @@ def _memmaps(n: int, mode: str) -> dict:
     return out
 
 
-def process_group(hub: Hub, g: dict, kinds_of: dict[int, list[str]]) -> tuple[dict, list]:
-    """Read one row group's payload column, decode only the wanted rows, pool them. Returns (group, results)."""
+def _kinds_every(v) -> tuple[list[str], int]:
+    """kinds_of value: raw kind list (observe_every 32) or (raw kinds, observe_every)."""
+    if isinstance(v, tuple):
+        return list(v[0]), int(v[1])
+    return list(v), OLD_OBSERVE_EVERY
+
+
+def raw_kinds_of(steps: list[dict]) -> dict[int, tuple[list[str], int]]:
+    """srow -> (raw observation kinds as stored in the tensor rows, observe_every). Uses meta/rollouts.jsonl
+    when the sidecar says a step was not on the 32 grid; old data: steps.csv kinds (identical)."""
+    grid = {int(r["row"]): r for r in read_csv(FEAT / "steps_grid.csv")} if (FEAT / "steps_grid.csv").is_file() else {}
+    meta = None
+    out = {}
+    for s in steps:
+        g = grid.get(int(s["row"]))
+        every = int(g["observe_every"]) if g else OLD_OBSERVE_EVERY
+        if every == GRID:
+            out[int(s["row"])] = (s["obs_kinds"].split("|"), every)
+            continue
+        meta = meta or load_meta()
+        out[int(s["row"])] = (meta[s["unit_id"]]["steps"][int(s["step_index"])]["obs_kinds"], every)
+    return out
+
+
+def process_group(hub: Hub, g: dict, kinds_of: dict) -> tuple[dict, list]:
+    """Read one row group's payload column, decode only the wanted rows, thin them to the 32-token grid, pool
+    them. Returns (group, results)."""
     import pyarrow.parquet as pq
 
     for attempt in range(5):
@@ -650,7 +784,9 @@ def process_group(hub: Hub, g: dict, kinds_of: dict[int, list[str]]) -> tuple[di
         if hashlib.sha256(value).hexdigest() != it["sha"]:
             raise hf_select.SelectError(f"sha256 mismatch {g['shard']} rg {g['rg']} row {it['row']}")
         arr = np.frombuffer(value, dtype=np.dtype(it["dtype"])).reshape(tuple(it["shape"]))
-        pooled, flags = pool_step(arr, kinds_of[it["srow"]])
+        kinds, every = _kinds_every(kinds_of[it["srow"]])
+        arr, kinds, _ = thin_to_grid32(arr, kinds, every)  # 32-token grid only (identity for old data)
+        pooled, flags = pool_step(arr, kinds)
         res.append((it["srow"], it["layer"], pooled, flags))
     del table, col
     return g, res
@@ -660,7 +796,7 @@ def stage_build(args) -> None:
     plan = json.loads((OUT / "plan.json").read_text(encoding="utf-8"))
     steps = read_csv(FEAT / "steps.csv")
     n = len(steps)
-    kinds_of = {int(s["row"]): s["obs_kinds"].split("|") for s in steps}
+    kinds_of = raw_kinds_of(steps)
     unit_of = {int(s["row"]): s["unit_id"] for s in steps}
     need = n * HIDDEN * 2 * len(LAYERS) * len(POOLS)
     if need > MAX_CACHE:
@@ -946,8 +1082,8 @@ def stage_card(args) -> None:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("stage", choices=("labels", "relabel", "meta", "steps", "plan", "build", "finalize", "card",
-                                      "all"))
+    ap.add_argument("stage", choices=("labels", "relabel", "meta", "points", "steps", "plan", "build", "finalize",
+                                      "card", "all"))
     ap.add_argument("--oct-labels", type=Path, default=OCT_LABELS)
     ap.add_argument("--nov-labels", type=Path, default=NOV_LABELS_DEFAULT)
     ap.add_argument("--revision", default=None, help="Hub commit (default: current main, pinned in plan.json)")

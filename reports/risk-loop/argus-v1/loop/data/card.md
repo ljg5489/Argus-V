@@ -191,3 +191,57 @@ v2 라벨 상태 (train·validation):
 
 - 11월 train 위반 383 → 379. 라벨이 null이라 뺀 행동은 v1과 같다 (10월 1개, 11월 초안 23개). 특징이 없는데 라벨만 새로 생긴 행동은 0개.
 - 11월 위반은 여전히 거의 전부(379개 중 372개) **규칙 초안**이다.
+
+## 10. 관측 지점별 캐시 (2026-11-09, 3단계 §6c — 특징 파일은 그대로)
+
+만든 코드: `experiments/risk_loop/argus_loop/build_obs_cache.py` (시험 `test_build_obs_cache.py`), 관측 위치는 `build_features.py points`. HF revision `57a4bdcd22a57e0dd5ac9f8b0c2dd61741867788`, 읽기 전용. 원본 텐서(2880차원 행)는 RAM에서만 쓰고 디스크에 쓰지 않았다.
+
+**build_features.py 변경 (observe_every)**
+- 단위마다 `rollout.json`의 `observe_every`를 기록한다. 필드가 없는 옛 10월·11월 단위는 32다(확인 결과 15,779 step 전부 32).
+- `grid32_keep` / `thin_to_grid32`: `pre_reasoning`·`reasoning_end`·`pre_action`은 항상 남기고, `reasoning+N`은 N이 32의 배수일 때만 남긴다. 32를 나누지 못하는 간격이나 격자 밖의 kind는 오류로 처리한다. 솎은 뒤에 pooling한다.
+- 옛 출력은 바이트 단위로 같다. `stage_steps`를 다시 돌린 `steps.csv`의 sha256이 기존과 같다. 아래 2회차에서 다시 계산한 `L16/20/23_{max,mean,pre,rend}` 47,337개(step×층) × 4 pool이 기존 npy와 fp16에서 모두 같다(불일치 0).
+- 시험: 합성 step 1,000개 × 간격 {1, 4, 8, 16, 32}에서 `observation_points(...,k)`를 솎은 위치·kind가 `observation_points(...,32)`와 모두 같다. 실제 15,779 step에서도 step 기록(prompt_length, reasoning_span, action_start)으로 32 격자 위치를 다시 계산했고 100% 같다.
+- `observe_every` 기록: `features/steps_grid.csv`(row, observe_every, n_obs_raw, n_obs_32)에 둔다. `steps.csv`는 바꾸지 않으려고 별도 파일로 만들었다. 관측 token_index: `meta/obs_points.jsonl`.
+
+**캐시** `artifacts/risk-loop/argus-v1-loop/obs_cache/` (층 16·20·23, 32 격자, train + validation만. test·봉인 행은 디코딩하지 않음. 섞인 row group 45개는 기존 `--include-mixed`와 같은 방식으로 원하는 행만 `.as_py()`)
+- x̃ = clip((x − 중앙값)/(IQR/1.349), ±3), u = (x̃ − pca_mean)·componentsᵀ ∈ ℝ⁵¹², fp16로 저장.
+- 1회차(기저 적합): train 행이 있는 row group 231개 중 seed 0으로 무작위 70개(30%, 4.02 GiB)를 받았다. 그 안의 **train 행만** 썼다(층당 약 27,230행, 상한 30,000 미만이라 전부 사용). validation 행은 기저 적합에 쓰지 않았다. 정확한 공분산 고유분해로 PCA를 구했다. 기저 sha256은 `obs_build/basis_frozen.json`에 고정했다(`749da6fd…`, 다시 적합하지 않음).
+- 2회차: row group 295개(17.03 GiB)를 모두 받아 투영했다. 걸린 시간 37분. 1회차는 10.5분.
+- 개수: step 15,779개(train 11,058 / validation 4,721), 관측 127,740개(train 89,766 / validation 37,974). 순서는 `labels/steps.v2.csv`와 같다.
+- 형식: `obs_L{16,20,23}.npy` float16 [127740, 512], `obs_index.csv`(obs_id, row, order, kind, token_index), `offsets.npy` int64 [15780], `step_rows.npy` int64 [15779], `basis_L{LL}.npz`(median, scale, clip, pca_mean, components, explained_variance, explained_variance_ratio, total_variance, n_fit_rows, zero_iqr_coords, clip_fraction), `manifest.json`.
+
+| 층 | PCA 512 설명 분산 (적합 표본) | (train 전체 행) | PCA 32 (표본) | 잘린 좌표 비율 | 최대 \|u\| |
+|---|---|---|---|---|---|
+| 16 | 0.835 | 0.824 | 0.516 | 0.45% | 41.7 |
+| 20 | 0.852 | 0.841 | 0.530 | 0.57% | 44.0 |
+| 23 | 0.867 | 0.850 | 0.577 | 1.32% | 77.3 |
+
+- 설명 분산이 세 층 모두 **95% 미만**이다(층 20: 84%). 지시에 따라 그대로 만들었다. 정보 보존은 아래 K11로 쟀다.
+- 크기: 캐시 0.386 GiB, 기존 `features/` 2.044 GiB, 합계 **2.43 GiB** (상한 3GB 안).
+- 디스크: HF 캐시(`~/.cache/huggingface`)는 늘지 않았다(0 MB, `HF_XET_CHUNK_CACHE_SIZE_BYTES=0`). TEMP는 10 MB 늘었다. 2회차 동안 여유 공간이 36.8 → 최저 19.2 GB로 떨어졌다가 32.8 GB로 돌아왔다. 이 변동은 Windows pagefile(22.7 → 27 GB)과 동시에 돈 다른 작업의 메모리 압박 때문이다. 이 작업이 쓴 파일은 캐시 0.39 GB뿐이다. 10 GB 미만이면 멈추는 감시는 한 번도 걸리지 않았다.
+
+| 파일 | 바이트 | sha256 |
+|---|---|---|
+| basis_L16.npz | 5,939,760 | `2de778a604e71fbb2d1454808f80fd5ef1b0ad5b817a539ab49b8d507132a37b` |
+| basis_L20.npz | 5,939,760 | `087c71ab1680ab213f34b0d6ef89a75daddd065bdc3a072c9f98f8c5f6293c46` |
+| basis_L23.npz | 5,939,760 | `35f8fe85b6ef48e1bad158c29f51ad475ce036dd35c945446f30bc33c684d4b1` |
+| obs_L16.npy | 130,805,888 | `4d62152aa807d5fed51546b9e0172df7e162c8a3bd10320c69d79c835fa085f5` |
+| obs_L20.npy | 130,805,888 | `65c44e543c7eb456802f22561a470f063f2a1287fdb5ca8fd1e8fb66ab3e9c85` |
+| obs_L23.npy | 130,805,888 | `802815b5b75f5f1b10b597c83ea5265c9084d5793db8faff3ff99ab5dd072f44` |
+| obs_index.csv | 4,205,080 | `64f3266f5dd959f083653cab4c5f2ff9c6ef6f39fa6a9b9283d89680ba30d473` |
+| offsets.npy | 126,368 | `a939c1f84fb12e8505a124cf3b5c8950e94a6e8781b0e5a3228f0ecf991a08c3` |
+| step_rows.npy | 126,360 | `0420fd80a42b0e2c8ddbe8b3820e026d3a6b5d3b22beae05370ebdae1b2f9751` |
+| manifest.json | — | `175355aa3c7e3c1f81fcff3402eae7d7f9783a19e8a103d2aad84654ac54486e` |
+| features/steps_grid.csv | — | `b0e4563fdd9fc0dd985418b0b6634d8c3b0e049dcd188168f46b13ea67bbef92` |
+| meta/obs_points.jsonl | — | `1e05c5dbc95327fe9eab5979b623484720da1db15fc5933f6045e48a42806a5c` |
+
+**K11 캐시 충실도** (`k11_cache_check.py` → `iter-13/k11_cache_check.json`. train만, 라벨 v2, 11,025행·위반 434. H1-0a 방식: 표준화 → PCA k → LogReg C=1, 클래스 가중. family fold seed 0~2, 동결 평가 코드의 같은 도구 안 AUROC v3)
+
+| 입력 | 기존 `L{LL}_pre` | 캐시 pre_action 행 | 차이 |
+|---|---|---|---|
+| 층 20, PCA 10 (**기준**) | 0.5356 | 0.5382 | **+0.0027 (통과)** |
+| 층 20, PCA 32 | 0.5307 | 0.5412 | +0.0105 |
+| 층 16, PCA 10 | 0.5482 | 0.5588 | +0.0106 |
+| 층 16, PCA 32 | 0.5766 | 0.5896 | +0.0130 |
+
+- 기준(층 20 H1-0a)의 차이는 0.01 이하다. 나머지 세 경우는 차이가 0.0105~0.013이다. 모두 캐시 쪽이 **높고**, 세 seed 모두에서 같은 방향이다. 견고 척도와 자르기가 이상치를 줄인 효과로 보인다. 정보 손실의 증거는 아니지만 |차이| > 0.01을 엄격히 적용하면 K11 문구에 걸린다. 오케스트레이터가 판단한다.
