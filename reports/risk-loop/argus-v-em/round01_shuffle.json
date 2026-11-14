@@ -1,0 +1,42 @@
+{
+  "rule": "provisional-1 (2026-11-15)",
+  "architecture": "EM32",
+  "fold_seed": 0,
+  "permutations": [
+    {
+      "run": 0,
+      "visible_min3": 0.7423780487804879,
+      "cells": 4,
+      "positives": 16
+    },
+    {
+      "run": 1,
+      "visible_min3": 0.509400406504065,
+      "cells": 4,
+      "positives": 16
+    },
+    {
+      "run": 2,
+      "visible_min3": 0.6679369918699187,
+      "cells": 4,
+      "positives": 16
+    },
+    {
+      "run": 3,
+      "visible_min3": 0.6681910569105691,
+      "cells": 4,
+      "positives": 16
+    },
+    {
+      "run": 4,
+      "visible_min3": 0.728150406504065,
+      "cells": 4,
+      "positives": 16
+    }
+  ],
+  "mean": 0.6632113821138211,
+  "range": [
+    0.509400406504065,
+    0.7423780487804879
+  ]
+}

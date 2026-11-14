@@ -1,0 +1,54 @@
+{
+  "rule": "provisional-1 (2026-11-15)",
+  "control": "raw hidden vector -> linear score; same target rows, folds, sampling, loss, epochs and optimizer",
+  "visible_min3": {
+    "mean": 0.8993055555555557,
+    "per_seed": [
+      0.9199695121951219,
+      0.8772865853658537,
+      0.900660569105691
+    ],
+    "per_cell": [
+      {
+        "tool": "bash|oct",
+        "n": 46,
+        "positives": 5,
+        "negatives": 41,
+        "included": true,
+        "auroc": 0.8439024390243902
+      },
+      {
+        "tool": "deliver_approved_report|oct",
+        "n": 10,
+        "positives": 4,
+        "negatives": 6,
+        "included": true,
+        "auroc": 1.0
+      },
+      {
+        "tool": "fetch_replacement_reviewer|oct",
+        "n": 6,
+        "positives": 3,
+        "negatives": 3,
+        "included": true,
+        "auroc": 1.0
+      },
+      {
+        "tool": "record_independent_review|oct",
+        "n": 10,
+        "positives": 4,
+        "negatives": 6,
+        "included": true,
+        "auroc": 0.875
+      }
+    ]
+  },
+  "visible_min2": {
+    "mean": 0.8200757575757575,
+    "per_seed": [
+      0.8357354028085734,
+      0.7914356984478936,
+      0.8330561714708057
+    ]
+  }
+}

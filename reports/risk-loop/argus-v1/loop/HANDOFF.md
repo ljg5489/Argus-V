@@ -1,5 +1,22 @@
 # HANDOFF — Argus-V1 성능 향상 루프
 
+## 인수인계 기록 추가 — 2026-11-15 04:20 KST
+
+- Claude의 Argus-V-p 실행은 03:30에 `DONE / EXIT 0`; 03:45 인수인계 표에도 실행 중 프로세스가 없다고 기록됐다. 04:09 재확인 때 Python 학습 프로세스가 없고 결과 문서·그래프가 완성되어 있어 Codex가 이어받았다. 기존 자동 확인은 Claude 작업이 끝난 것을 확인하는 용도로 종료한다.
+- 사용자 지시에 따라 미결정 항목은 기본 규칙대로 처리: Argus-V-p는 사전 규칙의 P5로 확정, epoch 곡선은 만들지 않음(Argus-V-p 구성원은 epoch 학습 모델이 아님). Argus-V1의 고정 모델/새 데이터 사전등록은 수정하지 않는다.
+- 발표용 live 초안 9장 작성 및 몽타주 확인 완료. Artifact Session: `document_73fdecfb-ff26-427c-a1cc-0bd271787961` (Argus-V-p 결과, 조건별 점수, 한계, 새 데이터·Argus-V-em 방향).
+- 다음 사용자 지시: 별도 모델 **Argus-V-em**에 학습된 임베딩을 넣어 학습·구조를 반복 조정한다. 별도 실험·결과 폴더와 장부를 만들고, 같은 도구 안 AUROC에서 “행동 전에 근거가 보인 위반” 목표 0.90을 계속 추구한다. 기존 지표/검증 코드·Argus-V1 누적 시도 수와 섞지 않는다. 현재 보이는 표본은 평가 위반 22개·고유 입력 15개이므로 탐색 점수와 일반화 성능을 구분하고, validation/test/sealed 데이터는 열지 않는다.
+- 현재 Codex 단계: Argus-V-em 첫 실험 라운드 완료. 자세한 인계는 아래 04:42 KST 항목과 `reports/risk-loop/argus-v-em/results.md` 참고.
+
+## 인수인계 기록 추가 — 2026-11-15 04:42 KST
+
+- **Argus-V-em round 01 결과**: 사전 고정한 32/64/128차원 학습 임베딩을 family-grouped 5-fold × 3 seed로 비교. visible-only min3 같은 도구 안 AUROC는 0.960 / 0.948 / 0.943. 세 모델 모두 각 시드 0.90 이상. 현재 min3 점수 목표는 달성.
+- 선택된 개발 모델은 EM32. Argus-V-p P1/P5를 같은 visible 표본으로 재계산한 값(0.760/0.756)보다 높고, 같은 target·fold·학습 표본의 raw-vector 선형 대조(0.899) 대비 +0.060. EM32 min2 score 0.851; 전체 위반 기준 0.549.
+- 제한/검증: visible 위반 22개(고유 입력 15개) 중 min3 지표에는 4개 칸·16개만 포함된다. 표시 규칙은 P 결과를 본 뒤 만든 provisional-1이며 한 칸마다 시나리오 가족 하나다. EM32 라벨 섞기 평균 0.663(5회 0.509–0.742). 따라서 0.960은 목표 subset의 재사용 train OOF 개발 점수이지 새 시나리오에서의 독립 확정 성능이 아니다. validation/test/sealed는 열지 않았다.
+- 모델 파일(로컬 ignored artifact): `artifacts/risk-loop/argus-v-em/argus_v_em_round01.pt`, SHA-256 `fcd8e5ad48119ce546e1f5c89e59d1a0fa40710c5a94b3928618460f0786a505`. 입력은 concat `L23:max` + `L16:pre`, 5,760차원. 추론 진입점 `score_checkpoint()`는 `experiments/risk_loop/argus_loop/argus_v_em.py`.
+- 기록/그림: `reports/risk-loop/argus-v-em/results.md`, `round01_results.json`, `round01_shuffle.json`, `round01_linear_control.json`, `argus_v_em_round01.png`. 첫 실험 계획은 `README.md`, 동일 타깃 선형 대조는 실행 전 `addendum-1.md`로 고정.
+- 다음 단계: 같은 데이터에서는 목표를 넘었으므로 추가 구조 탐색은 중단한다. fresh scenario에서 같은 0.90을 검증하려면 visibility 규칙을 새 데이터 점수 열기 전에 고정하고 독립 family 표본을 확보해야 한다. Argus-V1 frozen 모델·공식 평가 코드·새 데이터 사전등록·시도 장부에는 이 실험을 합치지 않는다.
+
 규칙과 목표: 같은 폴더의 `TASK.md`. 인수인계 기록 에이전트가 매 단계 갱신한다. 새로 투입되는 에이전트는 이 파일부터 읽는다. 반복별 요약 표는 `LOOP_LEDGER.md`.
 
 > 시간 순 사건 기록은 `WORKLOG.md`(2026-11-08부터, 이후 추가만 함).
