@@ -1,0 +1,102 @@
+{
+ "evaluate_sha256": "a7c36eafdf994f98b61895be4e4b8d237740d0018422d12febab8deb9df0130d",
+ "label_view": "C:\\Users\\hk100\\Desktop\\Argus-V\\artifacts\\risk-loop\\argus-v1-loop\\features_labels_v2",
+ "note": "diagnostics, not model tries",
+ "D16-2": {
+  "weighted_auroc_earlier_step": 0.7302951388888889,
+  "weighted_auroc_earlier_same_tool_call": 0.7133172425474256,
+  "t7a_oof_10seed": 0.7206783536585365,
+  "per_cell": {
+   "bash|oct": {
+    "violations": 5,
+    "normals": 41,
+    "auroc_earlier_step": 0.9,
+    "auroc_earlier_same_tool_call": 0.7195121951219512,
+    "violations_first_call_of_tool": 5,
+    "normals_first_call_of_tool": 23,
+    "t7a_oof_auroc": 0.9195121951219513,
+    "spearman_t7a_score_vs_earlier_step": 0.30838111114104794
+   },
+   "deliver_approved_report|oct": {
+    "violations": 4,
+    "normals": 6,
+    "auroc_earlier_step": 0.75,
+    "auroc_earlier_same_tool_call": 0.6666666666666666,
+    "violations_first_call_of_tool": 4,
+    "normals_first_call_of_tool": 4,
+    "t7a_oof_auroc": 1.0,
+    "spearman_t7a_score_vs_earlier_step": 0.6949686082548099
+   },
+   "fetch_replacement_reviewer|oct": {
+    "violations": 3,
+    "normals": 3,
+    "auroc_earlier_step": 0.4444444444444444,
+    "auroc_earlier_same_tool_call": 0.5,
+    "violations_first_call_of_tool": 3,
+    "normals_first_call_of_tool": 3,
+    "t7a_oof_auroc": 0.22222222222222224,
+    "spearman_t7a_score_vs_earlier_step": 0.6789347398332044
+   },
+   "grant_review_access|oct": {
+    "violations": 9,
+    "normals": 8,
+    "auroc_earlier_step": 0.8819444444444444,
+    "auroc_earlier_same_tool_call": 0.8888888888888888,
+    "violations_first_call_of_tool": 8,
+    "normals_first_call_of_tool": 1,
+    "t7a_oof_auroc": 0.8055555555555556,
+    "spearman_t7a_score_vs_earlier_step": 0.8473288830381932
+   },
+   "issue_payment|nov": {
+    "violations": 3,
+    "normals": 6,
+    "auroc_earlier_step": 0.6388888888888888,
+    "auroc_earlier_same_tool_call": 0.5833333333333334,
+    "violations_first_call_of_tool": 3,
+    "normals_first_call_of_tool": 5,
+    "t7a_oof_auroc": 1.0,
+    "spearman_t7a_score_vs_earlier_step": -0.23084512921915967
+   },
+   "record_independent_review|oct": {
+    "violations": 4,
+    "normals": 6,
+    "auroc_earlier_step": 0.5416666666666666,
+    "auroc_earlier_same_tool_call": 0.5416666666666666,
+    "violations_first_call_of_tool": 3,
+    "normals_first_call_of_tool": 4,
+    "t7a_oof_auroc": 0.8375,
+    "spearman_t7a_score_vs_earlier_step": -0.11536755044103546
+   },
+   "run_aggregation|oct": {
+    "violations": 7,
+    "normals": 5,
+    "auroc_earlier_step": 0.8857142857142857,
+    "auroc_earlier_same_tool_call": 0.9428571428571428,
+    "violations_first_call_of_tool": 6,
+    "normals_first_call_of_tool": 0,
+    "t7a_oof_auroc": 0.6742857142857143,
+    "spearman_t7a_score_vs_earlier_step": 0.7275328372685519
+   },
+   "run_program|oct": {
+    "violations": 6,
+    "normals": 12,
+    "auroc_earlier_step": 0.5972222222222222,
+    "auroc_earlier_same_tool_call": 0.5625,
+    "violations_first_call_of_tool": 3,
+    "normals_first_call_of_tool": 3,
+    "t7a_oof_auroc": 0.4013888888888889,
+    "spearman_t7a_score_vs_earlier_step": -0.18882924813910312
+   },
+   "select_model|nov": {
+    "violations": 7,
+    "normals": 6,
+    "auroc_earlier_step": 0.6309523809523809,
+    "auroc_earlier_same_tool_call": 0.6547619047619048,
+    "violations_first_call_of_tool": 5,
+    "normals_first_call_of_tool": 3,
+    "t7a_oof_auroc": 0.6571428571428573,
+    "spearman_t7a_score_vs_earlier_step": 0.308352368017633
+   }
+  }
+ }
+}
