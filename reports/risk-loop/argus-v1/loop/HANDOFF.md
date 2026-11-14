@@ -11,6 +11,7 @@
 | 시각 | 지금 돌고 있는 것 | 어디까지 됐나 | 다음 |
 |---|---|---|---|
 | 2026-11-15 03:05 | Argus-V-p 학습(`argus_v_p.py run`, 로그 `artifacts/risk-loop/argus-v-p/run.log`) | 조건 C(학습 데이터 재채점) 6개 설정 끝: 0.815 / 0.826 / 0.847 / 0.964 / 0.869 / 0.979. 조건 B(이미 본 시나리오) 6개 중 2개 끝: 0.682 / 0.632, 세 번째 계산 중 | 조건 B 나머지 → 조건 A → 누수 점검 → 모델 파일 저장 → `argus_v_p.py visible`(사용자 목표 기준 재채점) → 결과 문서와 커밋 |
+| 2026-11-15 03:14 | 같은 학습 계속 | 조건 B 5개 끝: P1 0.682 / P2 0.632 / P3 0.566 / P4 0.635 / P5 0.687, P6 계산 중(첫 나누기 0.573). 규제를 풀수록 학습 데이터 점수만 오르고 새 실행 점수는 떨어진다. 그래프 스크립트 `argus_v_p_plots.py` 작성 완료(아직 실행 전) | P6 조건 B → 조건 A(P3~P6) → 누수 점검 → 모델 저장 → `visible` → **그래프 그리기** → 결과 문서·커밋·사용자 보고 |
 
 # 지금 상태 — 2026-11-15 (가장 최신. 아래 3단계 대시보드는 2026-11-11까지의 기록)
 
@@ -35,7 +36,12 @@
 - 요청 원문 요지: "제일 성능이 좋았던 모델로, 너무 심하지 않게 어느 정도 과적합을 내서 0.9 이상을 내자. 3일 뒤 확정·발표. 가능성은 보여 줘야 한다." 이름 "Argus-V-p"는 사용자가 정했다.
 - 계획(실행 전에 고정): `reports/risk-loop/argus-v-p/README.md`. 설정 6개(최고 모델 그대로 / 같은 도구 안 학습 / 규제 완화 / 둘 다 / 랜덤 포레스트 추가 2가지) × 조건 3개(A 처음 보는 시나리오 / B 이미 본 시나리오의 새 실행 / C 학습 데이터 재채점). 조건 B가 가장 높은 설정을 Argus-V-p로 정한다. 판정 지표와 별도이고 루프의 시도 수(169)에 넣지 않는다.
 - **실행**: `PYTHONUTF8=1 py -3.11 -u experiments/risk_loop/argus_loop/argus_v_p.py run > artifacts/risk-loop/argus-v-p/run.log 2>&1` (2026-11-15에 시작). 중간에 끊기면 같은 명령을 다시 실행하면 된다(설정·seed별 점수가 `artifacts/risk-loop/argus-v-p/oof_*.npy`에, 중간 결과가 `results.json`에 저장돼 이어서 한다). 끝나면 로그 마지막 줄이 `DONE`이고 `reports/risk-loop/argus-v-p/results.json`이 생긴다. 표는 `py -3.11 experiments/risk_loop/argus_loop/argus_v_p.py report`.
-- 끝난 뒤 할 일: ① `reports/risk-loop/argus-v-p/results.md`와 `ledger.md` 작성(6개 설정 전부, 조건 표기) ② 커밋 ③ 사용자에게 결과 보고 ④ 발표 자료 초안(세 조건을 나란히, 도구별 점수, 원인 3가지, 새 데이터 계획). 학습 없이 쓸 근거: 원래 Argus-V1 0.51 → 최고 모델 0.72(처음 보는 시나리오), 도구 9개 중 4개는 0.84~1.00(`iter-12/remeasure.md`).
+- 끝난 뒤 할 일(순서대로): ① `PYTHONUTF8=1 py -3.11 experiments/risk_loop/argus_loop/argus_v_p.py visible` — 사용자가 정한 목표(행동 전에 근거가 보인 위반) 기준으로 다시 채점, 결과는 `reports/risk-loop/argus-v-p/visible_results.json` ② **그래프**(아래) ③ `reports/risk-loop/argus-v-p/results.md`와 `ledger.md` 작성(6개 설정 전부, 조건 표기) ④ 커밋 ⑤ 사용자에게 결과 보고 ⑥ 발표 자료 초안(세 조건을 나란히, 도구별 점수, 원인 3가지, 새 데이터 계획). 학습 없이 쓸 근거: 원래 Argus-V1 0.51 → 최고 모델 0.72(처음 보는 시나리오), 도구 9개 중 4개는 0.84~1.00(`iter-12/remeasure.md`).
+- **그래프 (사용자 요청 2026-11-15: "Argus-V-p 모델이 만들어지면 matplotlib으로 성능평가에 필요한 모든 그래프를 그려")**
+  - 스크립트: `experiments/risk_loop/argus_loop/argus_v_p_plots.py`. 실행: `PYTHONUTF8=1 py -3.11 experiments/risk_loop/argus_loop/argus_v_p_plots.py` (기본은 규칙으로 정해진 Argus-V-p 설정, 다른 설정은 `--setting P4`처럼 지정). 학습이 끝나 `artifacts/risk-loop/argus-v-p/results.json`에 `chosen`이 생긴 뒤에 돌린다. 약 1~2분.
+  - 출력: `reports/risk-loop/argus-v-p/figures/<설정>/`에 PNG 12장과 `tables.md`(그래프에 쓴 숫자 표). 그림 목록: 01 설정별·조건별 AUROC / 02 ROC 곡선 / 03 칸별 ROC / 04 정밀도-재현율 / 05 칸별 점수 분포 / 06 오경보 고정 탐지율 / 07 혼동 행렬 / 08 문턱별 재현율·정밀도·F1 / 09 칸별 AUROC / 10 규제 완화와 과적합 / 11 기준선 비교(95% 구간 포함) / 12 목표 기준 점수(`visible_results.json`이 있을 때만).
+  - 규칙: 모든 그림에 조건(A 처음 보는 시나리오 / B 이미 본 시나리오의 새 실행 / C 학습 데이터 재채점)을 적는다. 색은 조건마다 고정(A 파랑, B 주황, C 청록). 그린 뒤에는 PNG를 직접 열어 글자 겹침·잘림을 확인하고 고친다.
+  - 상태: 스크립트 작성·문법 확인까지 했고 아직 실행 전(학습이 끝나기를 기다리는 중).
 - 지킬 것: 조건 B·C의 수치를 "처음 보는 시나리오 성능"이나 판정 지표 값으로 적지 않는다(`iter-16/prereg-new-data.md` §9). validation·test·봉인 데이터는 쓰지 않는다.
 - 아직 없는 것: "행동 전에 근거가 보인 위반" 표시. 이 표시를 규칙으로 만들면 그 기준 값도 Argus-V-p 결과에 함께 적는다(독립 점검자가 받아 둔 train 기록 요약이 scratchpad `hf_check_data`에 있었으나 임시 폴더라 없을 수 있다. 없으면 `scripts/hf_select.py`로 train rollout의 `rollout.json`만 다시 받는다).
 
