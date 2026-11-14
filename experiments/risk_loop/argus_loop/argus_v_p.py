@@ -422,7 +422,65 @@ def cmd_report():
     print(json.dumps({k: res.get(k) for k in ("chosen", "ladder_C", "shuffle_check_B", "export")}, ensure_ascii=False, indent=1))
 
 
+def cmd_visible():
+    """Re-score every setting / condition on the user's 0.90 target (decision 2026-11-15): violations whose deciding
+    fact was explicit in the context before the call. Flags: reports/risk-loop/argus-v-p/visible_flag.json (rule in
+    visible_flag_rule.py, provisional). Conditions A and B reuse the saved scores; condition C refits on all rows
+    (same fits as the run). Nothing is selected here."""
+    cx = Ctx()
+    flag = json.loads((REPORT / "visible_flag.json").read_text(encoding="utf-8"))
+    vis = np.zeros(cx.n, bool)
+    for r in flag["violations"]:
+        i = int(r["pos"])
+        assert cx.y[i] == 1 and str(cx.rows.unit_id[i]) == r["unit_id"] and int(cx.rows.step_index[i]) == r["step_index"]
+        vis[i] = bool(r["visible"])
+    keep = (cx.y == 0) | vis          # every normal + the visible violations (other violations are left out)
+
+    def wtv(scores, min_pos=3):
+        s = np.asarray(scores, dtype=np.float64)
+        return E.within_tool_auroc(s[keep], cx.y[keep], cx.groups[keep], min_pos=min_pos)
+
+    def block(score_list):
+        out = {}
+        for mp in (3, 2):
+            rs = [wtv(s, mp) for s in score_list]
+            out[f"min{mp}"] = {"value": float(np.mean([r["value"] for r in rs])), "cells": rs[0]["n_tools"],
+                               "violations": rs[0]["n_positives_included"]}
+        per = {}
+        for e in wtv(score_list[0], 2)["per_tool"]:
+            if e["included"]:
+                m = keep & (cx.groups == e["tool"])
+                per[e["tool"]] = {"violations": e["positives"], "normals": e["negatives"],
+                                  "auroc": float(np.mean([H.auroc(np.asarray(s)[m], cx.y[m]) for s in score_list]))}
+        out["per_cell_min2"] = per
+        return out
+
+    step = np.asarray(cx.rows.step_index, dtype=np.float64)
+    res = {"rule": flag["rule_version"], "visible_violations": int(vis.sum()),
+           "unique_feature_rows_among_visible": int(len(set(cx.hashes[vis].tolist()))),
+           "all_judged_cell_violations": len(flag["violations"]), "settings": {}}
+    t7 = np.load(ART / "iter12_remeasure" / "oof_v2_T7-a_seed0-9.npy")
+    assert t7.shape[1] == cx.n
+    res["T7-a unseen scenario (saved, 10 splits)"] = block(list(t7))
+    res["order rule (earlier step = violation)"] = block([-step])
+    allpos = np.arange(cx.n)
+    for sid in SETTINGS:
+        r = {}
+        for cond in ("A", "B"):
+            r[cond] = block([np.load(oof_path(sid, cond, s)) for s in SEEDS])
+        tr, _ = cx.fit(sid, allpos, cx.y, np.zeros(0, np.int64))
+        r["C"] = block([tr])
+        res["settings"][sid] = r
+        log(sid, {c: round(r[c]["min3"]["value"], 4) for c in ("A", "B", "C")}, "cells", r["A"]["min3"]["cells"],
+            "violations", r["A"]["min3"]["violations"])
+    (REPORT / "visible_results.json").write_text(json.dumps(E.to_jsonable(res), indent=1, ensure_ascii=False), encoding="utf-8")
+    for k in ("T7-a unseen scenario (saved, 10 splits)", "order rule (earlier step = violation)"):
+        log(k, {m: round(res[k][m]["value"], 4) for m in ("min3", "min2")})
+    log("DONE visible", res["visible_violations"], "visible violations,", res["unique_feature_rows_among_visible"], "unique")
+
+
 if __name__ == "__main__":
-    if len(sys.argv) < 2 or sys.argv[1] not in ("run", "report"):
-        raise SystemExit("usage: argus_v_p.py run | report")
-    cmd_run() if sys.argv[1] == "run" else cmd_report()
+    cmds = {"run": cmd_run, "report": cmd_report, "visible": cmd_visible}
+    if len(sys.argv) < 2 or sys.argv[1] not in cmds:
+        raise SystemExit("usage: argus_v_p.py run | report | visible")
+    cmds[sys.argv[1]]()
