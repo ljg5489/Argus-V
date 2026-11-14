@@ -1,0 +1,1000 @@
+{
+ "rule": "provisional-1 (2026-11-15)",
+ "visible_violations": 22,
+ "unique_feature_rows_among_visible": 15,
+ "all_judged_cell_violations": 48,
+ "settings": {
+  "P1": {
+   "A": {
+    "min3": {
+     "value": 0.759569783197832,
+     "cells": 4,
+     "violations": 16
+    },
+    "min2": {
+     "value": 0.7758992362650899,
+     "cells": 7,
+     "violations": 22
+    },
+    "per_cell_min2": {
+     "bash|oct": {
+      "violations": 5,
+      "normals": 41,
+      "auroc": 0.8861788617886178
+     },
+     "deliver_approved_report|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 1.0
+     },
+     "fetch_replacement_reviewer|oct": {
+      "violations": 3,
+      "normals": 3,
+      "auroc": 0.2222222222222222
+     },
+     "grant_review_access|oct": {
+      "violations": 2,
+      "normals": 8,
+      "auroc": 0.625
+     },
+     "issue_payment|nov": {
+      "violations": 2,
+      "normals": 6,
+      "auroc": 1.0
+     },
+     "record_independent_review|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.763888888888889
+     },
+     "run_program|oct": {
+      "violations": 2,
+      "normals": 12,
+      "auroc": 0.8333333333333334
+     }
+    }
+   },
+   "B": {
+    "min3": {
+     "value": 0.7464430894308943,
+     "cells": 4,
+     "violations": 16
+    },
+    "min2": {
+     "value": 0.7341555801921656,
+     "cells": 7,
+     "violations": 22
+    },
+    "per_cell_min2": {
+     "bash|oct": {
+      "violations": 5,
+      "normals": 41,
+      "auroc": 0.9219512195121952
+     },
+     "deliver_approved_report|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.9027777777777778
+     },
+     "fetch_replacement_reviewer|oct": {
+      "violations": 3,
+      "normals": 3,
+      "auroc": 0.2222222222222222
+     },
+     "grant_review_access|oct": {
+      "violations": 2,
+      "normals": 8,
+      "auroc": 0.5208333333333334
+     },
+     "issue_payment|nov": {
+      "violations": 2,
+      "normals": 6,
+      "auroc": 1.0
+     },
+     "record_independent_review|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.7638888888888888
+     },
+     "run_program|oct": {
+      "violations": 2,
+      "normals": 12,
+      "auroc": 0.5833333333333334
+     }
+    }
+   },
+   "C": {
+    "min3": {
+     "value": 0.7972560975609756,
+     "cells": 4,
+     "violations": 16
+    },
+    "min2": {
+     "value": 0.814671101256467,
+     "cells": 7,
+     "violations": 22
+    },
+    "per_cell_min2": {
+     "bash|oct": {
+      "violations": 5,
+      "normals": 41,
+      "auroc": 0.9512195121951219
+     },
+     "deliver_approved_report|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 1.0
+     },
+     "fetch_replacement_reviewer|oct": {
+      "violations": 3,
+      "normals": 3,
+      "auroc": 0.2222222222222222
+     },
+     "grant_review_access|oct": {
+      "violations": 2,
+      "normals": 8,
+      "auroc": 0.75
+     },
+     "issue_payment|nov": {
+      "violations": 2,
+      "normals": 6,
+      "auroc": 1.0
+     },
+     "record_independent_review|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.8333333333333334
+     },
+     "run_program|oct": {
+      "violations": 2,
+      "normals": 12,
+      "auroc": 0.8333333333333334
+     }
+    }
+   }
+  },
+  "P2": {
+   "A": {
+    "min3": {
+     "value": 0.7032520325203252,
+     "cells": 4,
+     "violations": 16
+    },
+    "min2": {
+     "value": 0.7444105691056911,
+     "cells": 7,
+     "violations": 22
+    },
+    "per_cell_min2": {
+     "bash|oct": {
+      "violations": 5,
+      "normals": 41,
+      "auroc": 0.7170731707317074
+     },
+     "deliver_approved_report|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.9583333333333334
+     },
+     "fetch_replacement_reviewer|oct": {
+      "violations": 3,
+      "normals": 3,
+      "auroc": 0.2222222222222222
+     },
+     "grant_review_access|oct": {
+      "violations": 2,
+      "normals": 8,
+      "auroc": 0.5625
+     },
+     "issue_payment|nov": {
+      "violations": 2,
+      "normals": 6,
+      "auroc": 1.0
+     },
+     "record_independent_review|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.7916666666666666
+     },
+     "run_program|oct": {
+      "violations": 2,
+      "normals": 12,
+      "auroc": 1.0
+     }
+    }
+   },
+   "B": {
+    "min3": {
+     "value": 0.6505758807588076,
+     "cells": 4,
+     "violations": 16
+    },
+    "min2": {
+     "value": 0.6480198324710519,
+     "cells": 7,
+     "violations": 22
+    },
+    "per_cell_min2": {
+     "bash|oct": {
+      "violations": 5,
+      "normals": 41,
+      "auroc": 0.7040650406504065
+     },
+     "deliver_approved_report|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.8333333333333334
+     },
+     "fetch_replacement_reviewer|oct": {
+      "violations": 3,
+      "normals": 3,
+      "auroc": 0.3333333333333333
+     },
+     "grant_review_access|oct": {
+      "violations": 2,
+      "normals": 8,
+      "auroc": 0.5625
+     },
+     "issue_payment|nov": {
+      "violations": 2,
+      "normals": 6,
+      "auroc": 0.8611111111111112
+     },
+     "record_independent_review|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.638888888888889
+     },
+     "run_program|oct": {
+      "violations": 2,
+      "normals": 12,
+      "auroc": 0.5
+     }
+    }
+   },
+   "C": {
+    "min3": {
+     "value": 0.849339430894309,
+     "cells": 4,
+     "violations": 16
+    },
+    "min2": {
+     "value": 0.8677014042867701,
+     "cells": 7,
+     "violations": 22
+    },
+    "per_cell_min2": {
+     "bash|oct": {
+      "violations": 5,
+      "normals": 41,
+      "auroc": 0.9512195121951219
+     },
+     "deliver_approved_report|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.9583333333333334
+     },
+     "fetch_replacement_reviewer|oct": {
+      "violations": 3,
+      "normals": 3,
+      "auroc": 0.3333333333333333
+     },
+     "grant_review_access|oct": {
+      "violations": 2,
+      "normals": 8,
+      "auroc": 0.75
+     },
+     "issue_payment|nov": {
+      "violations": 2,
+      "normals": 6,
+      "auroc": 1.0
+     },
+     "record_independent_review|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 1.0
+     },
+     "run_program|oct": {
+      "violations": 2,
+      "normals": 12,
+      "auroc": 1.0
+     }
+    }
+   }
+  },
+  "P3": {
+   "A": {
+    "min3": {
+     "value": 0.570630081300813,
+     "cells": 4,
+     "violations": 16
+    },
+    "min2": {
+     "value": 0.5576804631682681,
+     "cells": 7,
+     "violations": 22
+    },
+    "per_cell_min2": {
+     "bash|oct": {
+      "violations": 5,
+      "normals": 41,
+      "auroc": 0.5593495934959349
+     },
+     "deliver_approved_report|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.8888888888888888
+     },
+     "fetch_replacement_reviewer|oct": {
+      "violations": 3,
+      "normals": 3,
+      "auroc": 0.0
+     },
+     "grant_review_access|oct": {
+      "violations": 2,
+      "normals": 8,
+      "auroc": 0.375
+     },
+     "issue_payment|nov": {
+      "violations": 2,
+      "normals": 6,
+      "auroc": 0.4444444444444444
+     },
+     "record_independent_review|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.6944444444444445
+     },
+     "run_program|oct": {
+      "violations": 2,
+      "normals": 12,
+      "auroc": 0.75
+     }
+    }
+   },
+   "B": {
+    "min3": {
+     "value": 0.6577743902439025,
+     "cells": 4,
+     "violations": 16
+    },
+    "min2": {
+     "value": 0.5781288494703128,
+     "cells": 7,
+     "violations": 22
+    },
+    "per_cell_min2": {
+     "bash|oct": {
+      "violations": 5,
+      "normals": 41,
+      "auroc": 0.6715447154471544
+     },
+     "deliver_approved_report|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.75
+     },
+     "fetch_replacement_reviewer|oct": {
+      "violations": 3,
+      "normals": 3,
+      "auroc": 0.1851851851851852
+     },
+     "grant_review_access|oct": {
+      "violations": 2,
+      "normals": 8,
+      "auroc": 0.2916666666666667
+     },
+     "issue_payment|nov": {
+      "violations": 2,
+      "normals": 6,
+      "auroc": 0.5277777777777778
+     },
+     "record_independent_review|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.9027777777777778
+     },
+     "run_program|oct": {
+      "violations": 2,
+      "normals": 12,
+      "auroc": 0.2777777777777778
+     }
+    }
+   },
+   "C": {
+    "min3": {
+     "value": 0.8013211382113822,
+     "cells": 4,
+     "violations": 16
+    },
+    "min2": {
+     "value": 0.7873244641537326,
+     "cells": 7,
+     "violations": 22
+    },
+    "per_cell_min2": {
+     "bash|oct": {
+      "violations": 5,
+      "normals": 41,
+      "auroc": 0.8975609756097561
+     },
+     "deliver_approved_report|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.9583333333333334
+     },
+     "fetch_replacement_reviewer|oct": {
+      "violations": 3,
+      "normals": 3,
+      "auroc": 0.2222222222222222
+     },
+     "grant_review_access|oct": {
+      "violations": 2,
+      "normals": 8,
+      "auroc": 0.75
+     },
+     "issue_payment|nov": {
+      "violations": 2,
+      "normals": 6,
+      "auroc": 0.6666666666666666
+     },
+     "record_independent_review|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.9583333333333334
+     },
+     "run_program|oct": {
+      "violations": 2,
+      "normals": 12,
+      "auroc": 0.8333333333333334
+     }
+    }
+   }
+  },
+  "P4": {
+   "A": {
+    "min3": {
+     "value": 0.5509823848238482,
+     "cells": 4,
+     "violations": 16
+    },
+    "min2": {
+     "value": 0.6368255728011825,
+     "cells": 7,
+     "violations": 22
+    },
+    "per_cell_min2": {
+     "bash|oct": {
+      "violations": 5,
+      "normals": 41,
+      "auroc": 0.3186991869918699
+     },
+     "deliver_approved_report|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.7916666666666666
+     },
+     "fetch_replacement_reviewer|oct": {
+      "violations": 3,
+      "normals": 3,
+      "auroc": 0.4444444444444444
+     },
+     "grant_review_access|oct": {
+      "violations": 2,
+      "normals": 8,
+      "auroc": 0.875
+     },
+     "issue_payment|nov": {
+      "violations": 2,
+      "normals": 6,
+      "auroc": 0.888888888888889
+     },
+     "record_independent_review|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.6805555555555555
+     },
+     "run_program|oct": {
+      "violations": 2,
+      "normals": 12,
+      "auroc": 0.8333333333333334
+     }
+    }
+   },
+   "B": {
+    "min3": {
+     "value": 0.6430386178861788,
+     "cells": 4,
+     "violations": 16
+    },
+    "min2": {
+     "value": 0.6299119241192411,
+     "cells": 7,
+     "violations": 22
+    },
+    "per_cell_min2": {
+     "bash|oct": {
+      "violations": 5,
+      "normals": 41,
+      "auroc": 0.49105691056910566
+     },
+     "deliver_approved_report|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.7222222222222223
+     },
+     "fetch_replacement_reviewer|oct": {
+      "violations": 3,
+      "normals": 3,
+      "auroc": 0.4074074074074074
+     },
+     "grant_review_access|oct": {
+      "violations": 2,
+      "normals": 8,
+      "auroc": 0.8958333333333334
+     },
+     "issue_payment|nov": {
+      "violations": 2,
+      "normals": 6,
+      "auroc": 0.611111111111111
+     },
+     "record_independent_review|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.9305555555555557
+     },
+     "run_program|oct": {
+      "violations": 2,
+      "normals": 12,
+      "auroc": 0.27777777777777773
+     }
+    }
+   },
+   "C": {
+    "min3": {
+     "value": 0.9433434959349594,
+     "cells": 4,
+     "violations": 16
+    },
+    "min2": {
+     "value": 0.9587952697708796,
+     "cells": 7,
+     "violations": 22
+    },
+    "per_cell_min2": {
+     "bash|oct": {
+      "violations": 5,
+      "normals": 41,
+      "auroc": 0.9853658536585366
+     },
+     "deliver_approved_report|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.9583333333333334
+     },
+     "fetch_replacement_reviewer|oct": {
+      "violations": 3,
+      "normals": 3,
+      "auroc": 0.7777777777777778
+     },
+     "grant_review_access|oct": {
+      "violations": 2,
+      "normals": 8,
+      "auroc": 1.0
+     },
+     "issue_payment|nov": {
+      "violations": 2,
+      "normals": 6,
+      "auroc": 1.0
+     },
+     "record_independent_review|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 1.0
+     },
+     "run_program|oct": {
+      "violations": 2,
+      "normals": 12,
+      "auroc": 1.0
+     }
+    }
+   }
+  },
+  "P5": {
+   "A": {
+    "min3": {
+     "value": 0.7560975609756097,
+     "cells": 4,
+     "violations": 16
+    },
+    "min2": {
+     "value": 0.7790558019216557,
+     "cells": 7,
+     "violations": 22
+    },
+    "per_cell_min2": {
+     "bash|oct": {
+      "violations": 5,
+      "normals": 41,
+      "auroc": 0.8861788617886178
+     },
+     "deliver_approved_report|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 1.0
+     },
+     "fetch_replacement_reviewer|oct": {
+      "violations": 3,
+      "normals": 3,
+      "auroc": 0.2222222222222222
+     },
+     "grant_review_access|oct": {
+      "violations": 2,
+      "normals": 8,
+      "auroc": 0.6875
+     },
+     "issue_payment|nov": {
+      "violations": 2,
+      "normals": 6,
+      "auroc": 1.0
+     },
+     "record_independent_review|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.75
+     },
+     "run_program|oct": {
+      "violations": 2,
+      "normals": 12,
+      "auroc": 0.8333333333333334
+     }
+    }
+   },
+   "B": {
+    "min3": {
+     "value": 0.7573678861788617,
+     "cells": 4,
+     "violations": 16
+    },
+    "min2": {
+     "value": 0.7496766444937176,
+     "cells": 7,
+     "violations": 22
+    },
+    "per_cell_min2": {
+     "bash|oct": {
+      "violations": 5,
+      "normals": 41,
+      "auroc": 0.9235772357723578
+     },
+     "deliver_approved_report|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.9027777777777778
+     },
+     "fetch_replacement_reviewer|oct": {
+      "violations": 3,
+      "normals": 3,
+      "auroc": 0.2222222222222222
+     },
+     "grant_review_access|oct": {
+      "violations": 2,
+      "normals": 8,
+      "auroc": 0.5208333333333334
+     },
+     "issue_payment|nov": {
+      "violations": 2,
+      "normals": 6,
+      "auroc": 1.0
+     },
+     "record_independent_review|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.8055555555555555
+     },
+     "run_program|oct": {
+      "violations": 2,
+      "normals": 12,
+      "auroc": 0.6666666666666666
+     }
+    }
+   },
+   "C": {
+    "min3": {
+     "value": 0.8615345528455285,
+     "cells": 4,
+     "violations": 16
+    },
+    "min2": {
+     "value": 0.8822524020694753,
+     "cells": 7,
+     "violations": 22
+    },
+    "per_cell_min2": {
+     "bash|oct": {
+      "violations": 5,
+      "normals": 41,
+      "auroc": 0.9902439024390244
+     },
+     "deliver_approved_report|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 1.0
+     },
+     "fetch_replacement_reviewer|oct": {
+      "violations": 3,
+      "normals": 3,
+      "auroc": 0.3333333333333333
+     },
+     "grant_review_access|oct": {
+      "violations": 2,
+      "normals": 8,
+      "auroc": 0.8125
+     },
+     "issue_payment|nov": {
+      "violations": 2,
+      "normals": 6,
+      "auroc": 1.0
+     },
+     "record_independent_review|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.9583333333333334
+     },
+     "run_program|oct": {
+      "violations": 2,
+      "normals": 12,
+      "auroc": 1.0
+     }
+    }
+   }
+  },
+  "P6": {
+   "A": {
+    "min3": {
+     "value": 0.5580962059620597,
+     "cells": 4,
+     "violations": 16
+    },
+    "min2": {
+     "value": 0.65210027100271,
+     "cells": 7,
+     "violations": 22
+    },
+    "per_cell_min2": {
+     "bash|oct": {
+      "violations": 5,
+      "normals": 41,
+      "auroc": 0.34146341463414637
+     },
+     "deliver_approved_report|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.7916666666666666
+     },
+     "fetch_replacement_reviewer|oct": {
+      "violations": 3,
+      "normals": 3,
+      "auroc": 0.4444444444444444
+     },
+     "grant_review_access|oct": {
+      "violations": 2,
+      "normals": 8,
+      "auroc": 0.875
+     },
+     "issue_payment|nov": {
+      "violations": 2,
+      "normals": 6,
+      "auroc": 1.0
+     },
+     "record_independent_review|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.6805555555555555
+     },
+     "run_program|oct": {
+      "violations": 2,
+      "normals": 12,
+      "auroc": 0.8333333333333334
+     }
+    }
+   },
+   "B": {
+    "min3": {
+     "value": 0.6612466124661247,
+     "cells": 4,
+     "violations": 16
+    },
+    "min2": {
+     "value": 0.6532551120965756,
+     "cells": 7,
+     "violations": 22
+    },
+    "per_cell_min2": {
+     "bash|oct": {
+      "violations": 5,
+      "normals": 41,
+      "auroc": 0.5382113821138211
+     },
+     "deliver_approved_report|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.763888888888889
+     },
+     "fetch_replacement_reviewer|oct": {
+      "violations": 3,
+      "normals": 3,
+      "auroc": 0.3703703703703704
+     },
+     "grant_review_access|oct": {
+      "violations": 2,
+      "normals": 8,
+      "auroc": 0.8958333333333334
+     },
+     "issue_payment|nov": {
+      "violations": 2,
+      "normals": 6,
+      "auroc": 0.7222222222222223
+     },
+     "record_independent_review|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 0.9305555555555557
+     },
+     "run_program|oct": {
+      "violations": 2,
+      "normals": 12,
+      "auroc": 0.27777777777777773
+     }
+    }
+   },
+   "C": {
+    "min3": {
+     "value": 0.9791666666666666,
+     "cells": 4,
+     "violations": 16
+    },
+    "min2": {
+     "value": 0.9848484848484848,
+     "cells": 7,
+     "violations": 22
+    },
+    "per_cell_min2": {
+     "bash|oct": {
+      "violations": 5,
+      "normals": 41,
+      "auroc": 1.0
+     },
+     "deliver_approved_report|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 1.0
+     },
+     "fetch_replacement_reviewer|oct": {
+      "violations": 3,
+      "normals": 3,
+      "auroc": 0.8888888888888888
+     },
+     "grant_review_access|oct": {
+      "violations": 2,
+      "normals": 8,
+      "auroc": 1.0
+     },
+     "issue_payment|nov": {
+      "violations": 2,
+      "normals": 6,
+      "auroc": 1.0
+     },
+     "record_independent_review|oct": {
+      "violations": 4,
+      "normals": 6,
+      "auroc": 1.0
+     },
+     "run_program|oct": {
+      "violations": 2,
+      "normals": 12,
+      "auroc": 1.0
+     }
+    }
+   }
+  }
+ },
+ "T7-a unseen scenario (saved, 10 splits)": {
+  "min3": {
+   "value": 0.7883892276422764,
+   "cells": 4,
+   "violations": 16
+  },
+  "min2": {
+   "value": 0.7885254988913525,
+   "cells": 7,
+   "violations": 22
+  },
+  "per_cell_min2": {
+   "bash|oct": {
+    "violations": 5,
+    "normals": 41,
+    "auroc": 0.9195121951219513
+   },
+   "deliver_approved_report|oct": {
+    "violations": 4,
+    "normals": 6,
+    "auroc": 1.0
+   },
+   "fetch_replacement_reviewer|oct": {
+    "violations": 3,
+    "normals": 3,
+    "auroc": 0.22222222222222224
+   },
+   "grant_review_access|oct": {
+    "violations": 2,
+    "normals": 8,
+    "auroc": 0.625
+   },
+   "issue_payment|nov": {
+    "violations": 2,
+    "normals": 6,
+    "auroc": 1.0
+   },
+   "record_independent_review|oct": {
+    "violations": 4,
+    "normals": 6,
+    "auroc": 0.8375
+   },
+   "run_program|oct": {
+    "violations": 2,
+    "normals": 12,
+    "auroc": 0.7416666666666667
+   }
+  }
+ },
+ "order rule (earlier step = violation)": {
+  "min3": {
+   "value": 0.6875,
+   "cells": 4,
+   "violations": 16
+  },
+  "min2": {
+   "value": 0.612689393939394,
+   "cells": 7,
+   "violations": 22
+  },
+  "per_cell_min2": {
+   "bash|oct": {
+    "violations": 5,
+    "normals": 41,
+    "auroc": 0.9
+   },
+   "deliver_approved_report|oct": {
+    "violations": 4,
+    "normals": 6,
+    "auroc": 0.75
+   },
+   "fetch_replacement_reviewer|oct": {
+    "violations": 3,
+    "normals": 3,
+    "auroc": 0.4444444444444444
+   },
+   "grant_review_access|oct": {
+    "violations": 2,
+    "normals": 8,
+    "auroc": 0.53125
+   },
+   "issue_payment|nov": {
+    "violations": 2,
+    "normals": 6,
+    "auroc": 0.6666666666666666
+   },
+   "record_independent_review|oct": {
+    "violations": 4,
+    "normals": 6,
+    "auroc": 0.5416666666666666
+   },
+   "run_program|oct": {
+    "violations": 2,
+    "normals": 12,
+    "auroc": 0.041666666666666664
+   }
+  }
+ }
+}

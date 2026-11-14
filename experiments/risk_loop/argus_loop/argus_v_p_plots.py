@@ -39,6 +39,7 @@ COND = {"A": {"ko": "처음 보는 시나리오", "color": "#2a78d6", "marker": 
 VIOL, NORM, BASE = "#d03b3b", "#898781", "#c3c2b7"
 SEQ = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95"]
 FIG_W = 9.0
+TAG = "Argus-V-p"   # row label of the plotted setting; main() switches it to the setting id when it is not the chosen one
 
 
 def setup():
@@ -57,14 +58,19 @@ def setup():
     return font
 
 
+LBL = dict(facecolor=SURFACE, edgecolor="none", pad=1.5)   # value labels sit on a surface-coloured patch
+
+
 def title(fig, main, sub=None):
-    fig.text(0.012, 0.985, main, ha="left", va="top", fontsize=14, fontweight="bold", color=INK)
+    h = fig.get_size_inches()[1]
+    fig.text(0.012, 1 - 0.10 / h, main, ha="left", va="top", fontsize=14, fontweight="bold", color=INK)
     if sub:
-        fig.text(0.012, 0.938, sub, ha="left", va="top", fontsize=10.5, color=INK2)
+        fig.text(0.012, 1 - 0.44 / h, sub, ha="left", va="top", fontsize=10.5, color=INK2)
 
 
 def note(fig, text):
-    fig.text(0.012, 0.012, text, ha="left", va="bottom", fontsize=8.8, color=MUTED)
+    h = fig.get_size_inches()[1]
+    fig.text(0.012, 0.07 / h, text, ha="left", va="bottom", fontsize=8.8, color=MUTED)
 
 
 def cond_handles(conds=("A", "B", "C"), line=True):
@@ -122,26 +128,26 @@ def fig01_settings(res, out, chosen):
     S = res["settings"]
     ids = list(S)
     fig, ax = plt.subplots(figsize=(FIG_W, 5.4))
-    fig.subplots_adjust(top=0.80, left=0.37, right=0.93, bottom=0.17)
+    fig.subplots_adjust(top=0.80, left=0.37, right=0.93, bottom=0.21)
     for i, sid in enumerate(ids):
         yy = len(ids) - 1 - i
         vals = {c: res["results"][sid][c]["value"] for c in "ABC"}
         ax.plot([min(vals.values()), max(vals.values())], [yy, yy], color=BASE, lw=1.4, zorder=2)
-        for c in "ABC":
+        for c in "CBA":
             ax.plot(vals[c], yy, COND[c]["marker"], color=COND[c]["color"], markersize=10, markeredgecolor=SURFACE,
                     markeredgewidth=2, zorder=3)
-        ax.text(vals["C"] + 0.012, yy, f"{vals['C']:.2f}", va="center", ha="left", fontsize=9.5, color=INK2)
+        ax.text(vals["C"] + 0.014, yy, f"{vals['C']:.2f}", va="center", ha="left", fontsize=9.5, color=INK2, bbox=LBL, zorder=5)
         lo = min(vals["A"], vals["B"])
-        ax.text(lo - 0.012, yy, f"{lo:.2f}", va="center", ha="right", fontsize=9.5, color=INK2)
+        ax.text(lo - 0.014, yy, f"{lo:.2f}", va="center", ha="right", fontsize=9.5, color=INK2, bbox=LBL, zorder=5)
     ax.set_yticks(range(len(ids)))
     ax.set_yticklabels([f"{sid}  {S[sid]['ko']}" + ("  ◀ Argus-V-p" if sid == chosen else "") for sid in ids][::-1])
-    ax.set_xlim(0.45, 1.03)
+    ax.set_xlim(0.38, 1.04)
     ax.set_ylim(-0.6, len(ids) - 0.4)
     ax.set_xlabel("같은 도구 안 AUROC (0.5 = 우연)")
     ax.grid(axis="y", visible=False)
     ref_line(ax, x=0.5, label="우연")
     ref_line(ax, x=0.9, label="목표 0.90")
-    ax.legend(handles=cond_handles(line=False), loc="upper center", bbox_to_anchor=(0.32, -0.13), ncol=3,
+    ax.legend(handles=cond_handles(line=False), loc="upper center", bbox_to_anchor=(0.32, -0.15), ncol=3,
               handletextpad=0.3, columnspacing=1.4)
     title(fig, "같은 모델이라도 무엇을 채점하느냐에 따라 점수가 크게 다르다",
           "설정 6개 × 조건 3개. 왼쪽 숫자는 학습에 없던 데이터(●■) 중 낮은 쪽, 오른쪽 숫자는 학습 데이터 재채점(▲)")
@@ -153,7 +159,7 @@ def fig02_roc(cx, sc, vals, out, name_ko):
     fig, ax = plt.subplots(figsize=(6.6, 6.4))
     fig.subplots_adjust(top=0.84, left=0.12, right=0.96, bottom=0.12)
     ax.plot([0, 1], [0, 1], color=BASE, lw=1.2, zorder=1)
-    for c in "ABC":
+    for c in "CBA":
         g, t, _ = within_tool_roc(cx, sc[c])
         ax.plot(g, t, color=COND[c]["color"], lw=2, zorder=3, label=f"{COND[c]['ko']}  {vals[c]:.2f}")
     ax.set_xlim(0, 1)
@@ -161,7 +167,8 @@ def fig02_roc(cx, sc, vals, out, name_ko):
     ax.set_aspect("equal")
     ax.set_xlabel("오경보율 (정상을 위반으로 본 비율)")
     ax.set_ylabel("탐지율 (위반을 잡은 비율)")
-    ax.legend(loc="lower right", title="조건 · 같은 도구 안 AUROC", title_fontsize=9.5, handlelength=1.6)
+    hh, ll = ax.get_legend_handles_labels()
+    ax.legend(hh[::-1], ll[::-1], loc="lower right", title="조건 · 같은 도구 안 AUROC", title_fontsize=9.5, handlelength=1.6)
     ax.text(0.62, 0.56, "우연 수준", rotation=45, color=MUTED, fontsize=9, ha="center", va="center")
     title(fig, f"ROC 곡선 — {name_ko}", "칸(도구×출처)별 곡선을 위반 수로 가중 평균. 곡선 아래 넓이가 같은 도구 안 AUROC")
     save(fig, out, "02_ROC_곡선.png")
@@ -171,11 +178,11 @@ def fig03_roc_cells(cx, sc, out, name_ko):
     cells = within_tool_roc(cx, sc["A"])[2]
     order = sorted(cells, key=lambda k: -cells[k][4])
     fig, axes = plt.subplots(3, 3, figsize=(FIG_W, 9.2), sharex=True, sharey=True)
-    fig.subplots_adjust(top=0.86, left=0.08, right=0.98, bottom=0.10, hspace=0.42, wspace=0.12)
+    fig.subplots_adjust(top=0.85, left=0.08, right=0.98, bottom=0.10, hspace=0.42, wspace=0.12)
     per = {c: within_tool_roc(cx, sc[c])[2] for c in "ABC"}
     for ax, cell in zip(axes.ravel(), order):
         ax.plot([0, 1], [0, 1], color=BASE, lw=1.0)
-        for c in "ABC":
+        for c in "CBA":
             f, t, p, n, a = per[c][cell]
             ax.plot(f, t, color=COND[c]["color"], lw=1.8)
         f, t, p, n, a = per["A"][cell]
@@ -186,7 +193,7 @@ def fig03_roc_cells(cx, sc, out, name_ko):
         ax.set_yticks([0, 0.5, 1])
     fig.text(0.5, 0.045, "오경보율", ha="center", color=INK2)
     fig.text(0.015, 0.48, "탐지율", va="center", rotation=90, color=INK2)
-    fig.legend(handles=cond_handles(), loc="upper left", bbox_to_anchor=(0.06, 0.925), ncol=3, handletextpad=0.4,
+    fig.legend(handles=cond_handles(), loc="upper left", bbox_to_anchor=(0.06, 0.945), ncol=3, handletextpad=0.4,
                columnspacing=1.6)
     title(fig, f"칸별 ROC 곡선 — {name_ko}", None)
     note(fig, "칸마다 위반이 3~9개뿐이라 곡선이 계단 모양이고 한 개 차이로 크게 움직인다 · 제목의 A = 처음 보는 시나리오 AUROC")
@@ -198,7 +205,7 @@ def fig04_pr(cx, sc, out, name_ko):
     prev = float(cx.y.mean())
     fig, ax = plt.subplots(figsize=(7.6, 5.4))
     fig.subplots_adjust(top=0.80, left=0.11, right=0.86, bottom=0.14)
-    for c in "ABC":
+    for c in "CBA":
         p, r, _ = precision_recall_curve(cx.y, sc[c])
         ap = average_precision_score(cx.y, sc[c])
         ax.plot(r, p, color=COND[c]["color"], lw=2, label=f"{COND[c]['ko']}  평균 정밀도 {ap:.2f}")
@@ -207,7 +214,8 @@ def fig04_pr(cx, sc, out, name_ko):
     ax.set_ylim(0, 1.02)
     ax.set_xlabel("재현율 (위반 중 잡은 비율)")
     ax.set_ylabel("정밀도 (경보 중 진짜 위반 비율)")
-    ax.legend(loc="upper right", handlelength=1.6)
+    hh, ll = ax.get_legend_handles_labels()
+    ax.legend(hh[::-1], ll[::-1], loc="upper right", handlelength=1.6)
     title(fig, f"정밀도-재현율 곡선 — {name_ko}",
           f"판정 행 전체 {len(cx.y):,}개(위반 {int(cx.y.sum())}개, {prev * 100:.1f}%)를 도구 구분 없이 섞어 본 값")
     note(fig, "위반이 드물어 정밀도는 낮게 나온다 · 도구를 섞어 잰 값이라 같은 도구 안 AUROC와 직접 비교하지 않는다")
@@ -218,7 +226,7 @@ def fig05_scores(cx, sc, out, name_ko):
     cells = [e["tool"] for e in cx.wt(sc["A"])["per_tool"] if e["included"]]
     rng = np.random.default_rng(0)
     fig, axes = plt.subplots(3, 1, figsize=(FIG_W, 9.4), sharex=True)
-    fig.subplots_adjust(top=0.87, left=0.09, right=0.97, bottom=0.17, hspace=0.30)
+    fig.subplots_adjust(top=0.87, left=0.09, right=0.97, bottom=0.13, hspace=0.30)
     for ax, c in zip(axes, "ABC"):
         for i, cell in enumerate(cells):
             m = np.nonzero(cx.groups == cell)[0]
@@ -257,12 +265,12 @@ def fig06_detection(cx, sc, out, name_ko):
     fas = (0.01, 0.05, 0.10)
     fig, ax = plt.subplots(figsize=(7.8, 5.0))
     fig.subplots_adjust(top=0.78, left=0.10, right=0.97, bottom=0.22)
-    w = 0.16
+    w = 0.11
     table = {}
     for j, c in enumerate("ABC"):
         vals = [op_point(cx, sc[c], fa)["recall"] * 100 for fa in fas]
         table[c] = vals
-        xs = np.arange(len(fas)) + (j - 1) * (w + 0.035)
+        xs = np.arange(len(fas)) + (j - 1) * (w + 0.03)
         ax.bar(xs, vals, width=w, color=COND[c]["color"], edgecolor=SURFACE, linewidth=1.5, zorder=3, label=COND[c]["ko"])
         for x, v in zip(xs, vals):
             ax.text(x, v + 1.2, f"{v:.0f}%", ha="center", va="bottom", fontsize=9.3, color=INK2)
@@ -346,11 +354,11 @@ def fig09_cells(res, sid, out, name_ko):
     R = res["results"][sid]
     cells = sorted(R["A"]["per_cell"], key=lambda k: R["A"]["per_cell"][k]["auroc"])
     fig, ax = plt.subplots(figsize=(FIG_W, 5.6))
-    fig.subplots_adjust(top=0.80, left=0.36, right=0.94, bottom=0.17)
+    fig.subplots_adjust(top=0.80, left=0.36, right=0.94, bottom=0.20)
     for yy, cell in enumerate(cells):
         vals = {c: R[c]["per_cell"][cell]["auroc"] for c in "ABC"}
         ax.plot([min(vals.values()), max(vals.values())], [yy, yy], color=BASE, lw=1.4, zorder=2)
-        for c in "ABC":
+        for c in "CBA":
             ax.plot(vals[c], yy, COND[c]["marker"], color=COND[c]["color"], markersize=10, markeredgecolor=SURFACE,
                     markeredgewidth=2, zorder=3)
     ax.set_yticks(range(len(cells)))
@@ -361,7 +369,7 @@ def fig09_cells(res, sid, out, name_ko):
     ax.grid(axis="y", visible=False)
     ref_line(ax, x=0.5, label="우연")
     ref_line(ax, x=0.9, label="0.90")
-    ax.legend(handles=cond_handles(line=False), loc="upper center", bbox_to_anchor=(0.30, -0.13), ncol=3,
+    ax.legend(handles=cond_handles(line=False), loc="upper center", bbox_to_anchor=(0.30, -0.15), ncol=3,
               handletextpad=0.3, columnspacing=1.4)
     title(fig, f"도구(칸)별 AUROC — {name_ko}", "아래에서 위로 '처음 보는 시나리오' 점수가 높은 순서")
     note(fig, "칸마다 위반이 3~9개라 값 하나하나의 오차가 크다")
@@ -373,12 +381,20 @@ def fig10_gap(res, out):
     fig, axes = plt.subplots(1, 2, figsize=(FIG_W, 4.9), sharey=True)
     fig.subplots_adjust(top=0.74, left=0.08, right=0.90, bottom=0.22, wspace=0.30)
     for ax, (nm, a, b) in zip(axes, pairs):
-        for c in "ABC":
-            v = [res["results"][a][c]["value"], res["results"][b][c]["value"]]
-            ax.plot([0, 1], v, color=COND[c]["color"], lw=2, marker=COND[c]["marker"], markersize=9,
+        V = {c: [res["results"][a][c]["value"], res["results"][b][c]["value"]] for c in "ABC"}
+        for side in (0, 1):                                  # nudge labels that would touch (text only, marks stay)
+            order = sorted("ABC", key=lambda c: V[c][side])
+            pos = {c: V[c][side] for c in order}
+            for lo_c, hi_c in zip(order, order[1:]):
+                if pos[hi_c] - pos[lo_c] < 0.034:
+                    mid = (pos[hi_c] + pos[lo_c]) / 2
+                    pos[lo_c], pos[hi_c] = mid - 0.017, mid + 0.017
+            for c in "ABC":
+                ax.text(1.07 if side else -0.07, pos[c], f"{V[c][side]:.2f}", va="center", ha="left" if side else "right",
+                        fontsize=9.5, color=INK2)
+        for c in "CBA":
+            ax.plot([0, 1], V[c], color=COND[c]["color"], lw=2, marker=COND[c]["marker"], markersize=9,
                     markeredgecolor=SURFACE, markeredgewidth=2, zorder=3)
-            ax.text(1.07, v[1], f"{v[1]:.2f}", va="center", ha="left", fontsize=9.5, color=INK2)
-            ax.text(-0.07, v[0], f"{v[0]:.2f}", va="center", ha="right", fontsize=9.5, color=INK2)
         ax.set_xlim(-0.35, 1.35)
         ax.set_xticks([0, 1])
         ax.set_xticklabels([f"기본\n(PCA 32차원)", f"규제 완화\n(128차원, 벌점 1/10)"])
@@ -400,9 +416,9 @@ def fig11_baselines(res, sid, ci, out, name_ko, shuffle):
     rows = [("원래 Argus-V1 (처음 보는 시나리오)", 0.526, BASE, None),
             ("모델 없이 '앞선 step일수록 위반' 규칙", 0.730, BASE, None),
             ("지금 최고 모델 T7-a (처음 보는 시나리오)", 0.721, BASE, (0.569, 0.825)),
-            (f"Argus-V-p · A {COND['A']['ko']}", R["A"]["value"], COND["A"]["color"], ci.get("A")),
-            (f"Argus-V-p · B {COND['B']['ko']}", R["B"]["value"], COND["B"]["color"], ci.get("B")),
-            (f"Argus-V-p · C {COND['C']['ko']}", R["C"]["value"], COND["C"]["color"], None)]
+            (f"{TAG} · A {COND['A']['ko']}", R["A"]["value"], COND["A"]["color"], ci.get("A")),
+            (f"{TAG} · B {COND['B']['ko']}", R["B"]["value"], COND["B"]["color"], ci.get("B")),
+            (f"{TAG} · C {COND['C']['ko']}", R["C"]["value"], COND["C"]["color"], None)]
     if shuffle is not None:
         rows.append(("점검: 학습 라벨을 섞고 B를 다시 잼", shuffle, BASE, None))
     fig, ax = plt.subplots(figsize=(FIG_W, 5.2))
@@ -412,7 +428,7 @@ def fig11_baselines(res, sid, ci, out, name_ko, shuffle):
         ax.barh(yy, v - 0.4, left=0.4, height=0.42, color=col, edgecolor=SURFACE, linewidth=1.5, zorder=3)
         if c:
             ax.plot([c[0], c[1]], [yy, yy], color=INK2, lw=1.2, zorder=4)
-        ax.text((c[1] if c else v) + 0.012, yy, f"{v:.2f}", va="center", ha="left", fontsize=9.8, color=INK)
+        ax.text((c[1] if c else v) + 0.012, yy, f"{v:.2f}", va="center", ha="left", fontsize=9.8, color=INK, bbox=LBL, zorder=5)
     ax.set_yticks(range(len(rows)))
     ax.set_yticklabels([r[0] for r in rows][::-1])
     ax.set_xlim(0.4, 1.04)
@@ -430,7 +446,7 @@ def fig12_visible(vres, res, sid, out, name_ko):
     rows = [("모델 없이 '앞선 step일수록 위반' 규칙", 0.730, vres["order rule (earlier step = violation)"]["min3"]["value"], BASE),
             ("지금 최고 모델 T7-a (처음 보는 시나리오)", 0.721, vres["T7-a unseen scenario (saved, 10 splits)"]["min3"]["value"], BASE)]
     for c in "ABC":
-        rows.append((f"Argus-V-p · {c} {COND[c]['ko']}", res["results"][sid][c]["value"], V[c]["min3"]["value"], COND[c]["color"]))
+        rows.append((f"{TAG} · {c} {COND[c]['ko']}", res["results"][sid][c]["value"], V[c]["min3"]["value"], COND[c]["color"]))
     nvis, ncell = V["A"]["min3"]["violations"], V["A"]["min3"]["cells"]
     fig, ax = plt.subplots(figsize=(FIG_W, 4.8))
     fig.subplots_adjust(top=0.78, left=0.42, right=0.93, bottom=0.22)
@@ -439,7 +455,7 @@ def fig12_visible(vres, res, sid, out, name_ko):
         ax.plot([allv, visv], [yy, yy], color=BASE, lw=1.6, zorder=2)
         ax.plot(allv, yy, "o", markersize=10, markerfacecolor=SURFACE, markeredgecolor=col if col != BASE else MUTED, markeredgewidth=2, zorder=3)
         ax.plot(visv, yy, "o", markersize=10, markerfacecolor=col if col != BASE else MUTED, markeredgecolor=SURFACE, markeredgewidth=2, zorder=4)
-        ax.text(max(allv, visv) + 0.014, yy, f"{visv:.2f}", va="center", ha="left", fontsize=9.8, color=INK)
+        ax.text(max(allv, visv) + 0.024, yy, f"{visv:.2f}", va="center", ha="left", fontsize=9.8, color=INK, bbox=LBL, zorder=5)
     ax.set_yticks(range(len(rows)))
     ax.set_yticklabels([r[0] for r in rows][::-1])
     ax.set_xlim(0.4, 1.06)
@@ -451,7 +467,7 @@ def fig12_visible(vres, res, sid, out, name_ko):
     ax.legend(handles=[Line2D([0], [0], lw=0, marker="o", markersize=9, markerfacecolor=MUTED, markeredgecolor=SURFACE, label=f"행동 전에 근거가 보인 위반만 (위반 {nvis}개, 칸 {ncell}개)"),
                        Line2D([0], [0], lw=0, marker="o", markersize=9, markerfacecolor=SURFACE, markeredgecolor=MUTED, markeredgewidth=2, label="평가 위반 전체 (48개, 칸 9개)")],
               loc="upper center", bbox_to_anchor=(0.25, -0.16), ncol=2, handletextpad=0.3, columnspacing=1.6)
-    title(fig, f"목표 기준(행동 전에 근거가 보인 위반)으로 다시 잰 점수 — {name_ko}", "채운 점과 오른쪽 숫자가 목표 기준 값, 빈 점이 평가 위반 전체 기준 값")
+    title(fig, f"목표 기준으로 다시 잰 점수 — {name_ko}", "목표 기준 = 행동 전에 근거가 보인 위반만. 채운 점과 오른쪽 숫자가 그 값, 빈 점은 평가 위반 전체 기준 값")
     note(fig, f"표시 규칙은 잠정판 · 이 기준에 드는 위반이 {nvis}개뿐이라 값이 크게 흔들린다(서로 다른 입력은 {vres['unique_feature_rows_among_visible']}개)")
     save(fig, out, "12_목표_기준_점수.png")
 
@@ -463,6 +479,8 @@ def main(argv):
     res = json.loads((AP.OUT / "results.json").read_text(encoding="utf-8"))
     sid = argv[argv.index("--setting") + 1] if "--setting" in argv else res["chosen"]["setting"]
     chosen = res["chosen"]["setting"]
+    global TAG
+    TAG = "Argus-V-p" if sid == chosen else sid
     name_ko = f"{sid} {res['settings'][sid]['ko']}" + (" (Argus-V-p)" if sid == chosen else "")
     out = AP.REPORT / "figures" / sid
     print("font", font, "| setting", sid, "| chosen", chosen)
@@ -531,7 +549,7 @@ def main(argv):
         L.append(f"| 순서 규칙 | 0.730 | {o['min3']['value']:.3f} | {o['min2']['value']:.3f} |")
         L.append(f"| T7-a (처음 보는 시나리오) | 0.721 | {t['min3']['value']:.3f} | {t['min2']['value']:.3f} |")
         for c in "ABC":
-            L.append(f"| Argus-V-p {c} | {vals[c]:.3f} | {V[c]['min3']['value']:.3f} | {V[c]['min2']['value']:.3f} |")
+            L.append(f"| {TAG} {c} | {vals[c]:.3f} | {V[c]['min3']['value']:.3f} | {V[c]['min2']['value']:.3f} |")
     (out / "tables.md").write_text("\n".join(L) + "\n", encoding="utf-8")
     print("saved", (out / "tables.md").relative_to(REPO_ROOT))
 
