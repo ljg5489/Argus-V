@@ -18,3 +18,5 @@ Train only on normal rows plus the visible-positive rows identified by the provi
 Initial fixed candidates: embedding widths 32, 64, 128; GELU + LayerNorm + dropout (0.15); AdamW, learning rate 0.001, weight decay 0.01; 60 full-batch epochs. Positive class weight is the square root of the sampled class ratio, capped at 20. No early stopping or hyperparameter choice on the scored fold. Run five family-grouped folds for seeds 0, 1, 2. Compare with saved Argus-V-p/P1 and T7-a OOF scores on the same rows. Record every candidate and seed. Later structures/optimization changes get new numbered rounds in the ledger; keep the best score clearly marked as selected-on-development data.
 
 The purpose of the first round is to test whether a learned projection can improve out-of-fold ranking. Training-row scores are diagnostic only and never count toward the 0.90 target. If no valid route to 0.90 is supported by available data, document why and the data needed rather than relabeling an in-sample score as generalization.
+
+For a compact layer-by-layer diagram and comparisons with Argus-V-p, see [`../model_architectures.md`](../model_architectures.md).
