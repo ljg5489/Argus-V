@@ -17,6 +17,12 @@
 - 기록/그림: `reports/risk-loop/argus-v-em/results.md`, `round01_results.json`, `round01_shuffle.json`, `round01_linear_control.json`, `argus_v_em_round01.png`. 첫 실험 계획은 `README.md`, 동일 타깃 선형 대조는 실행 전 `addendum-1.md`로 고정.
 - 다음 단계: 같은 데이터에서는 목표를 넘었으므로 추가 구조 탐색은 중단한다. fresh scenario에서 같은 0.90을 검증하려면 visibility 규칙을 새 데이터 점수 열기 전에 고정하고 독립 family 표본을 확보해야 한다. Argus-V1 frozen 모델·공식 평가 코드·새 데이터 사전등록·시도 장부에는 이 실험을 합치지 않는다.
 
+## 발표 보완 — 2026-11-15 (P6 설명 및 사례)
+
+- 사용자가 P6 구조와 “어떤 시나리오에서 맞히는지” 설명을 요청해 P4→P6 구조 비교와 조건 C 사례 분석을 추가했다.
+- P6 C를 1회 재현해 row scores를 보존했고, 재현 AUROC 0.979167이 기존 기록과 일치함을 확인. 7/9 같은 도구 칸이 AUROC 1.000이지만, 전역 5% 오경보 문턱은 위반 23/76 탐지·정상 460/9,202 오경보다. 순위값과 경보 수를 나눠 발표한다.
+- 상세 사례/호출: `reports/risk-loop/argus-v-p/p6_scenario_analysis.md`·`.json`. 발표 live deck은 Artifact Session `document_73fdecfb-ff26-427c-a1cc-0bd271787961`에 P4/P6 구조 및 시나리오 2장을 추가(총 11장).
+
 규칙과 목표: 같은 폴더의 `TASK.md`. 인수인계 기록 에이전트가 매 단계 갱신한다. 새로 투입되는 에이전트는 이 파일부터 읽는다. 반복별 요약 표는 `LOOP_LEDGER.md`.
 
 > 시간 순 사건 기록은 `WORKLOG.md`(2026-11-08부터, 이후 추가만 함).

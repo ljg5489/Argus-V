@@ -11,6 +11,7 @@ Argus-V1 루프의 시도 장부(누적 169, 보수 171)와 별개다. 여기 �
 | 2026-11-15 | 누수 점검: P5, 학습 라벨을 칸 안에서 섞고 조건 B를 5회 | 25 | `results.json`의 `shuffle_check_B` |
 | 2026-11-15 | 모델 파일 저장: P5를 전체 행에 한 번 | 1 | `artifacts/risk-loop/argus-v-p/model/argus_v_p.pkl` |
 | 2026-11-15 | 목표 기준 재채점과 그래프: 설정별 전체 행 학습을 다시 계산(같은 학습의 반복, 새 설정 없음) | — | `visible_results.json`, `figures/` |
+| 2026-11-15 | 발표 사례 분석: P6 조건 C를 한 번 재현해 행별 점수와 시나리오 호출을 복구(새 설정·선택 아님) | 1회 진단 재적합 | `p6_scenario_analysis.md`, `.json`, `artifacts/risk-loop/argus-v-p/p6_condition_c_scores.npy` |
 
 - 설정 수: 6개(P1~P6) + 사다리 1개. 전부 `results.md`에 보고했다.
 - 고른 것: 조건 B 값으로 P5를 Argus-V-p로 정함(실행 전에 고정한 규칙).
