@@ -1,0 +1,45 @@
+{
+ "note": "test split, epoch 67, alarms at the threshold where 5% of normal calls alarm; from the saved test scores, nothing fitted",
+ "values": {
+  "baseline": {
+   "false_alarms": 139,
+   "false_alarms_from_october": 32,
+   "share_october_among_false_alarms": 0.23,
+   "caught": 6,
+   "caught_october": 2,
+   "caught_november": 4,
+   "october_normals_alarmed_share": 0.094,
+   "november_normals_alarmed_share": 0.043
+  },
+  "w075": {
+   "false_alarms": 141,
+   "false_alarms_from_october": 27,
+   "share_october_among_false_alarms": 0.191,
+   "caught": 4,
+   "caught_october": 2,
+   "caught_november": 2,
+   "october_normals_alarmed_share": 0.079,
+   "november_normals_alarmed_share": 0.046
+  },
+  "w100": {
+   "false_alarms": 141,
+   "false_alarms_from_october": 89,
+   "share_october_among_false_alarms": 0.631,
+   "caught": 5,
+   "caught_october": 4,
+   "caught_november": 1,
+   "october_normals_alarmed_share": 0.261,
+   "november_normals_alarmed_share": 0.021
+  },
+  "w300": {
+   "false_alarms": 139,
+   "false_alarms_from_october": 97,
+   "share_october_among_false_alarms": 0.698,
+   "caught": 4,
+   "caught_october": 4,
+   "caught_november": 0,
+   "october_normals_alarmed_share": 0.284,
+   "november_normals_alarmed_share": 0.017
+  }
+ }
+}
