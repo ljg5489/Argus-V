@@ -1,0 +1,166 @@
+{
+ "note": "saved cross-validation scores of the class-weight check, mean of the three split seeds; nothing fitted",
+ "train_rows_by_period": {
+  "oct": {
+   "calls": 784,
+   "violations": 55,
+   "visible_violations": 20
+  },
+  "nov": {
+   "calls": 8494,
+   "violations": 21,
+   "visible_violations": 2
+  }
+ },
+ "tool_period_cells_with_a_violation": 28,
+ "normal_calls_of_those_cells": 256,
+ "normal_calls_of_other_cells": 8946,
+ "period_only_score": {
+  "what": "1 for an October call, 0 for a November call",
+  "train": 0.8222311511227537,
+  "test_from_counts": 0.7728294298556896,
+  "test_counts": {
+   "oct_violations": 16,
+   "nov_violations": 8,
+   "oct_normals": 341,
+   "nov_normals": 2477
+  }
+ },
+ "values": {
+  "baseline@10": {
+   "pooled_all": 0.7604,
+   "oct_only": 0.6084,
+   "nov_only": 0.6212,
+   "october_above_november_among_normal_calls": 0.7926,
+   "violation_tool_normals_above_other_normals": 0.6151,
+   "inside_violation_tools": 0.6526,
+   "violations_vs_normals_of_other_tools": 0.7635
+  },
+  "w075@10": {
+   "pooled_all": 0.8523,
+   "oct_only": 0.668,
+   "nov_only": 0.718,
+   "october_above_november_among_normal_calls": 0.8533,
+   "violation_tool_normals_above_other_normals": 0.6506,
+   "inside_violation_tools": 0.698,
+   "violations_vs_normals_of_other_tools": 0.8567
+  },
+  "w100@10": {
+   "pooled_all": 0.8748,
+   "oct_only": 0.6704,
+   "nov_only": 0.7077,
+   "october_above_november_among_normal_calls": 0.8853,
+   "violation_tool_normals_above_other_normals": 0.6486,
+   "inside_violation_tools": 0.7096,
+   "violations_vs_normals_of_other_tools": 0.8795
+  },
+  "baseline@20": {
+   "pooled_all": 0.7821,
+   "oct_only": 0.6431,
+   "nov_only": 0.6652,
+   "october_above_november_among_normal_calls": 0.7757,
+   "violation_tool_normals_above_other_normals": 0.6392,
+   "inside_violation_tools": 0.6516,
+   "violations_vs_normals_of_other_tools": 0.7859
+  },
+  "w075@20": {
+   "pooled_all": 0.8254,
+   "oct_only": 0.6654,
+   "nov_only": 0.7212,
+   "october_above_november_among_normal_calls": 0.8145,
+   "violation_tool_normals_above_other_normals": 0.6594,
+   "inside_violation_tools": 0.6808,
+   "violations_vs_normals_of_other_tools": 0.8295
+  },
+  "w100@20": {
+   "pooled_all": 0.8833,
+   "oct_only": 0.6827,
+   "nov_only": 0.7337,
+   "october_above_november_among_normal_calls": 0.8706,
+   "violation_tool_normals_above_other_normals": 0.6622,
+   "inside_violation_tools": 0.7115,
+   "violations_vs_normals_of_other_tools": 0.8883
+  },
+  "baseline@30": {
+   "pooled_all": 0.7726,
+   "oct_only": 0.66,
+   "nov_only": 0.6684,
+   "october_above_november_among_normal_calls": 0.7389,
+   "violation_tool_normals_above_other_normals": 0.6449,
+   "inside_violation_tools": 0.6434,
+   "violations_vs_normals_of_other_tools": 0.7762
+  },
+  "w075@30": {
+   "pooled_all": 0.7807,
+   "oct_only": 0.6687,
+   "nov_only": 0.6851,
+   "october_above_november_among_normal_calls": 0.7639,
+   "violation_tool_normals_above_other_normals": 0.6598,
+   "inside_violation_tools": 0.653,
+   "violations_vs_normals_of_other_tools": 0.7844
+  },
+  "w100@30": {
+   "pooled_all": 0.8768,
+   "oct_only": 0.685,
+   "nov_only": 0.7375,
+   "october_above_november_among_normal_calls": 0.8476,
+   "violation_tool_normals_above_other_normals": 0.673,
+   "inside_violation_tools": 0.706,
+   "violations_vs_normals_of_other_tools": 0.8816
+  },
+  "baseline@67": {
+   "pooled_all": 0.7192,
+   "oct_only": 0.6789,
+   "nov_only": 0.6025,
+   "october_above_november_among_normal_calls": 0.646,
+   "violation_tool_normals_above_other_normals": 0.6182,
+   "inside_violation_tools": 0.6223,
+   "violations_vs_normals_of_other_tools": 0.722
+  },
+  "w075@67": {
+   "pooled_all": 0.7025,
+   "oct_only": 0.6611,
+   "nov_only": 0.5751,
+   "october_above_november_among_normal_calls": 0.6665,
+   "violation_tool_normals_above_other_normals": 0.6219,
+   "inside_violation_tools": 0.6091,
+   "violations_vs_normals_of_other_tools": 0.7052
+  },
+  "w100@67": {
+   "pooled_all": 0.8161,
+   "oct_only": 0.6955,
+   "nov_only": 0.6868,
+   "october_above_november_among_normal_calls": 0.7593,
+   "violation_tool_normals_above_other_normals": 0.6817,
+   "inside_violation_tools": 0.6646,
+   "violations_vs_normals_of_other_tools": 0.8204
+  },
+  "baseline@100": {
+   "pooled_all": 0.7009,
+   "oct_only": 0.6785,
+   "nov_only": 0.58,
+   "october_above_november_among_normal_calls": 0.6212,
+   "violation_tool_normals_above_other_normals": 0.603,
+   "inside_violation_tools": 0.6185,
+   "violations_vs_normals_of_other_tools": 0.7032
+  },
+  "w075@100": {
+   "pooled_all": 0.7004,
+   "oct_only": 0.6647,
+   "nov_only": 0.553,
+   "october_above_november_among_normal_calls": 0.6636,
+   "violation_tool_normals_above_other_normals": 0.6129,
+   "inside_violation_tools": 0.6122,
+   "violations_vs_normals_of_other_tools": 0.703
+  },
+  "w100@100": {
+   "pooled_all": 0.7795,
+   "oct_only": 0.7012,
+   "nov_only": 0.6232,
+   "october_above_november_among_normal_calls": 0.7158,
+   "violation_tool_normals_above_other_normals": 0.666,
+   "inside_violation_tools": 0.6435,
+   "violations_vs_normals_of_other_tools": 0.7834
+  }
+ }
+}

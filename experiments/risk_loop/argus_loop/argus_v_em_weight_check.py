@@ -19,9 +19,10 @@ validation split are not read, and no all-rows model is exported.
 
 Training starts only with --approved.
 Usage : PYTHONUTF8=1 py -3.11 -u experiments/risk_loop/argus_loop/argus_v_em_weight_check.py --approved
+        PYTHONUTF8=1 py -3.11 experiments/risk_loop/argus_loop/argus_v_em_weight_check.py diag        (no training)
         PYTHONUTF8=1 py -3.11 experiments/risk_loop/argus_loop/argus_v_em_weight_check.py figure      (no training)
 Output: artifacts/risk-loop/argus-v-em300/class_weight_check/<setting>/EM64.npz   (ignored)
-        reports/risk-loop/argus-v-em300/class_weight_check.json, figures_weight/*.png
+        reports/risk-loop/argus-v-em300/class_weight_check.json, class_weight_check_diag.json, figures_weight/*.png
 """
 from __future__ import annotations
 
@@ -199,6 +200,59 @@ def train(argv):
     log("DONE", json.dumps(res["reading"]), f"{res['run']['seconds']}s")
 
 
+def diag():
+    """Where the all-calls score of the heavier weight comes from. Saved cross-validation scores only; nothing is fitted.
+
+    The train calls come from two collection periods with very different violation rates, so a score that merely
+    ranks October calls above November calls already gets a high all-calls AUROC. This splits the all-calls score
+    by period and measures how strongly each setting ranks October normal calls above November normal calls."""
+    cx = EM.Ctx()
+    vis, _ = EM.visible_mask(cx)
+    y = cx.y.astype(np.int64)
+    src = np.asarray(cx.src, dtype=object)
+    oofs = {"baseline": np.load(BASE_NPZ, allow_pickle=False)["oof"][:, :EPOCHS]}
+    for tag in SETTINGS:
+        oofs[tag] = np.load(OUT / tag / f"{MODEL}.npz", allow_pickle=False)["oof"]
+    viol_cells = sorted({g for g, v in zip(cx.groups.tolist(), y.tolist()) if v})
+    in_viol_cell = np.isin(cx.groups, viol_cells)
+    nm = y == 0
+    keys = ("pooled_all", "oct_only", "nov_only", "october_above_november_among_normal_calls",
+            "violation_tool_normals_above_other_normals", "inside_violation_tools", "violations_vs_normals_of_other_tools")
+    values = {}
+    for e in (10, 20, 30, MAIN_EPOCH, EPOCHS):
+        for tag, oof in oofs.items():
+            r = {k: [] for k in keys}
+            for si in range(oof.shape[0]):
+                s = oof[si, e - 1].astype(np.float64)
+                r["pooled_all"].append(H.auroc(s, y))
+                r["oct_only"].append(H.auroc(s[src == "oct"], y[src == "oct"]))
+                r["nov_only"].append(H.auroc(s[src == "nov"], y[src == "nov"]))
+                r["october_above_november_among_normal_calls"].append(H.auroc(s[nm], (src[nm] == "oct").astype(np.int64)))
+                r["violation_tool_normals_above_other_normals"].append(H.auroc(s[nm], in_viol_cell[nm].astype(np.int64)))
+                r["inside_violation_tools"].append(H.auroc(s[in_viol_cell], y[in_viol_cell]))
+                m = (y == 1) | ~in_viol_cell
+                r["violations_vs_normals_of_other_tools"].append(H.auroc(s[m], y[m]))
+            values[f"{tag}@{e}"] = {k: round(float(np.mean(v)), 4) for k, v in r.items()}
+            log(f"epoch {e:3d} {tag:9s}", json.dumps(values[f"{tag}@{e}"]))
+    # a score that only knows the collection period: 1 for an October call, 0 for a November call
+    period_train = float(H.auroc((src == "oct").astype(np.float64), y))
+    t = json.loads((REPORT / "test_eval.json").read_text(encoding="utf-8"))["data"]       # recorded counts only, no test rows read
+    vo, vn = t["violations_by_source"]["oct"], t["violations_by_source"]["nov"]
+    no, nn = t["by_source"]["oct"] - vo, t["by_source"]["nov"] - vn
+    period_test = (vo * nn + 0.5 * (vo * no + vn * nn)) / ((vo + vn) * (no + nn))
+    log("period-only score, all-calls AUROC: train", round(period_train, 4), "| test, from the recorded counts", round(period_test, 4))
+    out = {"note": "saved cross-validation scores of the class-weight check, mean of the three split seeds; nothing fitted",
+           "train_rows_by_period": {p: {"calls": int((src == p).sum()), "violations": int(y[src == p].sum()),
+                                        "visible_violations": int(vis[src == p].sum())} for p in ("oct", "nov")},
+           "tool_period_cells_with_a_violation": len(viol_cells), "normal_calls_of_those_cells": int((in_viol_cell & nm).sum()),
+           "normal_calls_of_other_cells": int((~in_viol_cell & nm).sum()),
+           "period_only_score": {"what": "1 for an October call, 0 for a November call", "train": period_train,
+                                 "test_from_counts": period_test,
+                                 "test_counts": {"oct_violations": vo, "nov_violations": vn, "oct_normals": no, "nov_normals": nn}},
+           "values": values}
+    (REPORT / "class_weight_check_diag.json").write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
 def figure():
     """Two panels from the saved summary: the main metric and the all-calls AUROC per epoch, one line per weight."""
     from experiments.risk_loop.argus_loop import argus_v_p_plots as PP
@@ -241,11 +295,21 @@ def figure():
                loc="lower center", bbox_to_anchor=(0.5, 0.045), ncol=3, columnspacing=1.8, handlelength=2.0, fontsize=9.6)
     b = res["settings"]["baseline"]["at_epoch"][str(res["main_epoch"])]
     d = {t: res["settings"][t]["at_epoch"][str(res["main_epoch"])] for t in ("w075", "w100")}
-    same = all(abs(d[t]["min3"]["mean"] - b["min3"]["mean"]) <= res["same_if_within"] for t in d)
-    head = ("위반 가중치를 키워도 점수는 달라지지 않는다" if same else "위반 가중치에 따라 점수가 달라진다") + " — train 안 교차검증"
-    PP.title(fig, head, f"64차원 모델, 위반 가중치만 바꿈. {res['main_epoch']} epoch의 주 지표: "
+    gap = [d[t]["min3"]["mean"] - b["min3"]["mean"] for t in d]
+    if all(abs(g) <= res["same_if_within"] for g in gap):
+        head = "위반 가중치를 키워도 점수는 달라지지 않는다"
+    elif all(g < -res["same_if_within"] for g in gap):
+        head = "위반 가중치를 키우면 같은 도구 안 구분은 나빠진다"
+    else:
+        head = "위반 가중치에 따라 점수가 달라진다"
+    PP.title(fig, head + " — train 안 교차검증", f"64차원 모델, 위반 가중치만 바꿈. {res['main_epoch']} epoch의 왼쪽 값: "
              + " / ".join(f"{names[t].split(' (')[0]} {res['settings'][t]['at_epoch'][str(res['main_epoch'])]['min3']['mean']:.3f}" for t in ("baseline", "w075", "w100")))
-    PP.note(fig, "train 시나리오를 5묶음으로 나눠 학습에서 뺀 묶음을 채점, 나누기 3가지 평균 · test·validation 분할은 쓰지 않음 · 새 시나리오에서 확인한 값이 아니다")
+    diag = REPORT / "class_weight_check_diag.json"
+    tail = "새 시나리오에서 확인한 값이 아니다"
+    if diag.is_file():                                          # the right-hand score can be raised by the collection period alone
+        po = json.loads(diag.read_text(encoding="utf-8"))["period_only_score"]["train"]
+        tail = f"오른쪽 값은 10월 기록을 높게 치기만 해도 {po:.2f}가 된다"
+    PP.note(fig, "train 시나리오를 5묶음으로 나눠 학습에서 뺀 묶음을 채점, 나누기 3가지 평균 · test·validation 분할은 쓰지 않음 · " + tail)
     out = REPORT / "figures_weight"
     out.mkdir(parents=True, exist_ok=True)
     PP.save(fig, out, "01_위반_가중치별_epoch_곡선.png")
@@ -254,5 +318,7 @@ def figure():
 if __name__ == "__main__":
     if "figure" in sys.argv[1:]:
         figure()
+    elif "diag" in sys.argv[1:]:
+        diag()
     else:
         train(sys.argv[1:])
