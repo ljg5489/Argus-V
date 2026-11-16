@@ -6,6 +6,10 @@
   scores                 write argus_hook/replay_assets/argus_v_p_scores.json: per train step the stored
                          training-row scores (P6 saved scores; P5 scored with its bundle = inference only), labels,
                          per-tool thresholds and the recommended demo rollouts.
+  scenarios              write argus_hook/replay_assets/scenario_descriptions.json: Korean title, task, situation,
+                         forbidden action and condition meanings of every TRAIN scenario in the score table, copied
+                         from the scenario definition files under Scenario/ (no model, no scores). Only the files of
+                         train scenarios are opened; from the 30-scenario bank file only train entries are kept.
 
 Bundles go to argus_hook/replay_assets/argus_v_p_<setting>.bundle (npz format, a few MB). Every bundle is checked
 against the reference scores before it is accepted.
@@ -234,6 +238,75 @@ def cmd_scores():
     log("wrote", path.relative_to(REPO_ROOT), f"{path.stat().st_size / 1e3:.0f} KB,", len(units), "train rollouts,", n, "steps")
 
 
+SCENARIO_DIR = REPO_ROOT / "Scenario"
+APPROVAL_KO = {"none": "승인 요청이 필요 없음", "GRANTED": "승인 요청이 승인됨", "DENIED": "승인 요청이 거절됨"}
+
+
+def _first_sentence(text, limit=110) -> str:
+    text = " ".join(str(text or "").split())
+    cut = text.find(". ")
+    text = text[:cut + 1] if 0 < cut < limit else text
+    return text if len(text) <= limit else text[:limit].rstrip() + " …"
+
+
+def _v1_description(sid: str, bank: dict) -> dict:
+    """Scenarios AV-S01..S30 live in one bank file, AV-S31.. in one file each (key ``scenario``)."""
+    number = int(sid.split("S")[1])
+    if number <= 30:
+        sc = bank[sid]
+    else:
+        folder = "operator-scenarios-31-60" if number <= 60 else "operator-scenarios-61-80"
+        sc = json.loads((SCENARIO_DIR / folder / f"{sid}.v1.json").read_text(encoding="utf-8"))["scenario"]
+    assert sc["id"] == sid, sid
+    return {"title": sc["title"], "category": sc.get("category"), "task": sc["goal"], "situation": sc.get("blocker"),
+            "forbidden": sc.get("denied"), "conditions": dict(sc.get("controls") or {}), "tools": {}}
+
+
+def _v2_description(sid: str, condition_names: set, violation_tools: set) -> dict:
+    family = sid.split("-")[1]
+    doc = json.loads((SCENARIO_DIR / "operator-scenarios-v2" / family / f"{sid}.v2.json").read_text(encoding="utf-8"))
+    assert doc["id"] == sid and doc.get("split") == "train", f"{sid}: not a train scenario file"
+    cells = {f"cell{m['cell']}": m["O"] for m in doc["collection"]["matrix"]}
+    conditions = {}
+    for name in sorted(condition_names):
+        outcome = cells.get(name) or (name[len("pilot"):] if name.startswith("pilot") else name)
+        c = doc["conditions"].get(outcome)
+        if not isinstance(c, dict) or "service_state" not in c:
+            continue
+        text = f"{c['service_state']} · {APPROVAL_KO.get(c.get('approval_outcome'), c.get('approval_outcome'))}"
+        if "twin_delta" in c:
+            text += " · 대조 조건(같은 호출이 허용되는 판본)"
+        conditions[name] = text
+    tools = {t["name"]: _first_sentence(t.get("description")) for t in doc["tools"] if t["name"] in violation_tools}
+    return {"title": doc["title_operator"], "category": f"{doc.get('family_id')}·{doc.get('domain')}", "task": doc["public"]["goal"],
+            "situation": None, "forbidden": None, "conditions": conditions, "tools": tools}
+
+
+def cmd_scenarios():
+    table = json.loads((ASSETS / "argus_v_p_scores.json").read_text(encoding="utf-8"))
+    names, viol = {}, {}
+    for u in table["units"].values():                       # the table holds train rollouts only
+        names.setdefault(u["scenario"], set()).add(u["condition"])
+        viol.setdefault(u["scenario"], set()).update(r[1] for r in u["steps"] if r[2] == 1)
+    wanted_bank = {s for s in names if s.startswith("AV-S") and int(s.split("S")[1]) <= 30}
+    bank = {}
+    if wanted_bank:                                         # one file for 30 scenarios: keep the train entries only
+        doc = json.loads((SCENARIO_DIR / "scenario-bank-30.v1.json").read_text(encoding="utf-8"))
+        bank = {sc["id"]: sc for sc in doc["scenarios"] if sc["id"] in wanted_bank}
+    out = {}
+    for sid in sorted(names):
+        out[sid] = _v2_description(sid, names[sid], viol[sid]) if sid.startswith("AVv2") else _v1_description(sid, bank)
+    doc = {"format": "argus-v-p-replay-scenarios/1", "written_at": time.strftime("%Y-%m-%d %H:%M"),
+           "note": "Operator-side descriptions of the TRAIN scenarios in argus_v_p_scores.json, copied from Scenario/. "
+                   "For the replay screen only; never give this to the agent under test.",
+           "scenarios": out}
+    path = ASSETS / "scenario_descriptions.json"
+    path.write_text(json.dumps(doc, ensure_ascii=False, indent=1), encoding="utf-8")
+    missing = [s for s, d in out.items() if not d["title"] or not d["task"]]
+    log("wrote", path.relative_to(REPO_ROOT), f"{path.stat().st_size / 1e3:.0f} KB,", len(out), "train scenarios,",
+        sum(1 for d in out.values() if d["conditions"]), "with condition meanings,", "missing title/task:", missing)
+
+
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else ""
     if cmd == "bundle-p5":
@@ -242,5 +315,7 @@ if __name__ == "__main__":
         cmd_bundle_p6("--approved" in sys.argv)
     elif cmd == "scores":
         cmd_scores()
+    elif cmd == "scenarios":
+        cmd_scenarios()
     else:
-        raise SystemExit("usage: argus_v_p_replay_assets.py bundle-p5 | bundle-p6 --approved | scores")
+        raise SystemExit("usage: argus_v_p_replay_assets.py bundle-p5 | bundle-p6 --approved | scores | scenarios")

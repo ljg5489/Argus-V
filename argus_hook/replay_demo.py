@@ -27,7 +27,8 @@
 
 옵션(묻지 않고 바로 실행):
     --scenario 31 --unit AV-S31-C1-s0-99762ab9 --mode 1 --model P6 --no-pause
-    --list            위반이 기록된 시나리오 목록
+    --list            위반이 기록된 시나리오 목록 (시나리오마다 한글 제목·과제·상황과 저장된 실행 수를 보여 준다.
+                      시나리오 번호를 묻는 자리에서 list를 입력해도 같은 목록이 나온다)
     --raw-scores      원래 점수와 그 도구의 학습 기록 점수 범위도 함께 표시
 기록 위치: --rollouts-dir(기본 artifacts/rollouts*) 아래에 실행 폴더가 있으면 그것을 쓰고, 없으면 Hugging Face
 데이터셋에서 그 실행의 기록만 받아 artifacts/replay-cache/에 둔다(읽기 전용).
@@ -38,7 +39,9 @@ import argparse
 import json
 import os
 import re
+import shutil
 import sys
+import unicodedata
 from pathlib import Path
 
 import numpy as np
@@ -50,6 +53,7 @@ import replay_scoring as RS  # noqa: E402
 
 ASSETS = HERE / "replay_assets"
 TABLE = ASSETS / "argus_v_p_scores.json"
+DESCRIPTIONS = ASSETS / "scenario_descriptions.json"   # Korean title / task / situation of each train scenario
 CACHE = PROJECT_ROOT / "artifacts" / "replay-cache"
 LOCAL_DIRS = [PROJECT_ROOT / "artifacts" / name for name in ("rollouts", "rollouts-v2", "rollouts-dec-v1")]
 HUB_REVISION = "57a4bdcd22a57e0dd5ac9f8b0c2dd61741867788"
@@ -81,6 +85,14 @@ def load_table() -> dict:
         raise SystemExit(f"점수표가 없습니다: {TABLE}\n"
                          "py -3.11 experiments/risk_loop/argus_loop/argus_v_p_replay_assets.py scores 로 만듭니다.")
     return json.loads(TABLE.read_text(encoding="utf-8"))
+
+
+def load_descriptions() -> dict:
+    """scenario id -> {title, category, task, situation, forbidden, conditions, tools}; empty when the file is absent
+    (py -3.11 experiments/risk_loop/argus_loop/argus_v_p_replay_assets.py scenarios writes it)."""
+    if not DESCRIPTIONS.is_file():
+        return {}
+    return json.loads(DESCRIPTIONS.read_text(encoding="utf-8")).get("scenarios", {})
 
 
 def scenario_matches(text: str, table: dict) -> list[str]:
@@ -251,6 +263,43 @@ def clip_text(text: str, limit: int, tail: bool = False) -> str:
     if len(text) <= limit:
         return text
     return ("… " + text[-limit:]) if tail else (text[:limit] + " …")
+
+
+def cell_width(text: str) -> int:
+    """Width in terminal cells (Korean and other wide characters take two)."""
+    return sum(2 if unicodedata.east_asian_width(ch) in "WF" else 1 for ch in text)
+
+
+def clip_cells(text: str, limit: int) -> str:
+    """One line of at most ``limit`` terminal cells."""
+    text = " ".join(str(text).split())
+    if cell_width(text) <= limit:
+        return text
+    out, used = [], 0
+    for ch in text:
+        w = 2 if unicodedata.east_asian_width(ch) in "WF" else 1
+        if used + w > limit - 2:
+            break
+        out.append(ch)
+        used += w
+    return "".join(out).rstrip() + " …"
+
+
+def wrap_cells(text: str, limit: int) -> list[str]:
+    """Split into lines of at most ``limit`` terminal cells, breaking at spaces where possible."""
+    lines, line = [], ""
+    for word in " ".join(str(text).split()).split(" "):
+        candidate = word if not line else line + " " + word
+        if cell_width(candidate) <= limit or not line:
+            line = candidate
+        else:
+            lines.append(line)
+            line = word
+    return lines + ([line] if line else [])
+
+
+def screen_cells() -> int:
+    return max(80, min(150, shutil.get_terminal_size((110, 30)).columns))
 
 
 def margin_bar(margin: float, half: int = 15, span: float = 0.30) -> str:
@@ -504,14 +553,14 @@ def replay_live(unit_id: str, unit: dict, table: dict, model: str, rec: Records,
 
 # ------------------------------------------------------------------------------------------ main
 
-def choose_scenario(table: dict, preset: str | None) -> str:
+def choose_scenario(table: dict, preset: str | None, desc: dict) -> str:
     while True:
         text = preset or ask("시나리오 번호를 입력하세요 (예: 31 또는 AV-S31, 목록은 list) > ")
         preset = None
         if not text:
             continue
         if text.lower() == "list":
-            list_scenarios(table)
+            list_scenarios(table, desc)
             continue
         found = scenario_matches(text, table)
         if len(found) == 1:
@@ -528,7 +577,8 @@ def judged_cells(table: dict) -> set[str]:
     return set(next(iter(table["models"].values()))["tool_thresholds"])
 
 
-def list_scenarios(table: dict) -> None:
+def list_scenarios(table: dict, desc: dict) -> None:
+    """Scenarios with a recorded violation: what the work and the situation are (Korean), then the stored runs."""
     judged = judged_cells(table)
     by = {}
     for uid, u in table["units"].items():
@@ -540,15 +590,50 @@ def list_scenarios(table: dict) -> None:
                 s["unjudged"] += f"{row[1]}|{u['source']}" not in judged
                 s["tools"].add(row[1])
     rec = {table["units"][u]["scenario"] for u in table["recommended_units"] if u in table["units"]}
-    print(" 위반이 기록된 시나리오 (학습 분할):")
-    for sid in sorted(k for k, v in by.items() if v["violations"]):
-        v = by[sid]
+    shown = sorted(k for k, v in by.items() if v["violations"])
+    width = screen_cells()
+    pad = max(len(s) for s in shown) + 2
+    print(f"\n 위반이 기록된 시나리오 {len(shown)}개 (학습 분할). AV-S 시나리오는 번호만 입력해도 됩니다(예: 31). ★ = 시연 추천")
+    for sid in shown:
+        v, d = by[sid], desc.get(sid) or {}
         note = f"(판정 기준 없음 {v['unjudged']}건)" if v["unjudged"] else ""
-        print(f"  {sid:18s} 실행 {v['runs']:2d}개 · 위반 {v['violations']:2d}건{note} · {', '.join(sorted(v['tools']))}"
-              + ("  ★ 시연 추천" if sid in rec else ""))
+        tools = ", ".join(t + (f" — {d['tools'][t]}" if (d.get("tools") or {}).get(t) else "") for t in sorted(v["tools"]))
+        indent = " " * (pad + 2)
+        title = wrap_cells(d.get("title") or "(설명 파일 없음)", width - pad - 8)      # the title is never cut short
+        print()
+        print("  " + c(f"{sid:<{pad}}", "bold") + c(title[0], "bold") + (c("  ★", "yellow") if sid in rec else ""))
+        for more in title[1:]:
+            print(indent + c(more, "bold"))
+        if d.get("task"):
+            print(indent + clip_cells("과제: " + d["task"], width - pad - 3))
+        if d.get("situation"):
+            print(indent + clip_cells("상황: " + d["situation"], width - pad - 3))
+        print(indent + c(f"기록: 실행 {v['runs']}개 · 위반 {v['violations']}건{note}", "dim"))
+        for line in wrap_cells(f"위반이 난 도구: {tools}", width - pad - 3)[:2]:
+            print(indent + c(line, "dim"))
+    print()
 
 
-def choose_unit(scenario: str, table: dict, preset: str | None) -> tuple[str, dict]:
+def show_scenario_brief(scenario: str, desc: dict, conditions: list[str]) -> None:
+    """What the chosen scenario is about, and what each stored condition means."""
+    d = desc.get(scenario)
+    if not d:
+        return
+    print()
+    print(" " + c(f"{scenario}  {d['title']}", "bold") + (f"   [{d['category']}]" if d.get("category") else ""))
+    for label, key in (("과제", "task"), ("상황", "situation"), ("금지", "forbidden")):
+        if d.get(key):
+            print(f"   {label}: {' '.join(str(d[key]).split())}")
+    groups: dict[str, list[str]] = {}
+    for name in conditions:
+        text = (d.get("conditions") or {}).get(name)
+        if text:
+            groups.setdefault(text, []).append(name)
+    for text, names in groups.items():
+        print(f"   조건 {'·'.join(names)}: {text}")
+
+
+def choose_unit(scenario: str, table: dict, preset: str | None, desc: dict) -> tuple[str, dict]:
     items = units_of(scenario, table)
     if preset:
         for uid, u in items:
@@ -556,6 +641,7 @@ def choose_unit(scenario: str, table: dict, preset: str | None) -> tuple[str, di
                 return uid, u
         raise SystemExit(f"{preset}는 {scenario}의 학습 기록이 아닙니다.")
     judged = judged_cells(table)
+    show_scenario_brief(scenario, desc, sorted({u["condition"] for _, u in items}))
     print(f"\n {scenario}의 저장된 실행 {len(items)}개:")
     for n, (uid, u) in enumerate(items, 1):
         viol = [f"step {s[0]}({s[1]}" + ("" if f"{s[1]}|{u['source']}" in judged else ", 판정 기준 없음") + ")"
@@ -609,12 +695,13 @@ def main(argv=None) -> int:
     if USE_COLOR and os.name == "nt":
         os.system("")                      # turns on colour escape codes in the Windows console
     table = load_table()
+    desc = load_descriptions()
     if args.list:
-        list_scenarios(table)
+        list_scenarios(table, desc)
         return 0
 
-    scenario = choose_scenario(table, args.scenario)
-    unit_id, unit = choose_unit(scenario, table, args.unit)
+    scenario = choose_scenario(table, args.scenario, desc)
+    unit_id, unit = choose_unit(scenario, table, args.unit, desc)
     mode = choose_mode(args.mode)
     model = args.model
     dirs = (args.rollouts_dir or []) + LOCAL_DIRS
