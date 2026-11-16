@@ -1,5 +1,13 @@
 # HANDOFF — Argus-V1 성능 향상 루프
 
+## 인수인계 기록 추가 — 2026-11-17 00:54 KST (Claude) — 새 분할 1차 학습: 본 학습은 끝, 가중치 버그로 8개만 다시 학습 중
+
+- **지금 돌고 있는 것**(00:53 시작, 약 8분): `resplit_run01.py em --approved`(빠진 8개만 학습) → `resplit_run01_metrics.py` → `resplit_run01_figures.py`. 로그는 `artifacts/risk-loop/resplit-1117/run01/`의 `run_fix_w15.log`, `metrics.log`, `figures.log`(각각 끝에 `exit=0`).
+- **본 학습**: 00:31~00:47에 끝남(Argus-V-em 36번 941초, Argus-V-p 6번 52초, `run.log`).
+- **발견한 버그와 조치**: `resplit_run01.py`의 `weight_fn`이 "약 15배"에 대해 그 시점의 `argus_v_em_epochs.class_weight`를 돌려줘서, 반복 1·2번의 "약 15배" 학습 8개(모델 4 × 반복 2)가 직전 설정인 300배로 학습됐다. 손실 그림에서 "약 15배" 선이 300배 선과 붙어 있는 것을 보고 찾았다(로그의 `weight 300.00`, 그리고 해당 파일이 300배 파일과 완전히 같음). 규칙을 스크립트에 직접 써 넣고(`WEIGHT_FUNCS`), 학습 직후와 지표 계산 때 "실제로 쓴 가중치 = 의도한 가중치"를 확인하도록 했다. 잘못된 8개 결과와 모델 파일은 `run01/mislabelled_w15/`로 옮겼고(삭제하지 않음), 올바른 가중치로 다시 학습 중이다. 반복 0번과 약 60배·300배 결과는 처음부터 맞았다.
+- **버그가 있던 상태에서 계산한 첫 지표(00:50)는 쓰지 않는다.** `reports/risk-loop/resplit-1117/run01/results.json`·`tables.md`·`figures/`는 다시 학습이 끝나면 덮어쓴다. 사용자에게는 아직 숫자를 보고하지 않았다.
+- **끝난 뒤 할 일**: 다시 계산된 `tables.md` 확인 → `run01/results.md` 작성 → 이 파일 갱신 → 커밋 → 사용자 보고(버그와 조치 포함).
+
 ## 인수인계 기록 추가 — 2026-11-17 00:31 KST (Claude) — 새 분할 1차 학습 시작 (사용자 승인 "루프 시작")
 
 - **지금 돌고 있는 것**: `PYTHONUTF8=1 py -3.11 -u experiments/risk_loop/argus_loop/resplit_run01.py em p --approved > artifacts/risk-loop/resplit-1117/run01/run.log 2>&1` (백그라운드, 00:31 시작, 예상 20분 안팎). 로그에 `EM DONE`, `P DONE`이 찍히고 마지막 줄에 `exit=0`. 끊기면 같은 명령을 다시 실행하면 끝난 학습은 건너뛴다.

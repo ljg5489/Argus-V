@@ -79,9 +79,16 @@ def load():
     return D
 
 
+# Each rule is written out here. (The first version returned the *current* argus_v_em_epochs.class_weight for "w15", which
+# after the first repeat was still the 300x rule of the previous setting: repeats 1 and 2 of "w15" were fitted with 300.
+# Found on 2026-11-17 from the loss figure; those eight runs were removed and fitted again with the rule below.)
+WEIGHT_FUNCS = {"w15": lambda neg, pos: min(20.0, float(np.sqrt(neg / pos))),      # argus_v_em.fit_model's rule
+                "w60": lambda neg, pos: float((neg / pos) ** 0.75),
+                "w300": lambda neg, pos: 300.0}
+
+
 def weight_fn(tag):
-    from experiments.risk_loop.argus_loop import argus_v_em_epochs as EP
-    return {"w15": EP.class_weight, "w60": lambda neg, pos: float((neg / pos) ** 0.75), "w300": lambda neg, pos: 300.0}[tag]
+    return WEIGHT_FUNCS[tag]
 
 
 # ---------------------------------------------------------------------- Argus-V-em
@@ -134,6 +141,8 @@ def stage_em(argv):
                                                                              stats=st, snapshot_epochs=keep)
                 for name in ("validation", "test"):
                     assert np.isfinite(extra[name]).all()
+                want = weight_fn(wtag)(float(len(y_fit) - y_fit.sum()), float(y_fit.sum()))
+                assert abs(pw - want) < 1e-3, f"{arch} {wtag} repeat {k}: weight {pw} used, {want} intended"
                 np.savez_compressed(path, scores_validation=extra["validation"], scores_test=extra["test"], scores_fit=s_fit,
                                     fit_rows=fit, y_fit=y_fit, loss_optimised=loss_opt,
                                     loss_train_eval=np.asarray([EP.bce(s_fit[e], y_fit, pw) for e in range(EPOCHS)]),
