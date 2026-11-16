@@ -1,5 +1,16 @@
 # HANDOFF — Argus-V1 성능 향상 루프
 
+## 인수인계 기록 추가 — 2026-11-16 22:58 KST (Claude) — 위반 가중치 300배 학습·test 진행 중 (사용자 지시)
+
+- **지금 돌고 있는 것**(22:57 시작, 약 6분): 아래 세 명령이 차례로 돈다. 로그는 `artifacts/risk-loop/argus-v-em300/class_weight_check/`의 `run_w300.log`, `test_run_w300.log`, `diag_w300.log`. 각 로그 끝에 `exit=0`이 찍힌다.
+  1. `PYTHONUTF8=1 py -3.11 -u experiments/risk_loop/argus_loop/argus_v_em_weight_check.py --approved` — train 안 5-fold 교차검증. 끝난 설정(약 60배, 약 230배)은 저장본을 읽고 **300배만 새로 학습**(15번) + 확인용 기준 학습 1번.
+  2. `… argus_v_em_weight_check.py test --user-approved-test` — 300배를 전체 train 행으로 1번 학습해 test 채점(test 세 번째 사용). 앞의 세 설정은 저장된 test 점수를 읽는다.
+  3. `… argus_v_em_weight_check.py diag` — 기록 시기별 분석(학습 없음).
+- **왜**: 사용자 지시 "위반 가중치를 올렸을 때 계속해서 상승하고 있지 특히 모든 호출에서 위반 가중치를 300배로 하고 한 번 학습 및 test를 진행해 보자". 읽는 법은 실행 전에 `class-weight-check.md`의 "추가 2" 절에 고정(커밋 `87a5d3a`).
+- **끝난 뒤 할 일**: `… argus_v_em_weight_check.py figure`(그림 2장 다시 그림) → `class-weight-check.md`에 300배 결과 추가 → `test-use-log.md` 3번 줄의 시각 채우기 → 이 파일 갱신 → 커밋 → 사용자에게 보고(train k-fold 값과 test 값을 나란히, 모든 호출 값 옆에 기록 시기만 아는 점수 0.77).
+- 중간에 끊기면 위 세 명령을 순서대로 다시 실행하면 된다(끝난 것은 건너뛴다).
+- 참고: 22:56에 내 패치 스크립트 오타로 `argus_v_em_weight_check.py`가 비워졌다가 직전 커밋에서 복원했다. 복원 뒤 500줄, 컴파일 확인, 커밋 `87a5d3a`.
+
 ## 인수인계 기록 추가 — 2026-11-16 22:52 KST (Claude) — 사용자 지시로 가중치 세 설정을 test로 채점: test에서도 좋아진 것 없음
 
 - **지금 돌고 있는 것 없음.** test 채점은 22:39에 끝남(전체 train 행 학습 3번 + 채점, 68초).
