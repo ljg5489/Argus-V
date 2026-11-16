@@ -59,6 +59,8 @@ BASELINE_RULE = EP.class_weight              # min(20, sqrt(neg / pos))
 SETTINGS = {
     "w075": {"ko": "가중치 약 60배", "rule": "(neg / pos) ** 0.75", "fn": lambda neg, pos: float((neg / pos) ** 0.75)},
     "w100": {"ko": "가중치 약 230배", "rule": "neg / pos", "fn": lambda neg, pos: float(neg / pos)},
+    # added on the user's instruction 2026-11-16 ("위반 가중치를 300배로 하고 한 번 학습 및 test를 진행해 보자"): fixed in every fit
+    "w300": {"ko": "가중치 300배", "rule": "300 (fixed)", "fn": lambda neg, pos: 300.0},
 }
 BASE_KO = "기준: 가중치 약 15배"
 MARKS = (10, 20, 30, 40, 50, 60, 67, 80, 100)
@@ -310,8 +312,9 @@ def test(argv):
     out_dir.mkdir(parents=True, exist_ok=True)
     pairs = int(sum(int(yv_t[sets["mask3"] & (cell_t == c)].sum()) * int((yv_t[sets["mask3"] & (cell_t == c)] == 0).sum()) for c in cells3))
     res = {"name": "Argus-V-em class-weight check, scored on the test split",
-           "test_use": "second scoring of the test split (the first, pre-registered one: 2026-11-16 20:15); settings made after "
-                       "that result was seen, so choosing a setting by these numbers would be optimistic",
+           "test_use": "scorings of the test split after the first, pre-registered one (2026-11-16 20:15); each setting carries "
+                       "its own scored_at, every use is listed in test-use-log.md. The settings were made after the first result "
+                       "was seen, so choosing a setting by these numbers would be optimistic",
            "instruction": "아니 자꾸 test는 왜 안 하냐고", "plan": "reports/risk-loop/argus-v-em300/class-weight-check.md (추가 절)",
            "model": MODEL, "epochs": EPOCHS, "main_epoch": MAIN_EPOCH, "rule": rule,
            "final_fit": {"rows": int(len(rows)), "visible_violations": int(y.sum()), "seed": FINAL_SEED},
@@ -324,12 +327,19 @@ def test(argv):
         f"fit rows={len(rows)} visible={int(y.sum())} | period-only score {res['period_only_score_all_calls']:.4f}")
     plan = [("baseline", BASELINE_RULE, BASE_KO)] + [(t, c["fn"], c["ko"]) for t, c in SETTINGS.items()]
     for tag, fn, ko in plan:
-        EP.class_weight = fn
         f0 = time.time()
-        _, _, _, pw, loss_opt, _, extra = EP.fit_logged(X[rows], y, EP.MODELS[MODEL], FINAL_SEED, {"test": D["X"]})
-        s_all = extra["test"]                                        # [epoch][test row]
-        assert np.isfinite(s_all).all()
-        np.savez_compressed(out_dir / f"{tag}.npz", scores=s_all, row=D["row"], pos_weight=np.asarray(pw), loss_optimised=loss_opt)
+        path = out_dir / f"{tag}.npz"
+        if path.is_file():                                           # scored before: read the saved scores, fit nothing
+            z = np.load(path, allow_pickle=False)
+            assert np.array_equal(z["row"], D["row"])
+            s_all, pw, fitted = z["scores"], float(z["pos_weight"]), False
+        else:
+            EP.class_weight = fn
+            _, _, _, pw, loss_opt, _, extra = EP.fit_logged(X[rows], y, EP.MODELS[MODEL], FINAL_SEED, {"test": D["X"]})
+            s_all, fitted = extra["test"], True                      # [epoch][test row]
+            assert np.isfinite(s_all).all()
+            np.savez_compressed(path, scores=s_all, row=D["row"], pos_weight=np.asarray(pw), loss_optimised=loss_opt)
+        scored_at = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(path.stat().st_mtime))
         cur = {k: np.full(EPOCHS, np.nan) for k in ("visible_min3", "all_violations_min3", "pooled_all", "pooled_visible",
                                                      "oct_only", "nov_only", "october_above_november_among_normal_calls",
                                                      "caught_at_5pct_false_alarms")}
@@ -347,6 +357,7 @@ def test(argv):
             cur["caught_at_5pct_false_alarms"][e] = TE.op_point(s, y_t, 0.05)["tp"]
         s_main = s_all[MAIN_EPOCH - 1].astype(np.float64)
         entry = {"ko": ko, "pos_weight": float(pw), "seconds": round(time.time() - f0, 1),
+                 "fitted_in_this_run": fitted, "scored_at": scored_at,
                  "at_main_epoch": TE.metrics_for(s_main, D, vis_t, sets, with_ci=True),
                  "pooled_all_ci95": pooled_ci(s_main, y_t, D["family"]),
                  "at_main_epoch_extra": {k: float(cur[k][MAIN_EPOCH - 1]) for k in cur},
@@ -370,6 +381,14 @@ def test(argv):
                           "pairs": round((res["settings"][t]["at_main_epoch"]["visible_min3"]["value"] - b) * pairs, 2),
                           "reads_as": ("no difference" if abs(res["settings"][t]["at_main_epoch"]["visible_min3"]["value"] - b) * pairs <= PAIRS_SAME + 1e-9
                                        else "different")} for t in SETTINGS}
+    pa = {t: res["settings"][t]["at_main_epoch"]["pooled_all_violations"]["auroc"] for t in res["settings"]}
+    ex = {t: res["settings"][t]["at_main_epoch_extra"] for t in res["settings"]}
+    res["all_calls_reading"] = {t: {"all_calls": pa[t], "vs_baseline": pa[t] - pa["baseline"],
+                                    "above_period_only_score": bool(pa[t] > res["period_only_score_all_calls"]),
+                                    "oct_only_vs_baseline": ex[t]["oct_only"] - ex["baseline"]["oct_only"],
+                                    "nov_only_vs_baseline": ex[t]["nov_only"] - ex["baseline"]["nov_only"],
+                                    "october_above_november_among_normal_calls": ex[t]["october_above_november_among_normal_calls"]}
+                                for t in res["settings"]}
     res["scored_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
     res["seconds"] = round(time.time() - t0, 1)
     res["evaluation_sha256"] = E.evaluate_sha256()
@@ -377,9 +396,10 @@ def test(argv):
     log("DONE", json.dumps(res["reading"]), f"{res['seconds']}s")
 
 
-ORDER = ("baseline", "w075", "w100")
-RAMP = {"baseline": "#86b6ef", "w075": "#3987e5", "w100": "#184f95"}      # ordinal: light to dark = small to large weight
-NAMES = {"baseline": "약 15배 (지금 방식)", "w075": "약 60배", "w100": "약 230배 (위반·정상 총 가중치 같음)"}
+ORDER = ("baseline", "w075", "w100", "w300")
+# ordinal ramp, light to dark = small to large weight (validate_palette.js --ordinal: all checks pass)
+RAMP = {"baseline": "#86b6ef", "w075": "#4f93e6", "w100": "#2668bf", "w300": "#143f78"}
+NAMES = {"baseline": "약 15배 (지금 방식)", "w075": "약 60배", "w100": "약 230배 (총 가중치 균형)", "w300": "300배"}
 
 
 def _panels(series, n_ep, main_epoch, panels, head, sub, note, fname, ylabel, ylim, ref=None):
@@ -419,8 +439,8 @@ def _panels(series, n_ep, main_epoch, panels, head, sub, note, fname, ylabel, yl
     if ref:
         axes[1].axhline(ref[0], color=PP.INK2, lw=1.1, ls=(0, (1, 2)), zorder=2)
         axes[1].text(70, ref[0] + 0.008, ref[1], va="bottom", ha="left", fontsize=9, color=PP.INK2)
-    fig.legend(handles=[PP.Line2D([0], [0], color=RAMP[t], lw=2.4, label="위반 가중치 " + NAMES[t]) for t in ORDER],
-               loc="lower center", bbox_to_anchor=(0.5, 0.045), ncol=3, columnspacing=1.8, handlelength=2.0, fontsize=9.6)
+    fig.legend(handles=[PP.Line2D([0], [0], color=RAMP[t], lw=2.4, label="가중치 " + NAMES[t]) for t in ORDER],
+               loc="lower center", bbox_to_anchor=(0.5, 0.045), ncol=len(ORDER), columnspacing=1.8, handlelength=2.0, fontsize=9.6)
     PP.title(fig, head, sub)
     PP.note(fig, note)
     out = REPORT / "figures_weight"
@@ -434,7 +454,7 @@ def figure():
     me = res["main_epoch"]
     short = {t: NAMES[t].split(" (")[0] for t in ORDER}
     at = {t: res["settings"][t]["at_epoch"][str(me)]["min3"]["mean"] for t in ORDER}
-    gap = [at[t] - at["baseline"] for t in ("w075", "w100")]
+    gap = [at[t] - at["baseline"] for t in ORDER[1:]]
     if all(abs(g) <= res["same_if_within"] for g in gap):
         head = "위반 가중치를 키워도 점수는 달라지지 않는다"
     elif all(g < -res["same_if_within"] for g in gap):
@@ -458,7 +478,7 @@ def figure():
     tr = json.loads(tpath.read_text(encoding="utf-8"))
     me = tr["main_epoch"]
     at = {t: tr["settings"][t]["at_main_epoch"]["visible_min3"]["value"] for t in ORDER}
-    better = [t for t in ("w075", "w100") if tr["reading"][t]["pairs"] > tr["same_if_within_pairs"]]
+    better = [t for t in ORDER[1:] if tr["reading"][t]["pairs"] > tr["same_if_within_pairs"]]
     head = "test에서는 위반 가중치를 키운 쪽이 더 높다" if better else "test에서도 위반 가중치를 키워 좋아진 것이 없다"
     n_vis, n_all, pairs = tr["test"]["visible_violations"], tr["test"]["violations"], tr["test"]["comparison_pairs_main_metric"]
     po = tr["period_only_score_all_calls"]
