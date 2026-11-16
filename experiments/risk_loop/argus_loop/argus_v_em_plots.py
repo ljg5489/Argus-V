@@ -718,6 +718,27 @@ def main(argv):
             L.append(f"- {MODEL_KO[m]}: {max(h['models'][m]['max_abs_diff_vs_saved_oof_per_seed']):.2e}")
         L += [f"- 전체 데이터로 맞춘 최종 32차원 모델: 점수 {h['final_EM32']['max_abs_diff_vs_saved_checkpoint']:.2e}, 가중치 {h['final_EM32']['max_abs_weight_diff_vs_saved_checkpoint']:.2e}", "",
               "손실은 학습에 쓴 가중 이진 교차 엔트로피를 평가 모드로 계산한 값, AUROC는 근거가 보인 위반(칸에 3개 이상) 기준. 학습 15번(묶음 5개 × 나누기 3가지) 평균.", ""]
+        npz = EM.OUT / "epochs" / "EM32.npz"
+        if npz.is_file():                                          # per-epoch held-out scores of every row (ignored artifact)
+            oof_e = np.load(npz)["oof"].astype(np.float64)         # [seed][epoch][row]
+            tr3 = np.nanmean(_ep(D, "EM32", "auroc_train_min3").reshape(-1, h["epochs"]), 0)
+
+            def at(mask, mp, e):
+                return float(np.mean([EM.score_metric(D.cx, oof_e[s, e - 1], mask, mp)["value"] for s in range(oof_e.shape[0])]))
+
+            marks = (1, 5, 10, 20, 30, 40, 50, 60)
+            L += ["### 32차원 모델: 검증 AUROC가 epoch에 따라 오르는가", "",
+                  "1 epoch = 가중치를 한 번 고치는 것(전체 행을 한꺼번에 넣어 학습). 같은 검증 점수를 채점 대상만 바꿔 다시 잰 값.", "",
+                  "| epoch | 학습에 쓴 행 | 검증: 주 지표(칸에 3개 이상) | 검증: 칸에 2개 이상 | 검증: 2개 이상, 복제를 하나로 침 | 검증: 위반 전체 |", "|---|---|---|---|---|---|"]
+            for e in marks:
+                L.append(f"| {e} | {tr3[e - 1]:.3f} | {at(D.mask3, 3, e):.3f} | {at(D.mask2, 2, e):.3f} | {at(D.mask2 & D.distinct, 2, e):.3f} | {at(everything, 3, e):.3f} |")
+            L += ["", "같은 도구를 쓴 호출끼리 위반과 정상을 비교한 값(칸 안 AUROC), 칸별:", "",
+                  "| 칸 | " + " | ".join(f"{e} epoch" for e in marks) + " | 주 지표 |", "|---|" + "---|" * (len(marks) + 1)]
+            for cell in sorted(D.cells2, key=lambda c: (-(D.counts[c][0] >= 3), c)):
+                m = D.target & (D.cx.groups == cell)
+                vals = [float(np.mean([H.auroc(oof_e[s, e - 1][m], D.yv[m]) for s in range(oof_e.shape[0])])) for e in marks]
+                L.append(f"| {short(cell)} | " + " | ".join(f"{v:.2f}" for v in vals) + f" | {'포함' if D.counts[cell][0] >= 3 else '보조'} |")
+            L.append("")
         ca = _ep(D, "EM32", "cell_auroc_heldout").mean(0)          # [epoch][cell]
         tot = _ep(D, "EM32", "auroc_heldout_min3").mean(0)
         npos = sum(D.counts[c][0] for c in h["cells_min3"])
