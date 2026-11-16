@@ -28,6 +28,7 @@ from torch import nn  # noqa: E402
 ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+from experiments.risk_loop import harness as H  # noqa: E402
 from experiments.risk_loop.argus_loop import argus_v_em as EM  # noqa: E402
 from experiments.risk_loop.argus_loop import evaluate as E  # noqa: E402
 
@@ -52,10 +53,12 @@ def scaled(x: np.ndarray, med: np.ndarray, scale: np.ndarray) -> np.ndarray:
     return out
 
 
-def fit_logged(x_train, y_train, width, seed, score_sets):
+def fit_logged(x_train, y_train, width, seed, score_sets, stats=None, snapshot_epochs=()):
     """argus_v_em.fit_model line for line, plus an evaluation-mode scoring pass after each epoch.
 
-    Returns (med, scale, state_dict, pos_weight, loss_optimised[E], train_scores[E, n_train], {name: scores[E, n]})."""
+    Returns (med, scale, state_dict, pos_weight, loss_optimised[E], train_scores[E, n_train], {name: scores[E, n]}).
+    If ``stats`` is a dict it receives grad_norm[E] (gradient L2 norm of each update), weight_norm[E] (parameter L2
+    norm after it) and snapshots {epoch: state_dict copy} for ``snapshot_epochs``. Reading these changes nothing."""
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -73,11 +76,14 @@ def fit_logged(x_train, y_train, width, seed, score_sets):
     loss_opt = np.zeros(EM.EPOCHS)
     train_scores = np.zeros((EM.EPOCHS, len(yt)), dtype=np.float32)
     out = {k: np.zeros((EM.EPOCHS, len(v)), dtype=np.float32) for k, v in extra.items()}
+    grad_norm, weight_norm, snaps = np.zeros(EM.EPOCHS), np.zeros(EM.EPOCHS), {}
     for e in range(EM.EPOCHS):
         model.train()
         opt.zero_grad(set_to_none=True)
         loss = loss_fn(model(a), yt)
         loss.backward()
+        if stats is not None:
+            grad_norm[e] = float(torch.sqrt(sum((p.grad.detach() ** 2).sum() for p in model.parameters())))
         opt.step()
         loss_opt[e] = float(loss.detach())
         model.eval()                                   # recording only: no gradient, no random draw
@@ -85,6 +91,12 @@ def fit_logged(x_train, y_train, width, seed, score_sets):
             train_scores[e] = model(a).numpy()
             for k, t in extra.items():
                 out[k][e] = model(t).numpy()
+            if stats is not None:
+                weight_norm[e] = float(torch.sqrt(sum((p ** 2).sum() for p in model.parameters())))
+                if (e + 1) in snapshot_epochs:
+                    snaps[e + 1] = {k: v.detach().clone() for k, v in model.state_dict().items()}
+    if stats is not None:
+        stats.update(grad_norm=grad_norm, weight_norm=weight_norm, snapshots=snaps)
     return med, scale, model.state_dict(), float(pos_weight), loss_opt, train_scores, out
 
 
@@ -93,6 +105,27 @@ def bce(scores: np.ndarray, y: np.ndarray, pos_weight: float) -> float:
     s = torch.from_numpy(np.asarray(scores, dtype=np.float32))
     t = torch.from_numpy(np.asarray(y, dtype=np.float32))
     return float(nn.functional.binary_cross_entropy_with_logits(s, t, pos_weight=torch.tensor(pos_weight)))
+
+
+class FastWT:
+    """E.within_tool_auroc on a fixed row mask with the per-cell row lists built once (same rule, same weights)."""
+
+    def __init__(self, cx, mask, min_pos):
+        idx = np.flatnonzero(mask)
+        g = cx.groups[idx]
+        self.cells = []
+        for t in sorted(set(g.tolist()), key=str):
+            m = idx[g == t]
+            p = int(cx.y[m].sum())
+            if p >= min_pos and len(m) - p >= E.MIN_NEG:
+                self.cells.append((str(t), m, cx.y[m], p))
+
+    def per_cell(self, s):
+        return {t: float(H.auroc(s[m], y)) for t, m, y, _ in self.cells}
+
+    def __call__(self, s):
+        den = sum(p for *_, p in self.cells)
+        return float(sum(H.auroc(s[m], y) * p for _, m, y, p in self.cells) / den) if den else float("nan")
 
 
 def wt(scores, y, groups, min_pos):
@@ -109,7 +142,8 @@ def run_model(name: str, cx, X, vis, train_rows, masks, cells3, cells2):
     S, K, EP = len(EM.SEEDS), 5, EM.EPOCHS
     oof = np.full((S, EP, cx.n), np.nan, dtype=np.float32)
     rec = {k: np.full((S, K, EP), np.nan) for k in
-           ("loss_optimised", "loss_train_eval", "loss_heldout", "auroc_train_min3", "auroc_train_min2")}
+           ("loss_optimised", "loss_train_eval", "loss_heldout", "auroc_train_min3", "auroc_train_min2",
+            "grad_norm", "weight_norm")}
     meta = {k: np.zeros((S, K)) for k in ("pos_weight", "n_fit", "n_pos", "n_heldout_rows", "n_heldout_pos", "seconds")}
     held_cells = np.zeros((S, K, len(cells3)), dtype=np.int8)       # 1 = that min-3 cell is in the held-out fold
     for si, seed in enumerate(EM.SEEDS):
@@ -121,8 +155,10 @@ def run_model(name: str, cx, X, vis, train_rows, masks, cells3, cells2):
                 oof[si][:, te] = 0.0
                 log(name, f"seed={seed} fold={fold_i} skipped (one class)")
                 continue
+            st = {}
             _, _, _, pw, loss_opt, s_tr, extra = fit_logged(X[fit], y_fit, width, model_seed(name, seed, fold_i),
-                                                             {"heldout": X[te]})
+                                                             {"heldout": X[te]}, stats=st)
+            rec["grad_norm"][si, fold_i], rec["weight_norm"][si, fold_i] = st["grad_norm"], st["weight_norm"]
             s_te = extra["heldout"]
             oof[si][:, te] = s_te
             ho = EM.sample_training_rows(cx, te[train_rows[te]], vis, HELDOUT_SAMPLE_SEED + seed * 100 + fold_i)
@@ -150,18 +186,22 @@ def run_model(name: str, cx, X, vis, train_rows, masks, cells3, cells2):
             raise RuntimeError(f"non-finite scores for {name} seed {seed}")
     held = {k: np.full((S, EP), np.nan) for k in ("auroc_heldout_min3", "auroc_heldout_min2", "auroc_heldout_all")}
     cell_auc = np.full((S, EP, len(cells3)), np.nan)
+    cell_auc2 = np.full((S, EP, len(cells2)), np.nan)
     everything = np.ones(cx.n, dtype=bool)
+    f3, f2, fall = FastWT(cx, masks["min3"], 3), FastWT(cx, masks["min2"], 2), FastWT(cx, everything, 3)
     for si in range(S):
         for e in range(EP):
             s = oof[si, e].astype(np.float64)
-            m3 = EM.score_metric(cx, s, masks["min3"], 3)
-            held["auroc_heldout_min3"][si, e] = m3["value"]
-            held["auroc_heldout_min2"][si, e] = EM.score_metric(cx, s, masks["min2"], 2)["value"]
-            held["auroc_heldout_all"][si, e] = EM.score_metric(cx, s, everything, 3)["value"]
-            per = {p["tool"]: p["auroc"] for p in m3["per_tool"] if p["included"]}
-            cell_auc[si, e] = [per.get(c, np.nan) for c in cells3]
-    data = {"oof": oof, "cell_auroc_heldout": cell_auc, "heldout_cells": held_cells, **rec, **held,
-            **{f"meta_{k}": v for k, v in meta.items()}}
+            held["auroc_heldout_min3"][si, e], held["auroc_heldout_min2"][si, e], held["auroc_heldout_all"][si, e] = f3(s), f2(s), fall(s)
+            per3, per2 = f3.per_cell(s), f2.per_cell(s)
+            cell_auc[si, e] = [per3.get(c, np.nan) for c in cells3]
+            cell_auc2[si, e] = [per2.get(c, np.nan) for c in cells2]
+        s = oof[si, -1].astype(np.float64)              # the fast path must equal the official function
+        for key, mask, mp in (("auroc_heldout_min3", masks["min3"], 3), ("auroc_heldout_min2", masks["min2"], 2),
+                              ("auroc_heldout_all", everything, 3)):
+            assert abs(held[key][si, -1] - EM.score_metric(cx, s, mask, mp)["value"]) < 1e-12, key
+    data = {"oof": oof, "cell_auroc_heldout": cell_auc, "cell_auroc_heldout_min2cells": cell_auc2, "heldout_cells": held_cells,
+            **rec, **held, **{f"meta_{k}": v for k, v in meta.items()}}
     np.savez_compressed(path, **data)
     log(name, "saved", path.relative_to(ROOT), "held-out AUROC at the last epoch per seed",
         np.round(held["auroc_heldout_min3"][:, -1], 4).tolist())

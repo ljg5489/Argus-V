@@ -1,5 +1,15 @@
 # HANDOFF — Argus-V1 성능 향상 루프
 
+## 인수인계 기록 추가 — 2026-11-16 19:20 KST (Claude) — Argus-V-em300 학습 시작, 끝나면 test 평가 (사용자 지시)
+
+- **사용자 지시 세 가지(2026-11-16)**: ① "새 시나리오를 돌릴 시간은 없어 … 300 epoch까지 학습을 시켜보자. Argus-V-em300이라는 이름으로 기존 Argus-V-em이랑 똑같은데 에폭만 300으로" ② "에폭을 돌며 성능지표에 필요한 epoch 정보, 다른 보고에 필요한 학습에 대한 데이터도 저장해" ③ "모든 학습이 끝나면 이번에는 정말 TEST 데이터를 가지고 성능평가를 시작해. 이때도 모든 성능평가 데이터를 기록하고".
+- **지금 실행 중(19:20 시작, 약 50분 예상)**: `PYTHONUTF8=1 py -3.11 -u experiments/risk_loop/argus_loop/argus_v_em300.py --approved > artifacts/risk-loop/argus-v-em300/run.log 2>&1`. 계획은 실행 전에 `reports/risk-loop/argus-v-em300/README.md`로 고정. Argus-V-em과 epoch 수만 다르다(60 → 300): 32·64·128차원 모델과 선형 대조를 5묶음 × 나누기 3가지로 학습 → 가장 높은 폭 선택 → 전체 행으로 최종 모델 → 라벨 섞기 5회. 순서는 32 → 64 → 128 → 선형 → 최종 → 섞기.
+- **끊기면**: 같은 명령을 다시 실행한다. 모델별 기록(`artifacts/risk-loop/argus-v-em300/epochs/<모델>.npz`)이 있으면 건너뛴다. 끝나면 로그에 `DONE`과 `exit=0`, `reports/risk-loop/argus-v-em300/results.json`의 `partial`이 false가 된다. 모델 하나가 끝날 때마다 `results.json`·`epoch_history.json`·`epoch_table.csv`가 갱신된다.
+- **확인할 것**: 로그의 "first 60 epochs vs Argus-V-em, largest difference"가 0이어야 한다(같은 학습을 더 길게 돌린 것이라는 확인). 보고하는 점수는 300 epoch 시점 값이고, 곡선의 최고 epoch 값은 참고로만 적는다.
+- **기록하는 것**: epoch별 손실(최적화한 값·평가 모드 학습 행·뺀 묶음), 학습 행 AUROC, 기울기·가중치 크기, 모든 행의 epoch별 교차검증 점수, 채점 대상별·칸별 AUROC, 학습별 행 수·시간, 실행 환경. 최종 모델은 모델 파일 + 10 epoch마다 중간 저장본 + 모든 행의 epoch별 점수 + 임베딩 벡터.
+- **학습이 끝난 뒤 할 일(순서대로)**: ① em300 그래프·표(`argus_v_em_plots.py`를 em300에도 쓰게 고침) ② **test 평가 준비**: test를 열기 전에 `reports/risk-loop/argus-v-em300/test-eval-prereg.md`에 모델 파일 SHA-256·표시 규칙·라벨 출처·지표 정의를 고정 ③ test 실행의 hidden state(층 16·23)와 step 기록을 Hugging Face에서 받아 같은 방법으로 특징을 만들고 한 번 채점 ④ 결과·그림·표 기록, 커밋, 사용자 보고.
+- **test 평가에서 지킬 것**: test는 사용자가 2026-11-16에 직접 열라고 지시했다(`TASK.md` §0의 "test는 사용자 승인 전까지 봉인"의 승인에 해당). 대상은 split 파일에 `test`로 적힌 실행만이고, split을 알 수 없는 봉인 단위(AV-S61~S80)와 validation은 지시가 없으므로 열지 않는다. test 결과를 본 뒤 모델·규칙을 바꾸지 않는다. 저장소 루트의 `ArgusV_review_progress copy.json`은 여전히 열지 않는다(라벨은 Hugging Face의 공식 파일에서 읽는다). 원본 텐서는 디스크에 남기지 않고 특징만 저장한다.
+
 ## 인수인계 기록 추가 — 2026-11-16 19:05 KST (Claude) — 사용자 오해 바로잡음: "검증"은 validation 분할이 아니다
 
 - 사용자 질문: "그러면 잘 학습하고 있는 거였잖아? 과적합도 안 되었고 validation이나 test 데이터로 나눈 거 활용해서 검증한 거 맞지?" **아니라고 답함.** 지금까지 "검증", "처음 보는 시나리오", held-out이라고 부른 값은 모두 train 분할(시나리오 102개, 계열 41개) 안에서 계열 5묶음 중 학습에서 뺀 묶음을 채점한 교차검증 값이다. validation·test 분할은 한 번도 열지 않았다. 지금 돌고 있는 것 없음, 학습 없음.
@@ -197,6 +207,7 @@
 | 2026-11-16 18:25 | **Argus-V-em 재실행**(`argus_v_em_epochs.py --approved`, 로그 `artifacts/risk-loop/argus-v-em/epochs.log`) — 사용자 승인받은 epoch 기록용 재학습 | 18:16 시작. 32·64·128차원 모델과 선형 대조를 round 01 설정 그대로 다시 학습하며 epoch마다 손실·점수 기록. 그래프 스크립트 `argus_v_em_plots.py` 작성 중 | 재실행 끝 → 저장 점수와 일치 확인 → Argus-V-em 그래프(epoch 포함) → PNG 확인 → Argus-V-p 그래프 보완 → 커밋·보고 |
 | 2026-11-16 18:40 | **돌고 있는 것 없음.** 재실행 18:28 종료(저장 점수와 차이 0), 두 모델의 그래프 완료 | Argus-V-em 14장(epoch 4장 포함)과 숫자 표, Argus-V-p는 13번 그림 추가해 P5·P6에 13장씩. PNG 전부 열어 확인. 그래프 스크립트는 학습하지 않음 | 사용자 결정 대기: ① P6 1회 재학습 승인(재생 도구 2번 방식용) ② 재실행 때 행동 직후 hidden state 저장 여부. 4090에서 2번 방식 실제 실행 확인 |
 | 2026-11-16 18:50 | **돌고 있는 것 없음.** 사용자 질문("과적합도 아닌데 validation 0.92?")에 답하려고 학습 없이 점검 | 학습/검증 사이에 새는 것 없음을 확인. 다만 0.96은 서로 다른 위반 입력 10개·시나리오 5개에 대한 값이고, 이전 모델과의 차이와 40 epoch 이후 상승은 쌍 9개짜리 칸 하나에서 나옴. 문서·표·그림 표기에 반영 | 사용자 결정 대기(위와 같음). 발표에서 "validation 0.96"이라고만 쓰지 않기 |
+| 2026-11-16 19:20 | **Argus-V-em300 학습**(`argus_v_em300.py --approved`, 로그 `artifacts/risk-loop/argus-v-em300/run.log`) — 사용자 지시 | 19:20 시작, 약 50분 예상. Argus-V-em과 epoch 수만 다름(300). 순서: 32 → 64 → 128차원 → 선형 대조 → 최종 모델 → 라벨 섞기. epoch별 기록 전부 저장 | 학습 끝 → em300 그래프·표 → test 평가 사전 고정 문서 → test 실행의 특징 받기 → test 한 번 채점 → 기록·커밋·보고 |
 
 # 지금 상태 — 2026-11-15 (가장 최신. 아래 3단계 대시보드는 2026-11-11까지의 기록)
 
