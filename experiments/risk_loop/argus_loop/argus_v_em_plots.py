@@ -83,6 +83,17 @@ class Data:
             raise SystemExit("artifacts/risk-loop/argus-v-em/epochs/final_EM32.npz is missing: run argus_v_em_epochs.py first")
         self.ins = np.load(fin)["saved_checkpoint_scores"].astype(np.float64)   # saved model on all rows
         self.selected = self.res["selected_on_development_oof"]
+        # the same hidden state is repeated across runs: distinct inputs among the visible violations of each cell
+        hsh = np.asarray(cx.hashes, dtype=str)
+        self.dpos = {c: len(set(hsh[self.vis & (cx.groups == c)].tolist())) for c in self.cells2}
+        self.d3, self.d2 = sum(self.dpos[c] for c in self.cells3), sum(self.dpos[c] for c in self.cells2)
+        self.distinct = np.zeros(cx.n, dtype=bool)            # one row per (cell, input, label)
+        seen = set()
+        for i in np.flatnonzero(self.mask2):
+            k = (cx.groups[i], hsh[i], int(self.yv[i]))
+            if k not in seen:
+                seen.add(k)
+                self.distinct[i] = True
 
     def wt(self, s, mask, min_pos):
         return EM.score_metric(self.cx, s, mask, min_pos)
@@ -190,7 +201,7 @@ def fig01_models(D: Data, T: dict):
                        Line2D([0], [0], color=INK2, lw=1.2, label="95% 구간(시나리오 계열을 다시 뽑아 계산)")],
               loc="upper center", bbox_to_anchor=(0.20, -0.14), ncol=3, handletextpad=0.4, columnspacing=1.4, fontsize=9.3)
     PP.title(fig, "학습된 임베딩은 목표 기준에서 0.90을 넘는다 — 개발용 데이터 기준",
-             f"{HELD_KO} · 행동 전에 근거가 보인 위반만 채점(위반 16개, 도구 칸 4개) · 데이터 나누기 3가지")
+             f"{HELD_KO} · 행동 전에 근거가 보인 위반만 채점 · 위반 16개(서로 다른 입력 {D.d3}개), 도구 칸 4개")
     PP.note(fig, "근거 표시 규칙은 잠정판이고 Argus-V-p 점수를 본 뒤에 만들었다 · 같은 학습 분할 행을 다시 쓴 개발용 점수이며 새 시나리오로 확인한 값이 아니다")
     PP.save(fig, OUT, "01_모델별_점수.png")
 
@@ -261,7 +272,7 @@ def fig03_roc_cells(D: Data, T: dict):
 def fig04_cells(D: Data, T: dict):
     cells = sorted(T["cells"], key=lambda c: T["cells"][c]["heldout"])
     fig, ax = plt.subplots(figsize=(FIG_W, 5.0))
-    fig.subplots_adjust(top=0.80, left=0.42, right=0.94, bottom=0.22)
+    fig.subplots_adjust(top=0.80, left=0.46, right=0.94, bottom=0.22)
     for yy, cell in enumerate(cells):
         c = T["cells"][cell]
         vals = [c["heldout"], c["insample"]]
@@ -271,7 +282,8 @@ def fig04_cells(D: Data, T: dict):
         ax.plot(c["insample"], yy + (0.38 if same else 0.0), "^", color=TRAIN, markersize=10, markeredgecolor=SURFACE, markeredgewidth=2, zorder=4)
         ax.plot(c["heldout"], yy, "o", color=HELD, markersize=10, markeredgecolor=SURFACE, markeredgewidth=2, zorder=5)
     ax.set_yticks(range(len(cells)))
-    ax.set_yticklabels([f"{short(c)}  (위반 {D.counts[c][0]} · 정상 {D.counts[c][1]})" + ("" if D.counts[c][0] >= 3 else "  보조") for c in cells])
+    ax.set_yticklabels([f"{short(c)}  (위반 {D.counts[c][0]} [입력 {D.dpos[c]}] · 정상 {D.counts[c][1]})" + ("" if D.counts[c][0] >= 3 else "  보조") for c in cells],
+                       fontsize=9.6)
     ax.set_xlim(-0.02, 1.05)
     ax.set_ylim(-0.6, len(cells) - 0.4)
     ax.set_xlabel("칸 안 AUROC")
@@ -282,7 +294,7 @@ def fig04_cells(D: Data, T: dict):
                        handle(TRAIN, TRAIN_KO, marker="^", line=False)],
               loc="upper center", bbox_to_anchor=(0.22, -0.16), ncol=3, handletextpad=0.3, columnspacing=1.4)
     PP.title(fig, "도구 칸별 AUROC — 32차원 모델", "근거가 보인 위반이 2개 이상인 칸 7개. '보조'는 위반이 2개뿐이라 주 지표에서 빠지는 칸")
-    PP.note(fig, "칸마다 위반이 2~5개라 한 개 차이로 값이 크게 움직인다 · 두 값이 같은 칸은 세모를 조금 위로 올려 그렸다")
+    PP.note(fig, "[입력 n] = 위반 중 서로 다른 hidden state 수(같은 입력이 여러 실행에 복제됨) · 한 개 차이로 값이 크게 움직인다 · 두 값이 같으면 세모를 위로 올림")
     PP.save(fig, OUT, "04_칸별_AUROC.png")
 
 
@@ -320,8 +332,8 @@ def fig05_scores(D: Data):
 
 def fig06_scope(D: Data, T: dict):
     rows = [(m, T["heldout"][m]) for m in MODEL_KO]
-    fig, ax = plt.subplots(figsize=(FIG_W, 4.3))
-    fig.subplots_adjust(top=0.76, left=0.36, right=0.93, bottom=0.27)
+    fig, ax = plt.subplots(figsize=(FIG_W, 4.8))
+    fig.subplots_adjust(top=0.78, left=0.36, right=0.93, bottom=0.34)
     for i, (m, v) in enumerate(rows):
         yy = len(rows) - 1 - i
         col = HELD if m != "LINEAR" else MUTED
@@ -339,12 +351,13 @@ def fig06_scope(D: Data, T: dict):
     ax.grid(axis="y", visible=False)
     PP.ref_line(ax, x=0.5, label="우연")
     PP.ref_line(ax, x=0.9, label="목표 0.90")
-    ax.legend(handles=[handle(HELD, "근거가 보인 위반, 칸에 3개 이상 (16개 · 칸 4개)", line=False),
-                       handle(HELD, "근거가 보인 위반, 칸에 2개 이상 (22개 · 칸 7개)", line=False, hollow=True),
+    ax.legend(handles=[handle(HELD, f"근거가 보인 위반, 칸에 3개 이상 (16개 · 서로 다른 입력 {D.d3}개 · 칸 4개)", line=False),
+                       handle(HELD, f"근거가 보인 위반, 칸에 2개 이상 (22개 · 서로 다른 입력 {D.d2}개 · 칸 7개)", line=False, hollow=True),
                        handle(MUTED, "위반 전체 (48개 · 칸 9개)", marker="s", line=False)],
               loc="upper center", bbox_to_anchor=(0.22, -0.20), ncol=1, handletextpad=0.3, labelspacing=0.35, fontsize=9.3)
     PP.title(fig, "0.96은 '근거가 보인 위반'에 대한 점수다 — 위반 전체로 재면 0.55 근처",
              f"{HELD_KO} · 같은 점수를 채점 대상만 바꿔 다시 잰 값. 오른쪽 숫자 = 주 지표, 왼쪽 숫자 = 위반 전체")
+    PP.note(fig, "같은 hidden state가 여러 실행에 복제돼 있어 위반 수보다 서로 다른 입력 수가 적다")
     PP.save(fig, OUT, "06_채점_대상에_따른_점수.png")
 
 
@@ -549,7 +562,7 @@ def fig12_epoch_auroc(D: Data):
     ninety = int(np.argmax(ho_m >= 0.90)) + 1 if (ho_m >= 0.90).any() else None
     sub = (f"학습에 쓴 행은 {one} epoch에 1.00에 닿고, " if one else "") + (f"처음 보는 시나리오는 {ninety} epoch에 0.90을 넘는다" if ninety else "처음 보는 시나리오는 0.90에 닿지 않는다")
     PP.title(fig, "epoch별 성능 — 32차원 모델", sub)
-    PP.note(fig, "행동 전에 근거가 보인 위반만 채점(칸에 3개 이상) · 60 epoch 고정, 이 곡선으로 epoch 수를 다시 고르지 않았다 · 개발용으로 이미 쓴 행이다")
+    PP.note(fig, f"근거가 보인 위반 16개(서로 다른 입력 {D.d3}개, 도구 4개)만 채점 · 60 epoch 고정, 이 곡선으로 epoch 수를 고르지 않았다 · 개발용으로 이미 쓴 행")
     PP.save(fig, OUT, "12_epoch별_성능.png")
 
 
@@ -592,21 +605,23 @@ def fig14_epoch_cells(D: Data):
     ep = np.arange(1, D.hist["epochs"] + 1)
     cells = D.hist["cells_min3"]
     arr = _ep(D, "EM32", "cell_auroc_heldout")              # [seed][epoch][cell]
-    fig, axes = plt.subplots(1, 4, figsize=(FIG_W + 2.6, 3.9), sharex=True, sharey=True)
-    fig.subplots_adjust(top=0.70, left=0.07, right=0.985, bottom=0.17, wspace=0.10)
+    fig, axes = plt.subplots(1, 4, figsize=(FIG_W + 2.6, 4.5), sharex=True, sharey=True)
+    fig.subplots_adjust(top=0.66, left=0.07, right=0.985, bottom=0.21, wspace=0.10)
     for j, (ax, cell) in enumerate(zip(axes, cells)):
         ax.axhline(0.5, color=MUTED, lw=1.0, ls=(0, (4, 3)), zorder=1)
         for s in range(arr.shape[0]):
             ax.plot(ep, arr[s, :, j], color=HELD, lw=1.0, alpha=0.45)
         ax.plot(ep, arr[:, :, j].mean(0), color=HELD, lw=2.2)
         p, n = D.counts[cell]
-        ax.set_title(f"{short(cell)}\n위반 {p} · 정상 {n} · 60 epoch 뒤 {arr[:, -1, j].mean():.2f}", fontsize=9.6, fontweight="normal", color=INK, pad=6)
+        ax.set_title(f"{short(cell)}\n위반 {p} [입력 {D.dpos[cell]}] · 정상 {n} · 비교 쌍 {p * n}\n60 epoch 뒤 {arr[:, -1, j].mean():.2f}",
+                     fontsize=9.6, fontweight="normal", color=INK, pad=6)
         ax.set_xticks([1, 20, 40, 60])
         ax.set_xlim(1, len(ep))
         ax.set_ylim(0.0, 1.04)
         ax.set_xlabel("epoch")
     axes[0].set_ylabel("칸 안 AUROC")
     PP.title(fig, "도구 칸별 epoch 곡선 — 32차원 모델, 처음 보는 시나리오", "굵은 선 = 나누기 3가지 평균, 가는 선 = 나누기 하나. 주 지표에 들어가는 칸 4개")
+    PP.note(fig, "[입력 n] = 위반 중 서로 다른 hidden state 수 · 비교 쌍이 9개인 칸은 쌍 하나가 뒤집힐 때마다 0.11씩 움직인다")
     PP.save(fig, OUT, "14_칸별_epoch_곡선.png")
 
 
@@ -675,6 +690,17 @@ def main(argv):
     for cell in sorted(T["cells"], key=lambda c: -T["cells"][c]["heldout"]):
         c = T["cells"][cell]
         L.append(f"| {short(cell)} | {D.counts[cell][0]} | {D.counts[cell][1]} | {c['heldout']:.3f} | {' / '.join(f'{v:.3f}' for v in c['heldout_seeds'])} | {c['insample']:.3f} | {'포함' if D.counts[cell][0] >= 3 else '보조'} |")
+    ded3 = [EM.score_metric(D.cx, s, D.mask3 & D.distinct, 3) for s in D.oof["EM32"]]
+    ded2 = [EM.score_metric(D.cx, s, D.mask2 & D.distinct, 2) for s in D.oof["EM32"]]
+    L += ["", "## 복제된 입력을 하나로 치면, 32차원 모델", "",
+          "같은 hidden state가 여러 실행에 복제돼 있다(같은 앞부분이 다른 실행에서 다시 재생됨). 칸마다 입력과 라벨이 같은 행을 하나만 남기고 다시 잰 값이다.", "",
+          "| 기준 | 모든 행 | 서로 다른 입력만 |", "|---|---|---|",
+          f"| 칸에 위반 3개 이상 | {T['heldout']['EM32']['min3']:.3f} (위반 16개 · 칸 4개) | {np.mean([r['value'] for r in ded3]):.3f} (위반 {ded3[0]['n_positives_included']}개 · 칸 {ded3[0]['n_tools']}개) |",
+          f"| 칸에 위반 2개 이상 | {T['heldout']['EM32']['min2']:.3f} (위반 22개 · 칸 7개) | {np.mean([r['value'] for r in ded2]):.3f} (위반 {ded2[0]['n_positives_included']}개 · 칸 {ded2[0]['n_tools']}개) |", "",
+          "| 칸 | 근거가 보인 위반 | 그중 서로 다른 입력 | 정상 | 비교 쌍 |", "|---|---|---|---|---|"]
+    for cell in D.cells2:
+        L.append(f"| {short(cell)} | {D.counts[cell][0]} | {D.dpos[cell]} | {D.counts[cell][1]} | {D.counts[cell][0] * D.counts[cell][1]} |")
+    L += ["", f"주 지표의 위반 16개는 서로 다른 입력 {D.d3}개, 근거가 보인 위반 22개 전체는 {D.d2}개다. 학습 묶음과 검증 묶음 사이에 같은 입력·같은 시나리오가 겹치는 경우는 없다(`argus_v_em_heldout_check.py`)."]
     L += ["", "## 문턱 하나를 모든 도구에 적용했을 때, 32차원 모델 (그림 07·08·10)", "",
           f"정상 {int((P['y'] == 0).sum()):,}개와 근거가 보인 위반 {int(P['y'].sum())}개만 계산(근거가 보이지 않은 위반 {P['hidden']}개는 뺌). 점수는 세 번 나누기의 평균.", "",
           "| 대상 | 탐지율: 오경보 1% | 5% | 10% | 평균 정밀도 | 전체 AUROC(도구 섞음) |", "|---|---|---|---|---|---|"]
@@ -692,6 +718,17 @@ def main(argv):
             L.append(f"- {MODEL_KO[m]}: {max(h['models'][m]['max_abs_diff_vs_saved_oof_per_seed']):.2e}")
         L += [f"- 전체 데이터로 맞춘 최종 32차원 모델: 점수 {h['final_EM32']['max_abs_diff_vs_saved_checkpoint']:.2e}, 가중치 {h['final_EM32']['max_abs_weight_diff_vs_saved_checkpoint']:.2e}", "",
               "손실은 학습에 쓴 가중 이진 교차 엔트로피를 평가 모드로 계산한 값, AUROC는 근거가 보인 위반(칸에 3개 이상) 기준. 학습 15번(묶음 5개 × 나누기 3가지) 평균.", ""]
+        ca = _ep(D, "EM32", "cell_auroc_heldout").mean(0)          # [epoch][cell]
+        tot = _ep(D, "EM32", "auroc_heldout_min3").mean(0)
+        npos = sum(D.counts[c][0] for c in h["cells_min3"])
+        L += ["### 32차원 모델: 40 epoch에서 60 epoch 사이에 바뀐 것", "",
+              f"전체 {tot[39]:.3f} → {tot[59]:.3f}. 칸별로 나누면:", "",
+              "| 칸 | 비교 쌍 | 40 epoch | 60 epoch | 바뀐 쌍 수 | 전체 점수에 준 변화 |", "|---|---|---|---|---|---|"]
+        for k, c in enumerate(h["cells_min3"]):
+            p, n = D.counts[c]
+            d = float(ca[59, k] - ca[39, k])
+            L.append(f"| {short(c)} | {p * n} | {ca[39, k]:.3f} | {ca[59, k]:.3f} | {d * p * n:+.1f} | {d * p / npos:+.3f} |")
+        L.append("")
         for m in MODEL_KO:
             ep_n = h["epochs"]
             a_tr = np.nanmean(_ep(D, m, "auroc_train_min3").reshape(-1, ep_n), 0)
