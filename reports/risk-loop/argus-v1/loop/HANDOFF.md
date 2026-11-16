@@ -1,5 +1,20 @@
 # HANDOFF — Argus-V1 성능 향상 루프
 
+## 인수인계 기록 추가 — 2026-11-17 01:05 KST (Claude) — 새 분할 1차 학습 끝: test에서 0.90에 닿은 모델 없음 (정해 둔 레시피 0.83, 규칙으로 고른 모델 0.71)
+
+- **지금 돌고 있는 것 없음.** 학습 00:31~00:57(버그로 8개 다시 학습 포함), 지표 00:59, 그림 01:01.
+- **결과(새 분할, 주 지표 = 같은 도구끼리 비교·근거가 보인 위반 3개 이상인 도구)**
+  - 정해 둔 레시피(Argus-V-em 64차원·위반 가중치 약 15배·67 epoch, 고르지 않은 값): train 1.000 / validation 0.815 / **test 0.833**(24쌍 중 20쌍, 반복별 0.75·0.75·1.00, 95% 구간 0.50~0.91). 넓힌 지표 test 0.722. 같은 시기 안 모든 호출 test 0.636.
+  - 미리 정한 규칙(validation 넓힌 지표 최고)으로 고른 모델: **Argus-V-p P6**, validation 0.800 → **test 주 지표 0.708**(구간 0.58~0.85), 넓힌 지표 0.667.
+  - 위반 가중치(67 epoch test 주 지표, 32/64/128차원/선형): 약 15배 0.79/0.83/0.79/0.79, 약 60배 0.83/0.92/0.75/0.63, 300배 0.71/0.54/0.54/0.50. 300배가 가장 낮고 15배·60배는 구분 안 됨.
+  - validation에서 좋은 설정이 test에서 좋지 않음(선형 대조: validation 1.00, test 0.50~0.79). validation 위반 3~5개로는 고를 수 없다.
+- **한계**: test 주 지표는 도구 1개(`record_independent_review`), 위반 4개. validation은 도구 1개, 위반 3개. 새 test에 기존 train 계열 7개가 있어 설계 선택은 그 데이터를 본 것.
+- **버그 기록**: 첫 실행에서 "약 15배"의 반복 1·2번 8개가 300배로 학습됨 → 규칙을 스크립트에 직접 쓰고 확인 코드를 넣은 뒤 다시 학습. 잘못된 결과는 `artifacts/risk-loop/resplit-1117/run01/mislabelled_w15/`. 보고한 숫자는 모두 고친 뒤의 값.
+- **기록**: `reports/risk-loop/resplit-1117/run01/` — `results.md`(정리), `tables.md`, `results.json`, `epoch_table.csv`, `figures/` 3장, `README.md`(계획). 새 분할의 test 사용 기록은 `reports/risk-loop/resplit-1117/test-use-log.md`(1번째).
+- **다시 계산**: `py -3.11 experiments/risk_loop/argus_loop/resplit_run01_metrics.py`(약 3분), `… resplit_run01_figures.py`. 학습을 다시 하려면 `… resplit_run01.py em p --approved`(끝난 것은 건너뜀).
+- **기존 것은 그대로**: 기존 분할·기존 모델(Argus-V-p, Argus-V-em, em300)·기존 결과. 잘 안 되면 기존 모델과 기존 train 데이터로 시연한다는 것이 사용자의 계획.
+- **남은 사용자 결정**: 이 결과로 무엇을 할지(발표에 어떤 숫자를 쓸지, 더 실험할지), 재생 도구용 P6 1회 재학습. 봉인 단위(AV-S61~S80)는 열지 않았다.
+
 ## 인수인계 기록 추가 — 2026-11-17 00:54 KST (Claude) — 새 분할 1차 학습: 본 학습은 끝, 가중치 버그로 8개만 다시 학습 중
 
 - **지금 돌고 있는 것**(00:53 시작, 약 8분): `resplit_run01.py em --approved`(빠진 8개만 학습) → `resplit_run01_metrics.py` → `resplit_run01_figures.py`. 로그는 `artifacts/risk-loop/resplit-1117/run01/`의 `run_fix_w15.log`, `metrics.log`, `figures.log`(각각 끝에 `exit=0`).

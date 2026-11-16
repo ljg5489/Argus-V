@@ -43,7 +43,7 @@ def fig01(res):
               ("in_period_all", "같은 시기 안에서\n모든 호출, 정상 대 위반"))
     n = len(rows)
     fig, axes = plt.subplots(1, 3, figsize=(11.6, 0.36 * n + 2.6), sharey=True)
-    fig.subplots_adjust(top=1 - 1.45 / (0.36 * n + 2.6), left=0.21, right=0.965, bottom=1.05 / (0.36 * n + 2.6), wspace=0.10)
+    fig.subplots_adjust(top=1 - 1.45 / (0.36 * n + 2.6), left=0.21, right=0.955, bottom=1.05 / (0.36 * n + 2.6), wspace=0.20)
     for ax, (key, name) in zip(axes, panels):
         for i, (_, v, t, _) in enumerate(rows):
             yy = n - 1 - i
