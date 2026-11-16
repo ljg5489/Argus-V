@@ -1,0 +1,12 @@
+# Argus-V-em round 01 addendum 2 — re-run with per-epoch recording
+
+Fixed 2026-11-16 before running. User request: "Argus-V-em은 epoch 등 추가적으로 필요한 그래프를 그려". Round 01 did not keep any per-epoch value, so the epoch figures need the training to be run once more. The user approved this re-run on 2026-11-16 (all four models).
+
+- **What is trained**: exactly the round 01 fits and the addendum 1 control — EM32, EM64, EM128 and the raw-vector linear control. Same inputs (`L23:max` + `L16:pre`, 5,760 values), same target rows (normal rows + the 22 visible-positive rows of the provisional-1 record), same negative sampling rule and sampling seeds, same five scenario-family folds × seeds 0/1/2, same model seeds, AdamW (learning rate 0.001, weight decay 0.01), dropout 0.15, 60 full-batch epochs. The final all-rows EM32 fit (seed 910032) is repeated the same way.
+- **The only addition**: after each epoch the model is switched to evaluation mode and scored without gradients — its own training rows and the held-out fold. Evaluation mode draws no random numbers, so the training trajectory is the one round 01 followed.
+- **Recorded per epoch**: the loss that was optimised; the same loss in evaluation mode on the training rows and on the held-out fold (held-out rows picked by the same per-cell sampling rule, same class weight as that fit); same-tool AUROC on the training rows and on the held-out rows (visible violations, minimum 3 per cell; also minimum 2 and the all-violation context).
+- **Check**: epoch-60 held-out scores must match the saved `oof_*_s*.npy` arrays, and the repeated final fit must match `argus_v_em_round01.pt`. The largest difference is reported. If they do not match, the figures are labelled as a re-run rather than as the history of the saved model.
+- **Not done**: no early stopping, no choice of epoch count, width or any other setting from these curves; the saved checkpoint, the saved scores and the round 01 tables are not changed. The held-out curves show the same reused development rows as round 01, so they are development evidence, not an independent confirmation. Validation, test and sealed data are not read.
+- This is not a new candidate and adds no entry to the Argus-V1 try count.
+
+Script: `experiments/risk_loop/argus_loop/argus_v_em_epochs.py`. Outputs: `artifacts/risk-loop/argus-v-em/epochs/` (ignored) and `reports/risk-loop/argus-v-em/epoch_history.json`.
