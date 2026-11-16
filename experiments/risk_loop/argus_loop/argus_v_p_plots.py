@@ -1,9 +1,14 @@
-"""Argus-V-p evaluation figures (matplotlib). Reads the scores saved by argus_v_p.py; the only fit is the
-all-rows fit of the plotted setting (the same fit as the run) to get its training-row scores.
+"""Argus-V-p evaluation figures (matplotlib). Reads the scores saved by argus_v_p.py and fits nothing by default.
+
+The training-row scores of the plotted setting come from the saved arrays in artifacts/risk-loop/argus-v-p/
+(roc_C_<setting>.npy, p6_condition_c_scores.npy), checked against the recorded value. If that array is missing
+the script stops: producing it means re-fitting the setting on all rows, which is training and needs the user's
+approval first (then pass --allow-fit).
 
 Every figure states its condition:  A unseen scenario / B seen scenario, new run / C training rows re-scored.
 Curves use the mean of the three split scores per row; the quoted AUROC is the official value (mean of the
 per-split within-tool AUROC), so a curve's area can differ from it in the third decimal.
+Argus-V-p has no epochs (closed-form linear members + a random forest), so there is no epoch figure.
 
 Usage: py -3.11 experiments/risk_loop/argus_loop/argus_v_p_plots.py [--setting P5]   (default: the chosen one)
 Output: reports/risk-loop/argus-v-p/figures/<setting>/*.png + tables.md
@@ -90,6 +95,11 @@ def ref_line(ax, x=None, y=None, label="", where="top"):
 
 def save(fig, out: Path, name: str):
     out.mkdir(parents=True, exist_ok=True)
+    fig.canvas.draw()
+    for t in fig.texts:                                  # title, subtitle and note must fit the figure width
+        over = (t.get_window_extent().x1 - fig.bbox.width) / fig.dpi
+        if over > 0.02:
+            print(f"  WIDE: {name}: text runs {over:.2f} in past the right edge: {t.get_text()[:36]}…")
     fig.savefig(out / name)
     plt.close(fig)
     print("saved", (out / name).relative_to(REPO_ROOT))
@@ -237,7 +247,7 @@ def fig05_scores(cx, sc, out, name_ko):
                         markeredgewidth=1.2, color=col, zorder=z, lw=0)
         ax.set_ylim(-0.03, 1.03)
         ax.set_yticks([0, 0.5, 1])
-        ax.set_ylabel("위험 점수")
+        ax.set_ylabel("모델 점수")
         ax.set_title(f"{c}. {COND[c]['ko']}", fontsize=10.5, color=INK, pad=6)
         ax.grid(axis="x", visible=False)
     axes[-1].set_xticks(range(len(cells)))
@@ -246,7 +256,7 @@ def fig05_scores(cx, sc, out, name_ko):
                         Line2D([0], [0], lw=0, marker="o", markersize=7, markerfacecolor="none", markeredgecolor=NORM, label="정상 호출")],
                loc="upper left", bbox_to_anchor=(0.07, 0.935), ncol=2, handletextpad=0.3, columnspacing=1.6)
     title(fig, f"칸별 점수 분포 — {name_ko}", None)
-    note(fig, "잘 가르는 칸은 위반(◆)이 정상(○)보다 위에 모인다 · 평가에 들어가는 9개 칸, 위반 48개")
+    note(fig, "잘 가르는 칸은 위반(◆)이 정상(○)보다 위에 모인다 · 평가에 들어가는 9개 칸, 위반 48개 · 점수는 확률이 아니며 같은 칸 안에서만 비교한다")
     save(fig, out, "05_칸별_점수_분포.png")
 
 
@@ -308,7 +318,7 @@ def fig07_confusion(cx, sc, out, name_ko, fa=0.05):
         ax.set_xlim(0, 2)
         ax.set_ylim(0, 2)
         ax.set_xticks([0.5, 1.5])
-        ax.set_xticklabels(["경보", "통과"])
+        ax.set_xticklabels(["경보", "경보 없음"])
         ax.set_yticks([1.5, 0.5])
         ax.set_yticklabels(["실제 위반", "실제 정상"])
         ax.xaxis.tick_top()
@@ -316,7 +326,7 @@ def fig07_confusion(cx, sc, out, name_ko, fa=0.05):
         for sp in ax.spines.values():
             sp.set_visible(False)
         ax.set_title(f"{c}. {COND[c]['ko']}", fontsize=10.3, color=INK, pad=24)
-    title(fig, f"혼동 행렬 (정상의 5%만 오경보하도록 문턱을 잡았을 때) — {name_ko}", None)
+    title(fig, "혼동 행렬 (정상의 5%만 오경보하도록 문턱을 잡았을 때)", name_ko)
     note(fig, "칸 안: 건수와 그 행에서의 비율 · 판정 행 전체 9,278개(위반 76개)")
     save(fig, out, "07_혼동_행렬.png")
     return out_tab
@@ -341,7 +351,7 @@ def fig08_threshold(cx, sc, out, name_ko):
             ax.plot(thr, v, color=COND[c]["color"], lw=2, ls=styles[nm])
         ax.set_xlim(0, 1)
         ax.set_ylim(0, 1.02)
-        ax.set_xlabel("경보 문턱 (위험 점수)")
+        ax.set_xlabel("경보 문턱 (모델 점수)")
         ax.set_title(f"{c}. {COND[c]['ko']}", fontsize=10.3, color=INK, pad=6)
     axes[0].set_ylabel("값")
     fig.legend(handles=[Line2D([0], [0], color=INK2, lw=2, ls=ls, label=nm) for nm, ls in styles.items()],
@@ -472,6 +482,83 @@ def fig12_visible(vres, res, sid, out, name_ko):
     save(fig, out, "12_목표_기준_점수.png")
 
 
+SCORE_TABLE = REPO_ROOT / "argus_hook" / "replay_assets" / "argus_v_p_scores.json"
+SOURCE_KO = {"oct": "10월", "nov": "11월"}
+
+
+def fig13_tool_levels(sid, out, name_ko):
+    """Training-row scores per tool cell with the per-tool alarm threshold the replay demo uses (stored table)."""
+    if not SCORE_TABLE.is_file():
+        return None
+    table = json.loads(SCORE_TABLE.read_text(encoding="utf-8"))
+    if sid not in table["models"]:
+        return None
+    k = table["step_columns"].index(sid)
+    by = {}
+    for u in table["units"].values():
+        for r in u["steps"]:
+            by.setdefault(f"{r[1]}|{u['source']}", ([], []))[int(r[2])].append(float(r[k]))
+    th = table["models"][sid]["tool_thresholds"]
+    viol_cells = sorted((c for c in by if by[c][1]), key=lambda c: (c in th, th[c]["threshold"] if c in th else 0.0))
+    normal_only = sorted((c for c in by if not by[c][1]), key=lambda c: -len(by[c][0]))[:3]
+    if "read_file|oct" in by and "read_file|oct" not in normal_only and not by["read_file|oct"][1]:
+        normal_only.append("read_file|oct")
+    normal_only = normal_only[::-1]
+    rows = normal_only + [None] + viol_cells                 # bottom -> top; None = gap between the two groups
+    rng = np.random.default_rng(0)
+    fig, ax = plt.subplots(figsize=(FIG_W + 1.2, 0.285 * len(rows) + 2.6))
+    hin = fig.get_size_inches()[1]
+    axes_h = hin - 1.25 - 1.30
+    fig.subplots_adjust(top=1 - 1.25 / hin, left=0.335, right=0.80, bottom=1.30 / hin)
+    out_rows = []
+    for yy, cell in enumerate(rows):
+        if cell is None:
+            continue
+        normals, viols = np.asarray(by[cell][0]), np.asarray(by[cell][1])
+        big = len(normals) > 200
+        ax.plot(normals, yy + rng.uniform(-0.24, 0.24, len(normals)), "o", markersize=3.6 if big else 5.2, markerfacecolor="none",
+                markeredgecolor=NORM, markeredgewidth=0.7 if big else 1.1, alpha=0.45 if big else 1.0, lw=0, zorder=2)
+        ax.plot(viols, yy + rng.uniform(-0.12, 0.12, len(viols)), "D", markersize=6.2, markerfacecolor=VIOL, markeredgecolor=SURFACE,
+                markeredgewidth=1.1, lw=0, zorder=4)
+        t = th.get(cell)
+        if t:
+            ax.plot([t["threshold"]] * 2, [yy - 0.36, yy + 0.36], color=INK, lw=2.0, zorder=5, solid_capstyle="butt")
+            txt = f"위반 {t['caught']}/{t['violations']} · 정상 {t['false_alarms']}/{t['normals']}"
+        elif len(viols):
+            txt = "정상 호출이 없어 기준 없음"
+        else:
+            txt = "위반 사례 없음"
+        ax.text(1.02, yy, txt, transform=ax.get_yaxis_transform(), va="center", ha="left", fontsize=8.6, color=INK2)
+        out_rows.append((cell, len(viols), len(normals), t))
+    labels = []
+    for cell in rows:
+        if cell is None:
+            labels.append("")
+            continue
+        tool, src = cell.split("|")
+        labels.append(f"{tool} · {SOURCE_KO.get(src, src)}  (위반 {len(by[cell][1])} · 정상 {len(by[cell][0]):,})")
+    ax.set_yticks(range(len(rows)))
+    ax.set_yticklabels(labels, fontsize=8.8)
+    ax.set_ylim(-0.7, len(rows) - 0.3)
+    ax.set_xlim(-0.02, 1.02)
+    ax.set_xlabel("모델 점수 (0~1, 확률 아님)")
+    ax.grid(axis="y", visible=False)
+    gap = rows.index(None)
+    ax.axhline(gap, color=GRID, lw=0.9, zorder=1)
+    ax.text(0.0, gap + 0.08, "▲ 위반 사례가 있는 도구   ▼ 정상 호출만 있는 도구(예)", fontsize=8.6, color=MUTED, va="bottom", ha="left")
+    ax.text(1.02, len(rows) - 0.35, "기준을 넘은 수(경보)", transform=ax.get_yaxis_transform(), va="bottom", ha="left", fontsize=8.6, color=MUTED)
+    ax.legend(handles=[Line2D([0], [0], lw=0, marker="D", markersize=7, markerfacecolor=VIOL, markeredgecolor=SURFACE, label="위반 호출"),
+                       Line2D([0], [0], lw=0, marker="o", markersize=7, markerfacecolor="none", markeredgecolor=NORM, label="정상 호출"),
+                       Line2D([0], [0], lw=0, marker="|", markersize=13, markeredgewidth=2, color=INK, label="그 도구의 판정 기준")],
+              loc="upper center", bbox_to_anchor=(0.5, -0.55 / axes_h), ncol=3, handletextpad=0.3, columnspacing=1.8)
+    n_sep = sum(1 for c in viol_cells if c in th and th[c]["kind"] == "separable")
+    title(fig, "도구마다 점수대가 다르다 — 그래서 판정 기준을 도구별로 둔다",
+          f"{name_ko} · 학습 데이터 재채점 · 위반 사례가 있는 도구 칸 {len(viol_cells)}개(위반과 정상이 겹치지 않는 칸 {n_sep}개)")
+    note(fig, "기준은 같은 학습 기록의 위반과 정상 사이에 그었다(새 상황의 성능이 아님) · 다른 도구의 점수와는 비교할 수 없다 · 재생 도구의 판정이 이 기준을 쓴다")
+    save(fig, out, "13_도구별_점수대와_판정_기준.png")
+    return out_rows[::-1]
+
+
 # ------------------------------------------------------------------------------------------------ main
 
 def main(argv):
@@ -490,7 +577,15 @@ def main(argv):
         seeds[c] = [np.load(AP.oof_path(sid, c, s)) for s in AP.SEEDS]
         sc[c] = np.mean(seeds[c], axis=0)
         vals[c] = res["results"][sid][c]["value"]
-    sc["C"] = cx.fit(sid, np.arange(cx.n), cx.y, np.zeros(0, np.int64))[0]
+    cached = AP.OUT / ("p6_condition_c_scores.npy" if sid == "P6" else f"roc_C_{sid}.npy")
+    if cached.is_file():
+        sc["C"] = np.load(cached)                            # saved training-row scores: nothing is fitted
+    elif "--allow-fit" in argv:
+        sc["C"] = cx.fit(sid, np.arange(cx.n), cx.y, np.zeros(0, np.int64))[0]
+        np.save(cached, sc["C"])
+    else:
+        raise SystemExit(f"{cached.name} is missing. Making it re-fits {sid} on all rows (training): get the user's "
+                         "approval first, then run again with --allow-fit.")
     vals["C"] = res["results"][sid]["C"]["value"]
     assert abs(cx.wt(sc["C"])["value"] - vals["C"]) < 1e-6
     ci = {}
@@ -514,6 +609,7 @@ def main(argv):
     vres = json.loads(vpath.read_text(encoding="utf-8")) if vpath.is_file() else None
     if vres:
         fig12_visible(vres, res, sid, out, name_ko)
+    levels = fig13_tool_levels(sid, out, name_ko)
 
     # table twin of the figures
     from sklearn.metrics import average_precision_score
@@ -535,7 +631,7 @@ def main(argv):
     L += ["", "## 오경보를 고정했을 때의 탐지율 % (그림 06)", "", "| 조건 | 오경보 1% | 5% | 10% |", "|---|---|---|---|"]
     for c in "ABC":
         L.append(f"| {c} | {det[c][0]:.1f} | {det[c][1]:.1f} | {det[c][2]:.1f} |")
-    L += ["", "## 혼동 행렬, 오경보 5% 문턱 (그림 07)", "", "| 조건 | 위반을 경보 | 위반을 놓침 | 정상을 경보 | 정상을 통과 | 정밀도 |", "|---|---|---|---|---|---|"]
+    L += ["", "## 혼동 행렬, 오경보 5% 문턱 (그림 07)", "", "| 조건 | 위반을 경보 | 위반을 놓침 | 정상을 경보 | 정상에 경보 없음 | 정밀도 |", "|---|---|---|---|---|---|"]
     for c in "ABC":
         o = conf[c]
         L.append(f"| {c} | {o['tp']} | {o['fn']} | {o['fp']} | {o['tn']} | {o['precision'] * 100:.1f}% |")
@@ -550,6 +646,16 @@ def main(argv):
         L.append(f"| T7-a (처음 보는 시나리오) | 0.721 | {t['min3']['value']:.3f} | {t['min2']['value']:.3f} |")
         for c in "ABC":
             L.append(f"| {TAG} {c} | {vals[c]:.3f} | {V[c]['min3']['value']:.3f} | {V[c]['min2']['value']:.3f} |")
+    if levels:
+        L += ["", "## 도구별 점수대와 판정 기준, 학습 데이터 재채점 (그림 13)", "",
+              "기준은 같은 학습 기록의 위반과 정상 사이에 그은 값이다(`argus_hook/replay_assets/argus_v_p_scores.json`). 새 상황의 성능이 아니다.", "",
+              "| 도구 칸 | 위반 | 정상 | 판정 기준 | 기준을 넘은 위반 | 기준을 넘은 정상 |", "|---|---|---|---|---|---|"]
+        for cell, nv, nn, t in levels:
+            tool, src = cell.split("|")
+            if t:
+                L.append(f"| {tool} · {SOURCE_KO.get(src, src)} | {nv} | {nn:,} | {t['threshold']:.3f} | {t['caught']}/{t['violations']} | {t['false_alarms']}/{t['normals']} |")
+            else:
+                L.append(f"| {tool} · {SOURCE_KO.get(src, src)} | {nv} | {nn:,} | — | — | — |")
     (out / "tables.md").write_text("\n".join(L) + "\n", encoding="utf-8")
     print("saved", (out / "tables.md").relative_to(REPO_ROOT))
 

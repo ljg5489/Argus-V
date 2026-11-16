@@ -1,11 +1,23 @@
 # HANDOFF — Argus-V1 성능 향상 루프
 
-## 인수인계 기록 추가 — 2026-11-16 18:25 KST (Claude) — 두 모델의 그래프 작업 시작 (Argus-V-em 재실행 중)
+## 인수인계 기록 추가 — 2026-11-16 18:40 KST (Claude) — 두 모델의 그래프 완료 (Argus-V-em epoch 곡선 포함)
+
+- **지금 돌고 있는 것 없음.** 아래 18:25 항목의 재실행과 그래프 작업이 모두 끝났다.
+- **Argus-V-em 재실행 결과**(18:16~18:28, 종료 코드 0): 32·64·128차원 모델, 선형 대조, 전체 데이터로 맞춘 최종 32차원 모델 모두 마지막 epoch의 점수가 저장된 점수와 차이 0(최종 모델은 가중치도 차이 0). 즉 기록한 곡선은 저장된 모델이 실제로 지나온 학습 과정이다. 기록은 `reports/risk-loop/argus-v-em/epoch_history.json`, 결과 요약은 `addendum-2.md`의 Outcome.
+- **Argus-V-em 그래프 14장**: `reports/risk-loop/argus-v-em/figures/`(PNG + `tables.md`). 01 모델별 점수 / 02 ROC / 03 칸별 ROC / 04 칸별 AUROC / 05 칸별 점수 분포 / 06 채점 대상에 따른 점수 / 07 오경보 고정 탐지율 / 08 혼동 행렬 / 09 문턱별 재현율·정밀도·F1 / 10 정밀도-재현율 / 11 epoch별 손실 / 12 epoch별 성능 / 13 모델별 epoch 곡선 / 14 칸별 epoch 곡선. 다시 그리기: `PYTHONUTF8=1 py -3.11 experiments/risk_loop/argus_loop/argus_v_em_plots.py`(학습 없음, 약 1분). 해설은 `reports/risk-loop/argus-v-em/results.md`의 "그래프와 epoch 곡선".
+- **epoch 곡선에서 나온 것(32차원 모델, 근거가 보인 위반 기준)**: 학습에 쓴 행은 40 epoch에 AUROC 1.00. 처음 보는 시나리오는 처음 10 epoch 동안 0.64~0.70, 37 epoch에 0.90을 넘고 60 epoch에 0.96. 손실은 학습 행 0.52 → 0.08, 처음 보는 시나리오 0.54 → 0.19(마지막 10 epoch은 거의 그대로). **0.96은 학습 길이에 달려 있다**(30 epoch이면 0.87). 60 epoch은 실행 전에 고정한 값이고 곡선을 보고 고르지 않았다. 위반 전체로 채점하면 내내 0.48~0.55.
+- **그림을 그리며 확인된 것**: 주 지표 95% 구간 0.894~1.000(시나리오 계열 9개 복원 추출). 보조 칸(근거가 보인 위반 2개) 셋 중 둘은 처음 보는 시나리오에서 가르지 못함(`issue_payment` 0.47, `grant_review_access` 0.21). 문턱 하나를 모든 도구에 적용하면 근거가 보인 위반 22개 중 17개 경보(정상 461개 오경보, 정밀도 3.6%), 도구를 섞은 AUROC 0.918.
+- **Argus-V-p 그래프**: 기존 12장에 13번(도구별 점수대와 판정 기준 — 재생 도구가 쓰는 도구별 기준을 그린 것)을 더해 P5·P6 폴더에 13장씩. 표기 수정: "위험 점수" → "모델 점수", 혼동 행렬의 "통과" → "경보 없음". Argus-V-p에는 epoch이 없어 epoch 그림은 없다(사용자 확인).
+- **`argus_v_p_plots.py`가 더는 학습하지 않는다.** 전에는 학습 데이터 점수를 얻으려고 전체 행에 다시 맞췄는데, 이제 저장된 배열(`artifacts/risk-loop/argus-v-p/roc_C_<설정>.npy`, P6은 `p6_condition_c_scores.npy`)을 읽고 기록된 값과 맞는지 확인한다. 배열이 없으면 멈추고 사용자 승인 뒤 `--allow-fit`을 주라고 알린다. 그림을 저장할 때 제목·부제·주석이 그림 폭을 넘으면 `WIDE:` 경고를 낸다.
+- 지킨 것: 학습은 사용자 승인 뒤에만(재실행 1건), train 분할만, 저장된 모델·round 01 표는 그대로, epoch 곡선으로 설정을 다시 고르지 않음. 모든 PNG를 직접 열어 겹침·잘림을 확인했다.
+- 대기 중인 사용자 결정은 그대로: ① 재생 도구의 2번 방식에서 P6 판정을 내기 위한 P6 1회 재학습 승인 ② 재실행 때 행동을 쓴 직후 지점의 hidden state 저장 여부. 4090에서 2번 방식 실제 실행 확인도 남아 있다.
+
+## 인수인계 기록 추가 — 2026-11-16 18:25 KST (Claude) — 두 모델의 그래프 작업 시작 (Argus-V-em 재실행 — 18:28에 끝남, 위 항목 참고)
 
 - 사용자 지시: "Argus-V-p는 epoch이 없으니 epoch을 빼고 필요한 그래프를 그리고, Argus-V-em은 epoch 등 추가로 필요한 그래프를 그려. python matplotlib으로."
 - 확인한 것: Argus-V-p 그래프는 이미 있다(`reports/risk-loop/argus-v-p/figures/P5`·`P6`에 12장씩, 2026-11-15). Argus-V-em은 그림 2장뿐이고(막대 비교, ROC — Codex 작성, 영어·다른 색) epoch별 값은 저장돼 있지 않다(`argus_v_em.py`의 학습 루프가 기록하지 않음).
 - **사용자 승인(2026-11-16, "네 모델 모두")**: Argus-V-em round 01 학습을 설정 그대로 다시 돌리면서 epoch마다 값을 기록한다. 대상은 32·64·128차원 임베딩 모델과 선형 대조 모델, 그리고 전체 데이터로 맞춘 최종 32차원 모델. 구조·데이터·묶음·seed·AdamW·60 epoch 모두 그대로이고, epoch이 끝날 때마다 평가 모드로 채점하는 것만 추가(난수를 쓰지 않아 학습 경로는 같음). 실행 전에 `reports/risk-loop/argus-v-em/addendum-2.md`로 고정.
-- **지금 실행 중**: `PYTHONUTF8=1 py -3.11 -u experiments/risk_loop/argus_loop/argus_v_em_epochs.py --approved > artifacts/risk-loop/argus-v-em/epochs.log 2>&1` (18:22 시작, 15~30분 예상). 모델별로 `artifacts/risk-loop/argus-v-em/epochs/<모델>.npz`가 생기고, 있으면 건너뛰므로 끊기면 같은 명령을 다시 실행하면 된다. 끝나면 로그 마지막에 `DONE`과 `exit=0`, 그리고 `reports/risk-loop/argus-v-em/epoch_history.json`이 생긴다. 로그의 "largest difference from the saved held-out scores"가 0에 가까워야 저장된 모델의 학습 과정을 그대로 다시 본 것이다.
+- **실행한 명령**(18:16 시작, 18:28 끝): `PYTHONUTF8=1 py -3.11 -u experiments/risk_loop/argus_loop/argus_v_em_epochs.py --approved > artifacts/risk-loop/argus-v-em/epochs.log 2>&1`. 모델별로 `artifacts/risk-loop/argus-v-em/epochs/<모델>.npz`가 생기고, 있으면 건너뛰므로 끊기면 같은 명령을 다시 실행하면 된다. 끝나면 로그 마지막에 `DONE`과 `exit=0`, 그리고 `reports/risk-loop/argus-v-em/epoch_history.json`이 생긴다. 로그의 "largest difference from the saved held-out scores"가 0에 가까워야 저장된 모델의 학습 과정을 그대로 다시 본 것이다.
 - 끝난 뒤 할 일: ① 그래프 스크립트 `experiments/risk_loop/argus_loop/argus_v_em_plots.py`(작성 중, `argus_v_p_plots.py`와 같은 글꼴·색) 실행 → `reports/risk-loop/argus-v-em/figures/` ② PNG를 직접 열어 겹침·잘림 확인 ③ Argus-V-p 쪽에 빠진 그림이 있으면 추가 ④ 커밋, 사용자 보고.
 - 지킬 것: epoch 곡선을 보고 epoch 수·폭을 다시 고르지 않는다(저장된 모델과 round 01 표는 그대로). 곡선의 "처음 보는 시나리오" 쪽도 round 01과 같은 개발용 행이라 독립 확인이 아니다.
 
@@ -139,7 +151,8 @@
 | 2026-11-16 15:55 | **돌고 있는 것 없음.** 재생 도구의 시나리오 목록에 한글 설명 추가 끝 | `list`에 시나리오마다 한글 제목·과제·상황·위반이 난 도구가 나오고, 시나리오를 고르면 금지 사항과 조건의 뜻까지 나온다. 설명은 학습 시나리오 102개분만 `Scenario/` 정의 파일에서 복사 | 사용자 결정 대기(위와 같음) |
 | 2026-11-16 16:20 | **돌고 있는 것 없음.** 재생 화면에서 점수가 있는 모든 step에 판정이 나오게 수정 끝 | 위반 사례가 있는 도구는 그 도구의 기준으로, 정상 호출만 있는 도구는 그 도구의 정상 점수 범위로 판정. 뒤쪽은 학습 기록에서 항상 "경보 없음"이라 맞힌 수에 넣지 않음. 보고용 호출만 "판정 안 함"으로 남음 | 사용자 결정 대기: ① P6 1회 재학습 승인 ② 재실행 때 행동 직후 hidden state 저장 여부 |
 | 2026-11-16 17:10 | **돌고 있는 것 없음**(Python 프로세스·예약 작업 없음). 사용자 요청으로 진행상황 보고 | 16:11 커밋 뒤로 바뀐 파일 없음. 시연 추천 기록 5개를 인터넷 없이 1번 방식으로 다시 돌려 모두 동작 확인. 브랜치는 원격보다 80커밋 앞(push 안 함) | 사용자 결정 대기: ① P6 1회 재학습 승인 ② 재실행 때 행동 직후 hidden state 저장 여부. 그 밖에 4090에서 2번 방식 실제 실행 확인이 남음(이 노트북으로는 불가). 발표 PC에서는 시연할 기록을 미리 한 번씩 받아 둘 것 |
-| 2026-11-16 18:25 | **Argus-V-em 재실행**(`argus_v_em_epochs.py --approved`, 로그 `artifacts/risk-loop/argus-v-em/epochs.log`) — 사용자 승인받은 epoch 기록용 재학습 | 18:22 시작. 32·64·128차원 모델과 선형 대조를 round 01 설정 그대로 다시 학습하며 epoch마다 손실·점수 기록. 그래프 스크립트 `argus_v_em_plots.py` 작성 중 | 재실행 끝 → 저장 점수와 일치 확인 → Argus-V-em 그래프(epoch 포함) → PNG 확인 → Argus-V-p 그래프 보완 → 커밋·보고 |
+| 2026-11-16 18:25 | **Argus-V-em 재실행**(`argus_v_em_epochs.py --approved`, 로그 `artifacts/risk-loop/argus-v-em/epochs.log`) — 사용자 승인받은 epoch 기록용 재학습 | 18:16 시작. 32·64·128차원 모델과 선형 대조를 round 01 설정 그대로 다시 학습하며 epoch마다 손실·점수 기록. 그래프 스크립트 `argus_v_em_plots.py` 작성 중 | 재실행 끝 → 저장 점수와 일치 확인 → Argus-V-em 그래프(epoch 포함) → PNG 확인 → Argus-V-p 그래프 보완 → 커밋·보고 |
+| 2026-11-16 18:40 | **돌고 있는 것 없음.** 재실행 18:28 종료(저장 점수와 차이 0), 두 모델의 그래프 완료 | Argus-V-em 14장(epoch 4장 포함)과 숫자 표, Argus-V-p는 13번 그림 추가해 P5·P6에 13장씩. PNG 전부 열어 확인. 그래프 스크립트는 학습하지 않음 | 사용자 결정 대기: ① P6 1회 재학습 승인(재생 도구 2번 방식용) ② 재실행 때 행동 직후 hidden state 저장 여부. 4090에서 2번 방식 실제 실행 확인 |
 
 # 지금 상태 — 2026-11-15 (가장 최신. 아래 3단계 대시보드는 2026-11-11까지의 기록)
 

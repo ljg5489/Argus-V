@@ -10,3 +10,10 @@ Fixed 2026-11-16 before running. User request: "Argus-V-em은 epoch 등 추가�
 - This is not a new candidate and adds no entry to the Argus-V1 try count.
 
 Script: `experiments/risk_loop/argus_loop/argus_v_em_epochs.py`. Outputs: `artifacts/risk-loop/argus-v-em/epochs/` (ignored) and `reports/risk-loop/argus-v-em/epoch_history.json`.
+
+## Outcome (added after the run, 2026-11-16 18:16–18:28, exit code 0)
+
+- The check passed exactly. Largest difference between the re-run's epoch-60 held-out scores and the saved `oof_*_s*.npy` arrays: 0.0 for EM32, EM64, EM128 and the linear control, all three seeds. The repeated final EM32 fit differs from `argus_v_em_round01.pt` by 0.0 in scores and 0.0 in weights. The recorded curves are therefore the history of the saved models, not an approximation of it.
+- Epoch-60 same-tool AUROC per seed equals the stored round 01 values (EM32 0.9395 / 0.9680 / 0.9710).
+- Time per fit on the laptop CPU: about 8 s (EM32), 10 s (EM64), 18 s (EM128), 3 s (linear); 60 fold fits plus the final fit.
+- Nothing was selected from the curves. Figures 11–14 in `figures/` and the "그래프와 epoch 곡선" section of `results.md` use this record.
