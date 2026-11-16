@@ -1,45 +1,56 @@
 {
- "note": "test split, epoch 67, alarms at the threshold where 5% of normal calls alarm; from the saved test scores, nothing fitted",
+ "note": "test split, epoch 67, alarms at the threshold where 5% of normal calls alarm; from the saved test scores",
+ "october_share_of_normal_calls": 0.12100780695528744,
  "values": {
   "baseline": {
    "false_alarms": 139,
    "false_alarms_from_october": 32,
-   "share_october_among_false_alarms": 0.23,
+   "share_october_among_false_alarms": 0.2302158273381295,
+   "october_normals_alarmed_share": 0.093841642228739,
+   "november_normals_alarmed_share": 0.04319741622930965,
    "caught": 6,
    "caught_october": 2,
-   "caught_november": 4,
-   "october_normals_alarmed_share": 0.094,
-   "november_normals_alarmed_share": 0.043
+   "caught_november": 4
   },
   "w075": {
    "false_alarms": 141,
    "false_alarms_from_october": 27,
-   "share_october_among_false_alarms": 0.191,
+   "share_october_among_false_alarms": 0.19148936170212766,
+   "october_normals_alarmed_share": 0.07917888563049853,
+   "november_normals_alarmed_share": 0.046023415421881306,
    "caught": 4,
    "caught_october": 2,
-   "caught_november": 2,
-   "october_normals_alarmed_share": 0.079,
-   "november_normals_alarmed_share": 0.046
+   "caught_november": 2
   },
   "w100": {
    "false_alarms": 141,
    "false_alarms_from_october": 89,
-   "share_october_among_false_alarms": 0.631,
+   "share_october_among_false_alarms": 0.6312056737588653,
+   "october_normals_alarmed_share": 0.26099706744868034,
+   "november_normals_alarmed_share": 0.020993136859103756,
    "caught": 5,
    "caught_october": 4,
-   "caught_november": 1,
-   "october_normals_alarmed_share": 0.261,
-   "november_normals_alarmed_share": 0.021
+   "caught_november": 1
   },
   "w300": {
    "false_alarms": 139,
    "false_alarms_from_october": 97,
-   "share_october_among_false_alarms": 0.698,
+   "share_october_among_false_alarms": 0.697841726618705,
+   "october_normals_alarmed_share": 0.2844574780058651,
+   "november_normals_alarmed_share": 0.016955995155429955,
    "caught": 4,
    "caught_october": 4,
-   "caught_november": 0,
-   "october_normals_alarmed_share": 0.284,
-   "november_normals_alarmed_share": 0.017
+   "caught_november": 0
+  },
+  "w1000": {
+   "false_alarms": 141,
+   "false_alarms_from_october": 123,
+   "share_october_among_false_alarms": 0.8723404255319149,
+   "october_normals_alarmed_share": 0.36070381231671556,
+   "november_normals_alarmed_share": 0.0072668550666128385,
+   "caught": 5,
+   "caught_october": 5,
+   "caught_november": 0
   }
  }
 }

@@ -7,7 +7,7 @@ test 분할을 채점할 때마다 한 줄씩 적는다. 첫 번째 줄만이 "�
 | 1 | 2026-11-16 20:15 | 주 모델(64차원, 67 epoch) + 참고 모델 3개(300 epoch 128차원, Argus-V-em 60 epoch, Argus-V-p) + 300 epoch 학습의 10 epoch마다 저장본 30개 | 사용자 지시("이번에는 정말 TEST 데이터를 가지고 성능평가를 시작해"), 채점 전에 방법 고정(`test-eval-prereg.md`, `test-eval-prereg-addendum-1.md`) | `test_eval.json`, `test_tables.md`, `figures_test/` |
 | 2 | 2026-11-16 22:39 | 위반 가중치 세 설정(약 15배·약 60배·약 230배)을 전체 train 행으로 맞춘 64차원 모델, epoch 1~100 | 사용자 지시("아니 자꾸 test는 왜 안 하냐고"), 채점 전에 읽는 법 고정(`class-weight-check.md`의 "추가" 절, 커밋 `8477752`) | `class_weight_check_test.json`, `figures_weight/02_test_위반_가중치별_epoch_곡선.png` |
 | 3 | 2026-11-16 23:04 | 위반 가중치를 300으로 고정한 64차원 모델(전체 train 행 학습), epoch 1~100 | 사용자 지시("위반 가중치를 300배로 하고 한 번 학습 및 test를 진행해 보자"), 채점 전에 읽는 법 고정(`class-weight-check.md`의 "추가 2" 절, 커밋 `87a5d3a`) | `class_weight_check_test.json`, `class_weight_check_test_alarms.json` |
-| 4 | 2026-11-16 (시각은 채점 뒤에 적음) | 위반 가중치를 1000으로 고정한 64차원 모델(전체 train 행 학습), epoch 1~100 | 사용자 지시("이번에 그러면 위험 가중치에 대해 1000배를 해보자"), 채점 전에 읽는 법 고정(`class-weight-check.md`의 "추가 3" 절) | `class_weight_check_test.json`, `class_weight_check_test_alarms.json` |
+| 4 | 2026-11-16 23:25 | 위반 가중치를 1000으로 고정한 64차원 모델(전체 train 행 학습), epoch 1~100 | 사용자 지시("이번에 그러면 위험 가중치에 대해 1000배를 해보자"), 채점 전에 읽는 법 고정(`class-weight-check.md`의 "추가 3" 절, 커밋 `04348df`) | `class_weight_check_test.json`, `class_weight_check_test_alarms.json` |
 
 ## 사용자와 합의한 읽는 법 (2026-11-16)
 

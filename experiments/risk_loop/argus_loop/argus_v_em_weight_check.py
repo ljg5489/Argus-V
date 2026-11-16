@@ -457,9 +457,10 @@ def _panels(series, n_ep, main_epoch, panels, head, sub, note, fname, ylabel, yl
     axes[0].text(main_epoch + 1.5, ylim[0] + 0.02, f"{main_epoch} epoch", va="bottom", ha="left", fontsize=9, color=PP.INK2)
     if ref:
         axes[1].axhline(ref[0], color=PP.INK2, lw=1.1, ls=(0, (1, 2)), zorder=2)
-        below = len(ref) > 3 and ref[3] == "below"             # put the label where no curve passes
-        axes[1].text(ref[2] if len(ref) > 2 else 70, ref[0] + (-0.008 if below else 0.008), ref[1],
-                     va="top" if below else "bottom", ha="left", fontsize=9, color=PP.INK2)
+        if ref[1]:                                             # an empty label: the note explains the line instead
+            below = len(ref) > 3 and ref[3] == "below"         # put the label where no curve passes
+            axes[1].text(ref[2] if len(ref) > 2 else 70, ref[0] + (-0.008 if below else 0.008), ref[1],
+                         va="top" if below else "bottom", ha="left", fontsize=9, color=PP.INK2)
     fig.legend(handles=[PP.Line2D([0], [0], color=RAMP[t], lw=2.4, label="가중치 " + NAMES[t]) for t in ORDER],
                loc="lower center", bbox_to_anchor=(0.5, 0.045), ncol=len(ORDER), columnspacing=1.8, handlelength=2.0, fontsize=9.6)
     PP.title(fig, head, sub)
@@ -483,15 +484,16 @@ def figure():
     else:
         head = "위반 가중치에 따라 점수가 달라진다"
     diag_path = REPORT / "class_weight_check_diag.json"
-    ref = None
+    ref, ref_note = None, "오른쪽 값은 기록 시기만 알아도 오른다"
     if diag_path.is_file():                                     # the right-hand score can be raised by the collection period alone
         po = json.loads(diag_path.read_text(encoding="utf-8"))["period_only_score"]["train"]
-        ref = (po, f"기록 시기만 아는 점수 {po:.2f}", 32, "below")
+        ref = (po, "")                                          # five curves leave no free spot for a label: the note carries it
+        ref_note = f"오른쪽 점선({po:.2f}): 10월 기록이면 1점, 11월 기록이면 0점만 준 점수"
     _panels({t: res["settings"][t]["per_epoch_mean"] for t in ORDER}, res["epochs"], me,
             (("min3", "같은 도구를 쓴 호출끼리 비교 · 근거가 보인 위반 16개"), ("pooled_all", "모든 호출을 정상 대 위반으로 가르기 · 위반 76개")),
             head + " — train 안 교차검증",
             f"64차원 모델, 위반 가중치만 바꿈. {me} epoch의 왼쪽 값: " + " / ".join(f"{short[t]} {at[t]:.3f}" for t in ORDER),
-            "train 시나리오를 5묶음으로 나눠 학습에서 뺀 묶음을 채점, 나누기 3가지 평균 · 오른쪽 점선: 10월 기록이면 1점, 11월 기록이면 0점만 준 점수",
+            "train 시나리오를 5묶음으로 나눠 학습에서 뺀 묶음을 채점, 나누기 3가지 평균 · " + ref_note,
             "01_위반_가중치별_epoch_곡선.png", "AUROC (train 안 교차검증)", (0.40, 1.02), ref)
     tpath = REPORT / "class_weight_check_test.json"
     if not tpath.is_file():
@@ -500,14 +502,20 @@ def figure():
     me = tr["main_epoch"]
     at = {t: tr["settings"][t]["at_main_epoch"]["visible_min3"]["value"] for t in ORDER}
     better = [t for t in ORDER[1:] if tr["reading"][t]["pairs"] > tr["same_if_within_pairs"]]
-    head = "test에서는 위반 가중치를 키운 쪽이 더 높다" if better else "test에서도 위반 가중치를 키워 좋아진 것이 없다"
+    pa = {t: tr["settings"][t]["at_main_epoch"]["pooled_all_violations"]["auroc"] for t in ORDER}
+    if better:
+        head = "test에서는 위반 가중치를 키운 쪽이 주 지표도 더 높다"
+    elif max(pa[t] for t in ORDER[1:]) - pa["baseline"] > 0.05:
+        head = "test: 가중치를 키우면 '모든 호출' 값만 오르고, 같은 도구 안 구분은 오르지 않는다"
+    else:
+        head = "test에서도 위반 가중치를 키워 좋아진 것이 없다"
     n_vis, n_all, pairs = tr["test"]["visible_violations"], tr["test"]["violations"], tr["test"]["comparison_pairs_main_metric"]
     po = tr["period_only_score_all_calls"]
     _panels({t: tr["settings"][t]["per_epoch"] for t in ORDER}, tr["epochs"], me,
             (("visible_min3", f"같은 도구를 쓴 호출끼리 비교 · 근거가 보인 위반 {n_vis}개"), ("pooled_all", f"모든 호출을 정상 대 위반으로 가르기 · 위반 {n_all}개")),
             head, f"64차원 모델을 전체 train 행으로 학습해 test로 채점. {me} epoch의 왼쪽 값: " + " / ".join(f"{short[t]} {at[t]:.3f}" for t in ORDER),
-            f"test 분할의 첫 채점 결과를 본 뒤에 만든 설정들 · 왼쪽은 비교 {pairs}쌍이라 한 쌍이 {1 / pairs:.2f} · 오른쪽 점선: 기록 시기만 아는 점수",
-            "02_test_위반_가중치별_epoch_곡선.png", "AUROC (test)", (0.30, 1.02), (po, f"기록 시기만 아는 점수 {po:.2f}"))
+            f"test 분할의 첫 채점 결과를 본 뒤에 만든 설정들 · 왼쪽은 비교 {pairs}쌍이라 한 쌍이 {1 / pairs:.2f} · 오른쪽 점선({po:.2f}): 10월 기록이면 1점만 준 점수",
+            "02_test_위반_가중치별_epoch_곡선.png", "AUROC (test)", (0.30, 1.02), (po, ""))
 
 
 if __name__ == "__main__":

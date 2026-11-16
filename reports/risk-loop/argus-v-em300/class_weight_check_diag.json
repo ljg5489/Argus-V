@@ -63,6 +63,15 @@
    "inside_violation_tools": 0.7102,
    "violations_vs_normals_of_other_tools": 0.8821
   },
+  "w1000@10": {
+   "pooled_all": 0.8691,
+   "oct_only": 0.6397,
+   "nov_only": 0.6923,
+   "october_above_november_among_normal_calls": 0.9034,
+   "violation_tool_normals_above_other_normals": 0.6481,
+   "inside_violation_tools": 0.6985,
+   "violations_vs_normals_of_other_tools": 0.874
+  },
   "baseline@20": {
    "pooled_all": 0.7821,
    "oct_only": 0.6431,
@@ -98,6 +107,15 @@
    "violation_tool_normals_above_other_normals": 0.6567,
    "inside_violation_tools": 0.7162,
    "violations_vs_normals_of_other_tools": 0.893
+  },
+  "w1000@20": {
+   "pooled_all": 0.8838,
+   "oct_only": 0.6693,
+   "nov_only": 0.7203,
+   "october_above_november_among_normal_calls": 0.9043,
+   "violation_tool_normals_above_other_normals": 0.6509,
+   "inside_violation_tools": 0.7127,
+   "violations_vs_normals_of_other_tools": 0.8887
   },
   "baseline@30": {
    "pooled_all": 0.7726,
@@ -135,6 +153,15 @@
    "inside_violation_tools": 0.7151,
    "violations_vs_normals_of_other_tools": 0.8933
   },
+  "w1000@30": {
+   "pooled_all": 0.8924,
+   "oct_only": 0.6824,
+   "nov_only": 0.7418,
+   "october_above_november_among_normal_calls": 0.8987,
+   "violation_tool_normals_above_other_normals": 0.6559,
+   "inside_violation_tools": 0.719,
+   "violations_vs_normals_of_other_tools": 0.8974
+  },
   "baseline@67": {
    "pooled_all": 0.7192,
    "oct_only": 0.6789,
@@ -171,6 +198,15 @@
    "inside_violation_tools": 0.6849,
    "violations_vs_normals_of_other_tools": 0.8519
   },
+  "w1000@67": {
+   "pooled_all": 0.8933,
+   "oct_only": 0.6939,
+   "nov_only": 0.7509,
+   "october_above_november_among_normal_calls": 0.8626,
+   "violation_tool_normals_above_other_normals": 0.6784,
+   "inside_violation_tools": 0.7179,
+   "violations_vs_normals_of_other_tools": 0.8984
+  },
   "baseline@100": {
    "pooled_all": 0.7009,
    "oct_only": 0.6785,
@@ -206,6 +242,15 @@
    "violation_tool_normals_above_other_normals": 0.6751,
    "inside_violation_tools": 0.6654,
    "violations_vs_normals_of_other_tools": 0.816
+  },
+  "w1000@100": {
+   "pooled_all": 0.8758,
+   "oct_only": 0.6987,
+   "nov_only": 0.7266,
+   "october_above_november_among_normal_calls": 0.8264,
+   "violation_tool_normals_above_other_normals": 0.6876,
+   "inside_violation_tools": 0.7039,
+   "violations_vs_normals_of_other_tools": 0.8807
   }
  }
 }
