@@ -306,10 +306,18 @@ def screen_cells() -> int:
     return max(80, min(150, shutil.get_terminal_size((110, 30)).columns))
 
 
-def margin_bar(margin: float, half: int = 15, span: float = 0.30) -> str:
+def verdict_line(tag: str, colour: str, how: str, margin: float | None) -> str:
+    """The ' 판정:' line of a step. Every step gets the same bar in the same column; ``margin`` None = empty bar."""
+    pad = lambda text, cells: text + " " * max(0, cells - cell_width(text))
+    return f" 판정: {c(tag, colour)}{' ' * (9 - cell_width(tag))}   {pad(how, 38)}   {margin_bar(margin)}"
+
+
+def margin_bar(margin: float | None, half: int = 15, span: float = 0.30) -> str:
     """Distance from the tool's own threshold, drawn from the centre mark: to the right = alarm side, to the left =
     pass side. Every judged call is on this same scale, so a longer bar to the right always means 'further past the
     threshold of its tool'. ``span`` score units fill one side."""
+    if margin is None:                              # not judged: same frame, nothing filled in
+        return c("정상 쪽 " + "░" * half + "│" + "░" * half + " 위반 쪽", "dim")
     n = min(half, max(1, round(abs(margin) / span * half)))
     if margin > 0:
         return "정상 쪽 " + "░" * half + "│" + c("█" * n, "red") + "░" * (half - n) + " 위반 쪽"
@@ -344,9 +352,10 @@ def show_header(unit_id: str, unit: dict, rec: Records, model: str, mode_text: s
     print(f" 기록 출처: {rec.origin}")
     print(c(" 이 모델은 이 기록들로 학습했다. 아래 판정은 학습에 쓴 기록을 다시 채점한 것이다.", "yellow"))
     print(c(" 읽는 법: 모든 호출의 hidden state를 읽어 점수를 내고, 호출한 도구에 따라 이렇게 판정한다.", "yellow"))
-    print(c("   ① 위반 사례를 학습한 도구: 그 도구의 기준보다 높으면 경보, 낮으면 경보 없음 (막대로 표시)", "yellow"))
-    print(c("   ② 정상 호출만 학습한 도구: 그 도구 정상 호출의 점수 범위를 넘을 때만 경보", "yellow"))
-    print(c("   ③ 결과 보고용 호출 등 학습에 쓰지 않은 호출: 판정 안 함", "yellow"))
+    print(c("   ① 위반 사례를 학습한 도구: 그 도구의 기준보다 높으면 경보, 낮으면 경보 없음 (막대 가운데 │ = 그 도구의 기준)", "yellow"))
+    print(c("   ② 정상 호출만 학습한 도구: 그 도구 정상 호출의 점수 범위를 넘을 때만 경보 (막대 가운데 │ = 정상 범위의 상한)", "yellow"))
+    print(c("   ③ 결과 보고용 호출 등 학습에 쓰지 않은 호출: 판정 안 함 (기준이 없어 막대는 빈 채로 표시)", "yellow"))
+    print(c("   막대는 모든 step에 같은 자리에 나온다. 초록이 왼쪽으로 길수록 정상 쪽, 빨강이 오른쪽으로 길수록 위반 쪽.", "yellow"))
     print(c("   숫자는 기준·범위에서 떨어진 거리이고, 위반일 확률이 아니다.", "yellow"))
     print(c("═" * 92, "bold"))
 
@@ -377,8 +386,8 @@ def show_step(i: int, step: dict, info: dict | None, score: float | None, extra:
     if score is not None and th is not None:
         margin = score - th
         alarm = margin > 0
-        print(f" 판정: {c('경보', 'red') + '     ' if alarm else c('경보 없음', 'green')}   이 도구의 기준보다 {abs(margin):.3f} "
-              f"{'높음' if alarm else '낮음'}   {margin_bar(margin)}")
+        print(verdict_line("경보" if alarm else "경보 없음", "red" if alarm else "green",
+                           f"이 도구의 기준보다 {abs(margin):.3f} {'높음' if alarm else '낮음'}", margin if alarm else min(margin, -1e-9)))
         if SHOW_RAW:
             print(c(f" (원래 점수 {score:.3f} · 이 도구의 기준 {th:.3f} · {name}의 학습 기록: 정상 {len(normals)}개는"
                     f" {normals[0]:.3f}~{normals[-1]:.3f}, 위반 {len(violations)}개는 {violations[0]:.3f}~{violations[-1]:.3f})",
@@ -389,25 +398,27 @@ def show_step(i: int, step: dict, info: dict | None, score: float | None, extra:
         top = float(normals[-1])
         margin = score - top
         alarm = margin > 5e-4                       # stored scores are rounded to 4 decimals
+        # the bar's centre mark is the highest normal score of this tool (there is no threshold to draw)
         if alarm:
-            how = f"이 도구 정상 호출 {len(normals)}개의 점수 범위를 {margin:.3f} 넘음"
+            how = f"이 도구 정상 범위 상한보다 {margin:.3f} 높음"
         elif margin > -5e-4:
-            how = f"이 도구의 정상 범위 안 (정상 호출 {len(normals)}개 중 가장 높은 값)"
+            how = "이 도구 정상 범위 상한과 같음"
         else:
-            how = f"이 도구의 정상 범위 안 (정상 호출 {len(normals)}개의 최고값보다 {-margin:.3f} 낮음)"
-        print(f" 판정: {c('경보', 'red') + '     ' if alarm else c('경보 없음', 'green')}   {how}")
+            how = f"이 도구 정상 범위 상한보다 {-margin:.3f} 낮음"
+        print(verdict_line("경보" if alarm else "경보 없음", "red" if alarm else "green", how,
+                           margin if alarm else min(margin, -1e-9)))
         if SHOW_RAW:
             print(c(f" (원래 점수 {score:.3f} · {name}의 학습 기록: 정상 {len(normals)}개는 {normals[0]:.3f}~{normals[-1]:.3f},"
                     f" 위반 사례 없음)", "dim"))
         verdict = "range_alarm" if alarm else "range_ok"
     else:
         if info is None:
-            why = "학습에 쓰지 않은 호출(결과 보고용 호출이거나 검수 대상에서 빠진 호출)"
+            why = "학습에 쓰지 않은 호출이라 기준 없음"
         elif not len(normals):
-            why = f"이 도구({name})는 학습 기록에 정상 호출이 없어 비교할 기준이 없음"
+            why = "이 도구는 정상 호출 기록이 없어 기준 없음"
         else:
             why = "점수를 계산하지 못함"
-        print(f" 판정: {c('안 함', 'bold')} — {why}")
+        print(verdict_line("안 함", "bold", why, None))
         if SHOW_RAW and score is not None:
             print(c(f" (원래 점수 {score:.3f} · 도구가 다른 호출과는 비교할 수 없는 값)", "dim"))
     if extra:
