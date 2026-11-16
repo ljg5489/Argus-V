@@ -1,0 +1,39 @@
+name: Deploy Argus-V Scenario Studio to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "sites/argus-v-demo-dashboard/dist/**"
+      - ".github/workflows/deploy-argus-v-dashboard.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: argus-v-scenario-studio-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - name: Upload dashboard
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: sites/argus-v-demo-dashboard/dist
+      - name: Deploy dashboard
+        id: deployment
+        uses: actions/deploy-pages@v4
