@@ -4,7 +4,7 @@ Reads the saved round-01 held-out scores (artifacts/risk-loop/argus-v-em/oof_*.n
 training-row scores and the per-epoch record written by argus_v_em_epochs.py (addendum 2).
 
 Every figure states what was scored:
-  held-out  = "처음 보는 시나리오": scenario-family folds, the scored fold was not used for training
+  held-out  = "train 안 교차검증": scenario-family folds, the scored fold was not used for training
   in-sample = "학습 데이터 재채점": the saved all-rows EM32 model scoring the rows it was trained on
 Target rows = normal calls + violations whose deciding fact was visible before the action (provisional-1 record).
 
@@ -32,7 +32,7 @@ from experiments.risk_loop.argus_loop import evaluate as E  # noqa: E402
 plt, Line2D = PP.plt, PP.Line2D
 SURFACE, INK, INK2, MUTED, GRID, BASE = PP.SURFACE, PP.INK, PP.INK2, PP.MUTED, PP.GRID, PP.BASE
 HELD, TRAIN, VIOL, NORM = PP.COND["A"]["color"], PP.COND["C"]["color"], PP.VIOL, PP.NORM
-HELD_KO, TRAIN_KO = "처음 보는 시나리오", "학습 데이터 재채점"
+HELD_KO, TRAIN_KO = "train 안 교차검증", "학습 데이터 재채점"
 WIDTH_RAMP = {"EM32": "#86b6ef", "EM64": "#3987e5", "EM128": "#184f95"}     # ordinal blue ramp (validated --ordinal)
 MODEL_KO = {"EM32": "32차원 임베딩", "EM64": "64차원 임베딩", "EM128": "128차원 임베딩", "LINEAR": "임베딩 없이 선형 점수만 (대조)"}
 MODEL_SHORT = {"EM32": "32차원", "EM64": "64차원", "EM128": "128차원", "LINEAR": "선형 대조"}
@@ -47,6 +47,28 @@ TRACK = TRACKS["em"]                 # main() switches it with --track
 OUT = EM.REPORT / "figures"
 FIG_W = PP.FIG_W
 LBL = PP.LBL
+
+
+def test_values(D) -> dict | None:
+    """What the same metric was on the test split, read from the single test evaluation (None while there is none).
+
+    Only used to print the test number next to the cross-validation number; nothing is fitted or selected with it."""
+    f = TRACKS["em300"]["report"] / "test_eval.json"
+    if not f.is_file():
+        return None
+    t = json.loads(f.read_text(encoding="utf-8"))
+
+    def val(k):
+        return float(t["models"][k]["visible_min3"]["value"])
+
+    c = t["frozen"]["best_choice"]
+    if TRACK.get("base"):            # long run: the model at the best epoch (the main test model) and the model at the last epoch
+        items = [(f"가장 좋았던 epoch의 모델({c['width']}차원, {c['epoch']} epoch)", "가장 좋았던 epoch", val(t["primary"])),
+                 (f"{D.N} epoch까지 학습한 {D.sel_ko}", f"{D.N} epoch", val("em300"))]
+    else:
+        items = [(f"이 {D.sel_ko}({D.N} epoch)", "", val("em60"))]
+    return {"items": items, "violations": int(t["models"][t["primary"]]["visible_min3"]["violations"]),
+            "date": t["evaluated_at"][:10], "best": c}
 
 
 def short(cell):
@@ -226,10 +248,17 @@ def fig01_models(D: Data, T: dict):
                        Line2D([0], [0], color=INK2, lw=1.2, label="95% 구간(시나리오 계열을 다시 뽑아 계산)")],
               loc="upper center", bbox_to_anchor=(0.20, -0.14), ncol=3, handletextpad=0.4, columnspacing=1.4, fontsize=9.3)
     sel_mean = T["heldout"][D.sel]["min3"]
-    head = ("학습된 임베딩은 목표 기준에서 0.90을 넘는다 — 개발용 데이터 기준" if sel_mean >= 0.90 else
-            f"{D.N} epoch까지 학습하면 선택된 모델이 {sel_mean:.2f}로 0.90에 못 미친다 — 개발용 데이터 기준")
-    PP.title(fig, head, f"{HELD_KO} · 행동 전에 근거가 보인 위반만 채점 · 위반 16개(서로 다른 입력 {D.d3}개), 도구 칸 4개")
-    PP.note(fig, "근거 표시 규칙은 잠정판이고 Argus-V-p 점수를 본 뒤에 만들었다 · 같은 학습 분할 행을 다시 쓴 개발용 점수이며 새 시나리오로 확인한 값이 아니다")
+    tv = test_values(D)
+    if sel_mean >= 0.90:
+        head = f"{HELD_KO}에서는 0.90을 넘는다" + (" — test에서는 넘지 못했다" if tv and max(v for _, _, v in tv["items"]) < 0.90 else "")
+    else:
+        head = f"{D.N} epoch까지 학습하면 선택된 모델이 {sel_mean:.2f}로 0.90에 못 미친다 — {HELD_KO}"
+    PP.title(fig, head, f"train 시나리오를 5묶음으로 나눠 학습에서 뺀 묶음을 채점 · 근거가 보인 위반 16개(서로 다른 입력 {D.d3}개), 도구 칸 4개")
+    tnote = ""
+    if tv:
+        tnote = (" · test 분할의 같은 지표: " + ", ".join(f"{v:.2f}" + (f"({k})" if k else "") for _, k, v in tv["items"])
+                 + f" (위반 {tv['violations']}개)")
+    PP.note(fig, "train 분할 행만 쓴 점수 · 근거 표시 규칙은 Argus-V-p 점수를 본 뒤에 만든 잠정판" + tnote)
     PP.save(fig, OUT, "01_모델별_점수.png")
 
 
@@ -242,7 +271,7 @@ def fig02_roc(D: Data, T: dict):
     ax.plot(g, t, color=TRAIN, lw=2, zorder=3, label=f"{TRAIN_KO}  {T['insample_min3']:.2f}")
     g, t, _ = wroc(D, D.oof_mean[D.sel], D.mask3, 3)
     ax.plot(g, t, color=HELD, lw=2, zorder=4, label=f"{HELD_KO}  {T['heldout'][D.sel]['min3']:.2f}")
-    ax.set_title(f"{D.sel_ko}: 학습에 쓴 행과 처음 보는 시나리오", fontsize=10.8, color=INK, pad=8)
+    ax.set_title(f"{D.sel_ko}: 학습에 쓴 행과 train 안 교차검증", fontsize=10.8, color=INK, pad=8)
     ax.legend(loc="lower right", title="같은 도구 안 AUROC", title_fontsize=9.5, handlelength=1.6)
     ax = axes[1]
     ax.plot([0, 1], [0, 1], color=BASE, lw=1.2, zorder=1)
@@ -252,8 +281,8 @@ def fig02_roc(D: Data, T: dict):
         g, t, _ = wroc(D, D.oof_mean[m], D.mask3, 3)
         ax.plot(g, t, color=WIDTH_RAMP[m], lw=2, zorder=3, label=f"{MODEL_SHORT[m]}  {T['heldout'][m]['min3']:.2f}")
     hh, ll = ax.get_legend_handles_labels()
-    ax.legend(hh[::-1], ll[::-1], loc="lower right", title="처음 보는 시나리오 AUROC", title_fontsize=9.5, handlelength=1.8)
-    ax.set_title("임베딩 폭 비교 (처음 보는 시나리오)", fontsize=10.8, color=INK, pad=8)
+    ax.legend(hh[::-1], ll[::-1], loc="lower right", title="train 안 교차검증 AUROC", title_fontsize=9.5, handlelength=1.8)
+    ax.set_title("임베딩 폭 비교 (train 안 교차검증)", fontsize=10.8, color=INK, pad=8)
     for ax in axes:
         ax.set_xlim(0, 1)
         ax.set_ylim(0, 1.005)
@@ -292,7 +321,7 @@ def fig03_roc_cells(D: Data, T: dict):
                         Line2D([0], [0], color=TRAIN, lw=4.6, alpha=0.55, label=f"{TRAIN_KO} (굵은 선, 겹치면 파란 선 아래에 보임)")],
                loc="upper left", bbox_to_anchor=(0.055, 0.905), ncol=2, handletextpad=0.5, columnspacing=1.8)
     PP.title(fig, f"도구 칸별 ROC 곡선 — {D.sel_ko}", None)
-    PP.note(fig, "제목의 숫자 = 처음 보는 시나리오 AUROC(나누기 3가지 평균) · '보조' = 근거가 보인 위반이 2개뿐이라 주 지표(3개 이상)에는 들어가지 않는 칸")
+    PP.note(fig, "제목의 숫자 = train 안 교차검증 AUROC(나누기 3가지 평균) · '보조' = 근거가 보인 위반이 2개뿐이라 주 지표(3개 이상)에는 들어가지 않는 칸")
     PP.save(fig, OUT, "03_칸별_ROC_곡선.png")
 
 
@@ -551,7 +580,7 @@ def fig11_epoch_loss(D: Data):
     ax.set_ylabel("손실 (로그 눈금, 낮을수록 좋음)")
     f2 = lambda v: f"{v:.2f}" if v >= 0.01 else f"{v:.3f}"     # noqa: E731  (small losses keep a digit)
     _end_labels(ax, len(ep) + (0.8 if D.N <= 60 else 4), [(tr_m[-1], f2(tr_m[-1]), TRAIN), (ho_m[-1], f2(ho_m[-1]), HELD)], 0)
-    ax.legend(handles=[handle(TRAIN, "학습에 쓴 행", marker=None), handle(HELD, "처음 보는 시나리오 (학습에서 뺀 묶음)", marker=None)],
+    ax.legend(handles=[handle(TRAIN, "학습에 쓴 행", marker=None), handle(HELD, "train 안 교차검증 (학습에서 뺀 묶음)", marker=None)],
               loc="upper center", bbox_to_anchor=(0.5, -0.13), ncol=2, handlelength=1.8, columnspacing=2.0)
     _mark_base_stop(ax, D)
     low = int(ho_m.argmin()) + 1
@@ -564,7 +593,7 @@ def fig11_epoch_loss(D: Data):
     else:
         tail = "끝까지 내려가지만 더 느리다"
     PP.title(fig, f"epoch별 손실 — {D.sel_ko}",
-             f"학습 행의 손실은 계속 내려가고, 처음 보는 시나리오의 손실은 {tail} ({D.N} epoch 뒤 {f2(tr_m[-1])} 대 {f2(ho_m[-1])})")
+             f"학습 행의 손실은 계속 내려가고, train 안 교차검증의 손실은 {tail} ({D.N} epoch 뒤 {f2(tr_m[-1])} 대 {f2(ho_m[-1])})")
     PP.note(fig, f"굵은 선 = 데이터 나누기 3가지 평균, 가는 선 = 나누기 하나 · 손실 = 학습에 쓴 가중 이진 교차 엔트로피(평가 모드) · {D.N} epoch 고정")
     PP.save(fig, OUT, "11_epoch별_손실.png")
 
@@ -597,19 +626,24 @@ def fig12_epoch_auroc(D: Data):
     _end_labels(ax, len(ep) + (0.8 if D.N <= 60 else 4), [(tr[-1], f"{tr[-1]:.2f}", TRAIN), (ho_m[-1], f"{ho_m[-1]:.2f}", HELD), (allv[-1], f"{allv[-1]:.2f}", MUTED)], 0.035)
     ax.legend(handles=[handle(TRAIN, "학습에 쓴 행 (학습 15번 평균)", marker=None),
                        handle(TRAIN, "전체 데이터로 맞춘 최종 모델의 학습 행", marker=None, ls=(0, (5, 2))),
-                       handle(HELD, "처음 보는 시나리오 (굵은 선 평균, 가는 선 나누기 하나)", marker=None),
-                       handle(MUTED, "처음 보는 시나리오를 위반 전체로 채점했을 때", marker=None)],
+                       handle(HELD, "train 안 교차검증 (굵은 선 평균, 가는 선 나누기 하나)", marker=None),
+                       handle(MUTED, "train 안 교차검증을 위반 전체로 채점했을 때", marker=None)],
               loc="upper center", bbox_to_anchor=(0.5, -0.13), ncol=2, handlelength=2.2, labelspacing=0.35, columnspacing=1.6, fontsize=9.3)
     _mark_base_stop(ax, D)
     one = int(np.argmax(tr >= 0.9995)) + 1 if (tr >= 0.9995).any() else None
     ninety = int(np.argmax(ho_m >= 0.90)) + 1 if (ho_m >= 0.90).any() else None
     best = int(ho_m.argmax()) + 1
     if best < len(ep) - 10:                      # the curve turned down before the end
-        sub = f"처음 보는 시나리오의 점수가 가장 높은 곳은 {best} epoch({ho_m.max():.3f})이고, {D.N} epoch의 값은 {ho_m[-1]:.3f}이다"
+        sub = f"train 안 교차검증의 점수가 가장 높은 곳은 {best} epoch({ho_m.max():.3f})이고, {D.N} epoch의 값은 {ho_m[-1]:.3f}이다"
     else:
-        sub = (f"학습에 쓴 행은 {one} epoch에 1.00에 닿고, " if one else "") + (f"처음 보는 시나리오는 {ninety} epoch에 0.90을 넘는다" if ninety else "처음 보는 시나리오는 0.90에 닿지 않는다")
+        sub = (f"학습에 쓴 행은 {one} epoch에 1.00에 닿고, " if one else "") + (f"train 안 교차검증은 {ninety} epoch에 0.90을 넘는다" if ninety else "train 안 교차검증은 0.90에 닿지 않는다")
     PP.title(fig, f"epoch별 성능 — {D.sel_ko}", sub)
-    PP.note(fig, f"근거가 보인 위반 16개(서로 다른 입력 {D.d3}개, 도구 4개)만 채점 · {D.N} epoch 고정, 이 곡선으로 epoch 수를 고르지 않았다 · 개발용으로 이미 쓴 행")
+    tv = test_values(D)
+    if D.N > 60 and tv:
+        tail = f"test 채점용 모델 = 세 폭 중 이 점수가 가장 높은 곳({tv['best']['width']}차원 {tv['best']['epoch']} epoch)"
+    else:
+        tail = f"{D.N} epoch 고정, 이 곡선으로 epoch 수를 고르지 않았다"
+    PP.note(fig, f"근거가 보인 위반 16개(입력 {D.d3}개, 도구 4개)만 채점 · train 분할 행만 쓴 점수 · {tail}")
     PP.save(fig, OUT, "12_epoch별_성능.png")
 
 
@@ -645,7 +679,7 @@ def fig13_epoch_models(D: Data):
     axes[0, 0].set_ylabel("같은 도구 안 AUROC")
     axes[1, 0].set_ylabel("손실 (로그 눈금)")
     axes[0, -1].text(1.02, 0.9, "0.90", transform=axes[0, -1].get_yaxis_transform(), va="center", ha="left", fontsize=9, color=INK2)
-    fig.legend(handles=[handle(TRAIN, "학습에 쓴 행", marker=None), handle(HELD, "처음 보는 시나리오", marker=None)],
+    fig.legend(handles=[handle(TRAIN, "학습에 쓴 행", marker=None), handle(HELD, "train 안 교차검증", marker=None)],
                loc="lower center", bbox_to_anchor=(0.5, 0.03), ncol=2, handlelength=1.8, columnspacing=2.0)
     PP.title(fig, "모델별 epoch 곡선 — 임베딩 폭 3가지와 선형 대조", "위: 근거가 보인 위반의 같은 도구 안 AUROC, 아래: 손실. 선은 학습 15번(묶음 5개 × 나누기 3가지)의 평균")
     PP.save(fig, OUT, "13_모델별_epoch_곡선.png")
@@ -671,7 +705,7 @@ def fig14_epoch_cells(D: Data):
         ax.set_xlabel("epoch")
         _mark_base_stop(ax, D, label=False)
     axes[0].set_ylabel("칸 안 AUROC")
-    PP.title(fig, f"도구 칸별 epoch 곡선 — {D.sel_ko}, 처음 보는 시나리오", "굵은 선 = 나누기 3가지 평균, 가는 선 = 나누기 하나. 주 지표에 들어가는 칸 4개")
+    PP.title(fig, f"도구 칸별 epoch 곡선 — {D.sel_ko}, train 안 교차검증", "굵은 선 = 나누기 3가지 평균, 가는 선 = 나누기 하나. 주 지표에 들어가는 칸 4개")
     PP.note(fig, "[입력 n] = 위반 중 서로 다른 hidden state 수 · 비교 쌍이 9개인 칸은 쌍 하나가 뒤집힐 때마다 0.11씩 움직인다")
     PP.save(fig, OUT, "14_칸별_epoch_곡선.png")
 
@@ -725,11 +759,17 @@ def main(argv):
         fig14_epoch_cells(D)
 
     # table twin of the figures
-    L = ["# 그래프에 쓴 숫자 — Argus-V-em", "",
-         f"지표는 같은 도구 안 AUROC. 채점 대상은 정상 호출과 '행동 전에 근거가 보인 위반'(표시 규칙 {D.rule}).",
-         f"'{HELD_KO}' = train 분할 안에서 시나리오 계열 5묶음 중 학습에서 뺀 묶음을 채점(교차검증), 데이터 나누기 3가지 평균. '{TRAIN_KO}' = 저장된 최종 {D.sel_ko}이 자기가 학습한 행을 채점.",
-         "**따로 나눠 둔 validation·test 분할은 한 번도 열지 않았다.** 아래 숫자는 모두 train 분할 안에서 나온 값이다.",
-         "같은 학습 분할 행을 다시 쓴 개발용 점수이며 새 시나리오로 확인한 값이 아니다.", "",
+    tv = test_values(D)
+    L = [f"# 그래프에 쓴 숫자 — {TRACK['name']}", "",
+         f"지표는 같은 도구 안 AUROC. 채점 대상은 정상 호출과 '행동 전에 근거가 보인 위반'(표시 규칙 {D.rule}).", "",
+         f"'{HELD_KO}' = train 분할의 시나리오를 5묶음으로 나누고(같은 계열은 한 묶음), 4묶음으로 학습해 남은 1묶음을 채점하기를 "
+         f"묶음을 바꿔 가며 5번 한 것(5-fold 교차검증). 나누는 방법 3가지의 평균. '{TRAIN_KO}' = 저장된 최종 {D.sel_ko}이 자기가 학습한 행을 채점.", "",
+         "**아래 숫자는 모두 train 분할 안에서 나온 값이고 validation·test 분할은 쓰이지 않았다.** 모델 크기와 근거 표시 규칙을 "
+         "같은 행의 점수를 보며 정했으므로 실제보다 높게 나온다. 이 값을 '처음 보는 시나리오 성능'이라고 부르지 않는다."]
+    if tv:
+        L += ["", f"test 분할을 한 번 채점한 결과({tv['date']}, `reports/risk-loop/argus-v-em300/results.md`): 같은 지표가 "
+              + ", ".join(f"{name} **{v:.3f}**" for name, _, v in tv["items"]) + f". test에는 근거가 보인 위반이 {tv['violations']}개뿐이다."]
+    L += ["",
          "## 모델별 점수 (그림 01·02·06)", "",
          "| 모델 | 근거가 보인 위반, 칸에 3개 이상 (16개·칸 4개) | 나누기별 | 95% 구간 | 칸에 2개 이상 (22개·칸 7개) | 위반 전체 (48개·칸 9개) |", "|---|---|---|---|---|---|"]
     for r in T["models"]:
@@ -756,7 +796,7 @@ def main(argv):
           "| 칸 | 근거가 보인 위반 | 그중 서로 다른 입력 | 정상 | 비교 쌍 |", "|---|---|---|---|---|"]
     for cell in D.cells2:
         L.append(f"| {short(cell)} | {D.counts[cell][0]} | {D.dpos[cell]} | {D.counts[cell][1]} | {D.counts[cell][0] * D.counts[cell][1]} |")
-    L += ["", f"주 지표의 위반 16개는 서로 다른 입력 {D.d3}개, 근거가 보인 위반 22개 전체는 {D.d2}개다. 학습 묶음과 검증 묶음 사이에 같은 입력·같은 시나리오가 겹치는 경우는 없다(`argus_v_em_heldout_check.py`)."]
+    L += ["", f"주 지표의 위반 16개는 서로 다른 입력 {D.d3}개, 근거가 보인 위반 22개 전체는 {D.d2}개다. 학습에 쓴 4묶음과 채점한 1묶음 사이에 같은 입력·같은 시나리오가 겹치는 경우는 없다(`argus_v_em_heldout_check.py`)."]
     L += ["", f"## 문턱 하나를 모든 도구에 적용했을 때, {D.sel_ko} (그림 07·08·10)", "",
           f"정상 {int((P['y'] == 0).sum()):,}개와 근거가 보인 위반 {int(P['y'].sum())}개만 계산(근거가 보이지 않은 위반 {P['hidden']}개는 뺌). 점수는 세 번 나누기의 평균.", "",
           "| 대상 | 탐지율: 오경보 1% | 5% | 10% | 평균 정밀도 | 전체 AUROC(도구 섞음) |", "|---|---|---|---|---|---|"]
@@ -793,10 +833,10 @@ def main(argv):
                 return float(np.mean([EM.score_metric(D.cx, oof_e[s, e - 1], mask, mp)["value"] for s in range(oof_e.shape[0])]))
 
             marks = D.marks
-            L += [f"### {D.sel_ko}: 검증 AUROC가 epoch에 따라 오르는가", "",
-                  "여기서 '검증'은 train 분할 안에서 학습에서 뺀 시나리오 묶음을 채점한 값(교차검증)이다. 따로 나눠 둔 validation·test 분할은 열지 않았다.",
-                  "1 epoch = 가중치를 한 번 고치는 것(전체 행을 한꺼번에 넣어 학습). 같은 검증 점수를 채점 대상만 바꿔 다시 잰 값.", "",
-                  "| epoch | 학습에 쓴 행 | 검증: 주 지표(칸에 3개 이상) | 검증: 칸에 2개 이상 | 검증: 2개 이상, 복제를 하나로 침 | 검증: 위반 전체 |", "|---|---|---|---|---|---|"]
+            L += [f"### {D.sel_ko}: {HELD_KO} AUROC가 epoch에 따라 오르는가", "",
+                  "train 분할 안에서 학습에서 뺀 시나리오 묶음을 채점한 값이다. validation·test 분할은 이 표에 쓰이지 않았다.",
+                  "1 epoch = 가중치를 한 번 고치는 것(전체 행을 한꺼번에 넣어 학습). 같은 교차검증 점수를 채점 대상만 바꿔 다시 잰 값.", "",
+                  "| epoch | 학습에 쓴 행 | 교차검증: 주 지표(칸에 3개 이상) | 교차검증: 칸에 2개 이상 | 교차검증: 2개 이상, 복제를 하나로 침 | 교차검증: 위반 전체 |", "|---|---|---|---|---|---|"]
             for e in marks:
                 L.append(f"| {e} | {tr3[e - 1]:.3f} | {at(D.mask3, 3, e):.3f} | {at(D.mask2, 2, e):.3f} | {at(D.mask2 & D.distinct, 2, e):.3f} | {at(everything, 3, e):.3f} |")
             L += ["", "같은 도구를 쓴 호출끼리 위반과 정상을 비교한 값(칸 안 AUROC), 칸별:", "",
@@ -820,8 +860,11 @@ def main(argv):
         L.append("")
         if D.N > 60:
             best = int(tot.argmax()) + 1
-            L += [f"교차검증 주 지표가 가장 높았던 epoch은 {best}({tot.max():.3f})이다. 참고로만 적는다. 보고하는 점수는 {D.N} epoch 시점의 {tot[-1]:.3f}이고, "
-                  "가장 높은 epoch을 골라 쓰면 같은 개발용 행으로 고른 값이 된다.", ""]
+            L += [f"이 폭에서 교차검증 주 지표가 가장 높았던 epoch은 {best}({tot.max():.3f})이고, {D.N} epoch 시점의 값은 {tot[-1]:.3f}이다."]
+            if tv:
+                L += [f"test 채점에는 사용자 지시에 따라 세 폭 전체에서 교차검증이 가장 높았던 {tv['best']['width']}차원 {tv['best']['epoch']} epoch의 모델을 썼다"
+                      "(`best_epoch.json`). 그렇게 고른 교차검증 값은 여러 후보 중 최고값이라 실제보다 높게 나온다."]
+            L.append("")
         for m in MODEL_KO:
             ep_n = h["epochs"]
             a_tr = np.nanmean(_ep(D, m, "auroc_train_min3").reshape(-1, ep_n), 0)
