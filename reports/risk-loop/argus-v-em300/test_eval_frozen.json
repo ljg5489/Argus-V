@@ -1,0 +1,164 @@
+{
+ "frozen_at": "2026-11-16 20:15:16",
+ "primary": "best",
+ "width_of_the_300_epoch_model": 128,
+ "files": {
+  "best": {
+   "path": "artifacts/risk-loop/argus-v-em300/argus_v_em300_best.pt",
+   "sha256": "381ec4ef9dd1bfb1923faacd8c429ed9a4199d9da0885cbbd89e86931797b72c"
+  },
+  "em300": {
+   "path": "artifacts/risk-loop/argus-v-em300/argus_v_em300.pt",
+   "sha256": "458df59e585faede13d3fe1e653b7cb8895be408393b1f288170d9d787e2d075"
+  },
+  "em60": {
+   "path": "artifacts/risk-loop/argus-v-em/argus_v_em_round01.pt",
+   "sha256": "fcd8e5ad48119ce546e1f5c89e59d1a0fa40710c5a94b3928618460f0786a505"
+  },
+  "P5": {
+   "path": "argus_hook/replay_assets/argus_v_p_P5.bundle",
+   "sha256": "88228a77f66a9d778fe4fec930936668ecd0031aae386dcc0aaebb3afec04bb0"
+  },
+  "em300_epoch_010": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_010.pt",
+   "sha256": "5afaaa1deb8e7a5b45e1f30c2f2962821efd316805320fd1fbaa47b02e0c9bfe"
+  },
+  "em300_epoch_020": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_020.pt",
+   "sha256": "788a92a1cbab2985d2f3a2c0d6378da23a9b88ebbd042d4e5736d9ad7742485f"
+  },
+  "em300_epoch_030": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_030.pt",
+   "sha256": "224d9781c490564870007aeee2e791219270f77c6b87a7ce826acd70fee93edb"
+  },
+  "em300_epoch_040": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_040.pt",
+   "sha256": "dbc33df81ebb9bdf86addf544bc4d9b10ab91d996ccc69da4b24ca031c7e676d"
+  },
+  "em300_epoch_050": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_050.pt",
+   "sha256": "dce92b24ed152de95d18e8ad137496e4cf2eec73e2a1a198f11ff25be2d87439"
+  },
+  "em300_epoch_060": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_060.pt",
+   "sha256": "5249e782fa9b065e28043229e4c2ec5e1163d3983264f83f4e24464c7f75a25c"
+  },
+  "em300_epoch_070": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_070.pt",
+   "sha256": "58d6a8eeb1bb1d6fadae343e705c202c5aa69502b1e10120aeeaa837dae7f86a"
+  },
+  "em300_epoch_080": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_080.pt",
+   "sha256": "fa5686c54244c7e7d99f51cabeafc46f8288bbfbdb5b5685bc93f0889beb2e79"
+  },
+  "em300_epoch_090": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_090.pt",
+   "sha256": "1ee9cb71c42f7d2b38f2ee75ede05c89ce5be0e13d9d201ad88299631714d7a8"
+  },
+  "em300_epoch_100": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_100.pt",
+   "sha256": "0397592f061d846c8b89d1c0ec2a34e3ac9a95ab76d6f80709304e84b7b7a529"
+  },
+  "em300_epoch_110": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_110.pt",
+   "sha256": "dcc04c6a7883b68b0ab23a47f7c16c70c3697cd17d54156df5580087dd7a0984"
+  },
+  "em300_epoch_120": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_120.pt",
+   "sha256": "60f955b016a598c82aae6276cc99e1682ae464d9bd96579866a45e036afea8f3"
+  },
+  "em300_epoch_130": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_130.pt",
+   "sha256": "1610900801959d29bb0e9232ca7d05e33d040d9bbd27f1767400db1aea7751b9"
+  },
+  "em300_epoch_140": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_140.pt",
+   "sha256": "12e9dc58bbca42d2c96afd8f77e889ecafb5b5c386220e2c91b64419154d6b30"
+  },
+  "em300_epoch_150": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_150.pt",
+   "sha256": "7a403cfb77ebe4a8b339d55a9ca147c05abaa60ad1511a7375c808ca298ad5eb"
+  },
+  "em300_epoch_160": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_160.pt",
+   "sha256": "3bd74d640a1ea50fbbfb5bf8ce8d517bf802ffc7c3a4b2030a8bade10c5c5e49"
+  },
+  "em300_epoch_170": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_170.pt",
+   "sha256": "de6838f596efbf4205b2a5a51e8ad92cb66402740a26b07cb0d4281474f7fe92"
+  },
+  "em300_epoch_180": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_180.pt",
+   "sha256": "4c501a86d1f1cc60708124a5a13f9ae8f4f2c260bdfb981669aeee87cb8a2153"
+  },
+  "em300_epoch_190": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_190.pt",
+   "sha256": "ea800a9ec2a596795c011812f42abdcca9a9a03466dafd85dbf7fd34ebbb65be"
+  },
+  "em300_epoch_200": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_200.pt",
+   "sha256": "73f626f0b811f0e0693a53bd0dde2185c14c10f66216ab4c76cf96ab0cbaf693"
+  },
+  "em300_epoch_210": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_210.pt",
+   "sha256": "827ad3649d4ac7bae9b73c8f64e2e08523280dd433ad418bad7a0c8767c46c57"
+  },
+  "em300_epoch_220": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_220.pt",
+   "sha256": "29a3eb326249cc7ad51009bfa06eba2cc8ce2703ff5f1b18d6cc312e7bb92ca1"
+  },
+  "em300_epoch_230": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_230.pt",
+   "sha256": "91cdeaa20602943ea5b35be4855eb2a86da93e1086addcfa10511b53314f7207"
+  },
+  "em300_epoch_240": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_240.pt",
+   "sha256": "27fb4cf5c2f6eccf021fe599e070e8e089c3bbf193a7e36cc36a5dcc430057bf"
+  },
+  "em300_epoch_250": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_250.pt",
+   "sha256": "3077937998210543ed6415b22bc247218418fe08542b05c64992efce164161a2"
+  },
+  "em300_epoch_260": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_260.pt",
+   "sha256": "151de35f9f1d827928ac80d76d6f780b1cf115305b9ad2d1cee1e2c64adfd089"
+  },
+  "em300_epoch_270": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_270.pt",
+   "sha256": "6226181092ec908eab86b8086085b72c0ca50fddd7d734cce42a34067bb25d47"
+  },
+  "em300_epoch_280": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_280.pt",
+   "sha256": "3cb038ac04863b07726abc81e1a55c373759a1d5312890042ff22fb2891adb68"
+  },
+  "em300_epoch_290": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_290.pt",
+   "sha256": "f7e9a62ab84535c845f52fc712cf001f02fae29af812ef878d1530d773bda9d4"
+  },
+  "em300_epoch_300": {
+   "path": "artifacts/risk-loop/argus-v-em300/snapshots/epoch_300.pt",
+   "sha256": "a6bf485cea345ce907a357d413aca3f7db1a05ac6c372507bb731c73a1bd4d62"
+  }
+ },
+ "best_choice": {
+  "model": "EM64",
+  "width": 64,
+  "epoch": 67,
+  "cv_value": 0.9679880000000001,
+  "cv_per_seed": [
+   0.963415,
+   0.980183,
+   0.960366
+  ],
+  "cv_min2_per_seed": [
+   0.846499,
+   0.851118,
+   0.849963
+  ],
+  "cv_all_violations_per_seed": [
+   0.549437,
+   0.52829,
+   0.534879
+  ]
+ }
+}
