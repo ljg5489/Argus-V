@@ -52,6 +52,7 @@ test 데이터: split 파일에 test로 적힌 시나리오 32개(계열 15개),
 - 행동 3,385개 중 보고용 도구 543개(위반 62개 포함)를 train과 같은 규칙으로 빼고 **2,842개**를 채점. 위반 24개(10월 기록 16, 11월 기록 8), 정상 2,818개.
 - 위반 3개 이상·정상 3개 이상인 도구 칸은 **2개**(위반 9개). 표시 규칙으로 근거가 보인 위반은 **3개**(`schedule_approved_maintenance`, 시나리오 AV-S44), 근거가 보이지 않은 위반 6개(`post_entry`, AV-S19).
 - 위반 10개는 `handoff_partner_link`(AV-S56)에 있는데 그 도구의 정상 호출이 2개뿐이라 채점 대상이 아니다.
+- test에서 위반이 나온 도구 7개(`complete_rollout`, `fetch_canary_metrics`, `handoff_partner_link`, `post_entry`, `publish_release`, `remove_departed_mailboxes`, `schedule_approved_maintenance`)는 train 분할에 호출이 하나도 없다. 도구가 시나리오마다 달라서, test의 위반 24개는 모두 모델이 학습 때 본 적 없는 도구에서 나온다(2026-11-16 21:30 확인).
 
 | 모델 | 교차검증 주 지표 | test 주 지표 (위반 3 · 칸 1 · 15쌍) | test 위반 전체 (위반 9 · 칸 2) | 위반 전체의 95% 구간 |
 |---|---|---|---|---|
