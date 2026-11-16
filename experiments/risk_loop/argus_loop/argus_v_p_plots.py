@@ -5,7 +5,8 @@ The training-row scores of the plotted setting come from the saved arrays in art
 the script stops: producing it means re-fitting the setting on all rows, which is training and needs the user's
 approval first (then pass --allow-fit).
 
-Every figure states its condition:  A unseen scenario / B seen scenario, new run / C training rows re-scored.
+Every figure states its condition:  A cross-validation inside train, scenario families held out /
+B seen scenario, new run / C training rows re-scored.  All three use the train split only.
 Curves use the mean of the three split scores per row; the quoted AUROC is the official value (mean of the
 per-split within-tool AUROC), so a curve's area can differ from it in the third decimal.
 Argus-V-p has no epochs (closed-form linear members + a random forest), so there is no epoch figure.
@@ -38,7 +39,7 @@ from experiments.risk_loop.argus_loop import evaluate as E  # noqa: E402
 
 # ---- style: validated reference palette (slots 1-3 pass the all-pairs colour-blind check), recessive chrome
 SURFACE, INK, INK2, MUTED, GRID, AXIS = "#fcfcfb", "#0b0b0b", "#52514e", "#898781", "#e1e0d9", "#c3c2b7"
-COND = {"A": {"ko": "처음 보는 시나리오", "color": "#2a78d6", "marker": "o"},
+COND = {"A": {"ko": "train 안 교차검증", "color": "#2a78d6", "marker": "o"},
         "B": {"ko": "이미 본 시나리오의 새 실행", "color": "#eb6834", "marker": "s"},
         "C": {"ko": "학습 데이터 재채점", "color": "#1baf7a", "marker": "^"}}
 VIOL, NORM, BASE = "#d03b3b", "#898781", "#c3c2b7"
@@ -64,6 +65,23 @@ def setup():
 
 
 LBL = dict(facecolor=SURFACE, edgecolor="none", pad=1.5)   # value labels sit on a surface-coloured patch
+
+
+def test_lines(sid: str) -> list[str]:
+    """What the single test evaluation gave for P5 (it was scored there as a reference model); [] while there is none.
+
+    Read only: nothing is fitted or chosen with it."""
+    f = REPO_ROOT / "reports" / "risk-loop" / "argus-v-em300" / "test_eval.json"
+    if not f.is_file():
+        return []
+    t = json.loads(f.read_text(encoding="utf-8"))
+    a, v = t["models"]["P5"]["all_violations_min3"], t["models"]["P5"]["visible_min3"]
+    line = (f"test 분할을 한 번 채점한 결과({t['evaluated_at'][:10]}, `reports/risk-loop/argus-v-em300/results.md`): P5의 같은 지표는 "
+            f"**{a['value']:.3f}**(위반 {a['violations']}개·도구 칸 {a['cells']}개, 95% 구간 {a['ci95']['low']:.3f}–{a['ci95']['high']:.3f}), "
+            f"근거가 보인 위반만으로는 {v['value']:.3f}(위반 {v['violations']}개).")
+    if sid != "P5":
+        line += f" {sid}은 test로 채점하지 않았다."
+    return ["", line]
 
 
 def title(fig, main, sub=None):
@@ -160,7 +178,7 @@ def fig01_settings(res, out, chosen):
     ax.legend(handles=cond_handles(line=False), loc="upper center", bbox_to_anchor=(0.32, -0.15), ncol=3,
               handletextpad=0.3, columnspacing=1.4)
     title(fig, "같은 모델이라도 무엇을 채점하느냐에 따라 점수가 크게 다르다",
-          "설정 6개 × 조건 3개. 왼쪽 숫자는 학습에 없던 데이터(●■) 중 낮은 쪽, 오른쪽 숫자는 학습 데이터 재채점(▲)")
+          "설정 6개 × 조건 3개. 왼쪽 숫자는 학습에서 뺀 묶음(●■) 중 낮은 쪽, 오른쪽 숫자는 학습 데이터 재채점(▲)")
     note(fig, "학습 분할 판정 행 9,278개 · 평가에 들어가는 위반 48개(칸 9개) · 조건 A·B는 데이터 나누기 3가지 평균")
     save(fig, out, "01_설정별_조건별_AUROC.png")
 
@@ -206,7 +224,7 @@ def fig03_roc_cells(cx, sc, out, name_ko):
     fig.legend(handles=cond_handles(), loc="upper left", bbox_to_anchor=(0.06, 0.945), ncol=3, handletextpad=0.4,
                columnspacing=1.6)
     title(fig, f"칸별 ROC 곡선 — {name_ko}", None)
-    note(fig, "칸마다 위반이 3~9개뿐이라 곡선이 계단 모양이고 한 개 차이로 크게 움직인다 · 제목의 A = 처음 보는 시나리오 AUROC")
+    note(fig, "칸마다 위반이 3~9개뿐이라 곡선이 계단 모양이고 한 개 차이로 크게 움직인다 · 제목의 A = train 안 교차검증 AUROC")
     save(fig, out, "03_칸별_ROC_곡선.png")
 
 
@@ -381,7 +399,7 @@ def fig09_cells(res, sid, out, name_ko):
     ref_line(ax, x=0.9, label="0.90")
     ax.legend(handles=cond_handles(line=False), loc="upper center", bbox_to_anchor=(0.30, -0.15), ncol=3,
               handletextpad=0.3, columnspacing=1.4)
-    title(fig, f"도구(칸)별 AUROC — {name_ko}", "아래에서 위로 '처음 보는 시나리오' 점수가 높은 순서")
+    title(fig, f"도구(칸)별 AUROC — {name_ko}", "아래에서 위로 train 안 교차검증 점수가 높은 순서")
     note(fig, "칸마다 위반이 3~9개라 값 하나하나의 오차가 크다")
     save(fig, out, "09_칸별_AUROC.png")
 
@@ -417,15 +435,15 @@ def fig10_gap(res, out):
     axes[1].text(1.38, 0.5, "우연", va="center", ha="left", fontsize=9, color=INK2)
     axes[0].set_ylabel("같은 도구 안 AUROC")
     fig.legend(handles=cond_handles(), loc="lower center", bbox_to_anchor=(0.5, 0.02), ncol=3, columnspacing=1.6)
-    title(fig, "모델을 자유롭게 풀수록 학습 데이터 점수만 오른다", "규제를 풀었을 때 조건별 점수 변화. 학습에 없던 데이터(●■)에서는 오르지 않는다")
+    title(fig, "모델을 자유롭게 풀수록 학습 데이터 점수만 오른다", "규제를 풀었을 때 조건별 점수 변화. 학습에서 뺀 묶음(●■)에서는 오르지 않는다")
     save(fig, out, "10_규제_완화와_과적합.png")
 
 
 def fig11_baselines(res, sid, ci, out, name_ko, shuffle):
     R = res["results"][sid]
-    rows = [("원래 Argus-V1 (처음 보는 시나리오)", 0.526, BASE, None),
+    rows = [("원래 Argus-V1 (train 안 교차검증)", 0.526, BASE, None),
             ("모델 없이 '앞선 step일수록 위반' 규칙", 0.730, BASE, None),
-            ("지금 최고 모델 T7-a (처음 보는 시나리오)", 0.721, BASE, (0.569, 0.825)),
+            ("지금 최고 모델 T7-a (train 안 교차검증)", 0.721, BASE, (0.569, 0.825)),
             (f"{TAG} · A {COND['A']['ko']}", R["A"]["value"], COND["A"]["color"], ci.get("A")),
             (f"{TAG} · B {COND['B']['ko']}", R["B"]["value"], COND["B"]["color"], ci.get("B")),
             (f"{TAG} · C {COND['C']['ko']}", R["C"]["value"], COND["C"]["color"], None)]
@@ -454,7 +472,7 @@ def fig11_baselines(res, sid, ci, out, name_ko, shuffle):
 def fig12_visible(vres, res, sid, out, name_ko):
     V = vres["settings"][sid]
     rows = [("모델 없이 '앞선 step일수록 위반' 규칙", 0.730, vres["order rule (earlier step = violation)"]["min3"]["value"], BASE),
-            ("지금 최고 모델 T7-a (처음 보는 시나리오)", 0.721, vres["T7-a unseen scenario (saved, 10 splits)"]["min3"]["value"], BASE)]
+            ("지금 최고 모델 T7-a (train 안 교차검증)", 0.721, vres["T7-a unseen scenario (saved, 10 splits)"]["min3"]["value"], BASE)]
     for c in "ABC":
         rows.append((f"{TAG} · {c} {COND[c]['ko']}", res["results"][sid][c]["value"], V[c]["min3"]["value"], COND[c]["color"]))
     nvis, ncell = V["A"]["min3"]["violations"], V["A"]["min3"]["cells"]
@@ -614,7 +632,14 @@ def main(argv):
     # table twin of the figures
     from sklearn.metrics import average_precision_score
     L = [f"# 그래프에 쓴 숫자 — {name_ko}", "",
-         "조건: A 처음 보는 시나리오 / B 이미 본 시나리오의 새 실행 / C 학습 데이터 재채점. 지표는 같은 도구 안 AUROC.", "",
+         "지표는 같은 도구 안 AUROC. 조건 세 가지:", "",
+         "- **A train 안 교차검증**: train 분할의 시나리오를 5묶음으로 나누고(같은 계열은 한 묶음), 4묶음으로 학습해 남은 1묶음을 채점하기를 5번 한 것. "
+         "채점되는 시나리오는 그 모델이 학습하지 않은 것이다. 2026-11-16 저녁까지는 '처음 보는 시나리오'라고 적었다.",
+         "- **B 이미 본 시나리오의 새 실행**: 같은 시나리오의 다른 실행을 학습에 넣고 남은 실행을 채점.",
+         "- **C 학습 데이터 재채점**: 전체에 학습하고 같은 행을 채점.", "",
+         "**세 조건 모두 train 분할 안의 값이고 validation·test 분할은 쓰이지 않았다.** A도 새 시나리오에서 확인한 성능이 아니다."]
+    L += test_lines(sid) + [""]
+    L += [
          "## 설정 6개 × 조건 3개 (그림 01·10)", "", "| 설정 | A | B | C |", "|---|---|---|---|"]
     for k, s in res["settings"].items():
         r = res["results"][k]
@@ -643,7 +668,7 @@ def main(argv):
         o = vres["order rule (earlier step = violation)"]
         t = vres["T7-a unseen scenario (saved, 10 splits)"]
         L.append(f"| 순서 규칙 | 0.730 | {o['min3']['value']:.3f} | {o['min2']['value']:.3f} |")
-        L.append(f"| T7-a (처음 보는 시나리오) | 0.721 | {t['min3']['value']:.3f} | {t['min2']['value']:.3f} |")
+        L.append(f"| T7-a (train 안 교차검증) | 0.721 | {t['min3']['value']:.3f} | {t['min2']['value']:.3f} |")
         for c in "ABC":
             L.append(f"| {TAG} {c} | {vals[c]:.3f} | {V[c]['min3']['value']:.3f} | {V[c]['min2']['value']:.3f} |")
     if levels:
