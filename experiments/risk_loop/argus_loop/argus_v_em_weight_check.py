@@ -253,6 +253,130 @@ def diag():
     (REPORT / "class_weight_check_diag.json").write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
+FINAL_SEED = 910032                          # the all-rows fit of argus_v_em.run and argus_v_em300_best.py
+PAIRS_SAME = 2                               # test reading rule: up to two of the 15 comparison pairs = "no difference"
+
+
+def pooled_ci(s, y, fam, reps=2000, seed=0):
+    """Percentile 95% interval of the all-calls AUROC, resampling scenario families with replacement."""
+    f = fam.astype(str)
+    fams = sorted(set(f.tolist()))
+    members = [np.flatnonzero(f == x) for x in fams]
+    rng = np.random.default_rng(seed)
+    vals = []
+    for _ in range(reps):
+        loc = np.concatenate([members[i] for i in rng.integers(0, len(fams), len(fams))])
+        if 0 < y[loc].sum() < len(loc):
+            vals.append(H.auroc(s[loc], y[loc]))
+    lo, hi = np.percentile(vals, [2.5, 97.5])
+    return [float(lo), float(hi)]
+
+
+def test(argv):
+    """Score the three weight settings on the test split (user instruction 2026-11-16; second use of the test split).
+
+    Each setting is fitted once on all train target rows, exactly as the main model was (same rows, seed 910032),
+    and the test-row scores are recorded after every epoch. The comparison epoch is MAIN_EPOCH."""
+    if "--user-approved-test" not in argv:
+        raise SystemExit("This reads the test split and fits three all-rows models. Run it only on the user's instruction: "
+                         "add --user-approved-test.")
+    from experiments.risk_loop.argus_loop import argus_v_em300_test_eval as TE
+
+    t0 = time.time()
+    D = TE.load_rows()
+    vis_t = TE.visible_mask(D, TE.cmd_flags(D))
+    y_t, yv_t, cell_t = D["y"], vis_t.astype(np.int64), D["cell"]
+    src_t = D["source"].astype(str)
+    target_t = (y_t == 0) | vis_t
+    cv = TE.cell_counts(D, vis_t)
+    cells3 = sorted(c for c, (p, n) in cv.items() if p >= 3 and n >= 3)
+    cells2 = sorted(c for c, (p, n) in cv.items() if p >= 2 and n >= 2)
+    distinct, seen = np.zeros(D["n"], bool), set()
+    for i in range(D["n"]):
+        k = (cell_t[i], D["hash"][i], int(vis_t[i]), int(y_t[i]))
+        if k not in seen:
+            seen.add(k)
+            distinct[i] = True
+    sets = {"mask3": target_t & np.isin(cell_t, cells3), "mask2": target_t & np.isin(cell_t, cells2), "distinct": distinct}
+    everything = np.ones(D["n"], bool)
+    nm = y_t == 0
+    cx = EM.Ctx()
+    vis, rule = EM.visible_mask(cx)
+    X, train_rows, _, _ = EM.prepare(cx, vis)
+    rows = EM.sample_training_rows(cx, np.flatnonzero(train_rows), vis, FINAL_SEED)
+    y = vis[rows].astype(np.int64)
+    frozen_main = np.load(TE.OUT / "scores.npz", allow_pickle=False)["best"].astype(np.float64)
+    out_dir = OUT / "test"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    pairs = int(sum(int(yv_t[sets["mask3"] & (cell_t == c)].sum()) * int((yv_t[sets["mask3"] & (cell_t == c)] == 0).sum()) for c in cells3))
+    res = {"name": "Argus-V-em class-weight check, scored on the test split",
+           "test_use": "second scoring of the test split (the first, pre-registered one: 2026-11-16 20:15); settings made after "
+                       "that result was seen, so choosing a setting by these numbers would be optimistic",
+           "instruction": "아니 자꾸 test는 왜 안 하냐고", "plan": "reports/risk-loop/argus-v-em300/class-weight-check.md (추가 절)",
+           "model": MODEL, "epochs": EPOCHS, "main_epoch": MAIN_EPOCH, "rule": rule,
+           "final_fit": {"rows": int(len(rows)), "visible_violations": int(y.sum()), "seed": FINAL_SEED},
+           "test": {"calls": int(D["n"]), "violations": int(y_t.sum()), "visible_violations": int(vis_t.sum()),
+                    "cells_visible_min3": cells3, "comparison_pairs_main_metric": pairs,
+                    "by_period": {p: {"calls": int((src_t == p).sum()), "violations": int(y_t[src_t == p].sum())} for p in ("oct", "nov")}},
+           "period_only_score_all_calls": float(H.auroc((src_t == "oct").astype(np.float64), y_t)),
+           "same_if_within_pairs": PAIRS_SAME, "settings": {}}
+    log(f"test rows={D['n']} violations={int(y_t.sum())} visible={int(vis_t.sum())} cells3={cells3} pairs={pairs} | "
+        f"fit rows={len(rows)} visible={int(y.sum())} | period-only score {res['period_only_score_all_calls']:.4f}")
+    plan = [("baseline", BASELINE_RULE, BASE_KO)] + [(t, c["fn"], c["ko"]) for t, c in SETTINGS.items()]
+    for tag, fn, ko in plan:
+        EP.class_weight = fn
+        f0 = time.time()
+        _, _, _, pw, loss_opt, _, extra = EP.fit_logged(X[rows], y, EP.MODELS[MODEL], FINAL_SEED, {"test": D["X"]})
+        s_all = extra["test"]                                        # [epoch][test row]
+        assert np.isfinite(s_all).all()
+        np.savez_compressed(out_dir / f"{tag}.npz", scores=s_all, row=D["row"], pos_weight=np.asarray(pw), loss_optimised=loss_opt)
+        cur = {k: np.full(EPOCHS, np.nan) for k in ("visible_min3", "all_violations_min3", "pooled_all", "pooled_visible",
+                                                     "oct_only", "nov_only", "october_above_november_among_normal_calls",
+                                                     "caught_at_5pct_false_alarms")}
+        for e in range(EPOCHS):
+            s = s_all[e].astype(np.float64)
+            v = TE.wt(s, yv_t, cell_t, sets["mask3"], 3)["value"]
+            a = TE.wt(s, y_t, cell_t, everything, 3)["value"]
+            cur["visible_min3"][e] = np.nan if v is None else v
+            cur["all_violations_min3"][e] = np.nan if a is None else a
+            cur["pooled_all"][e] = H.auroc(s, y_t)
+            cur["pooled_visible"][e] = H.auroc(s[target_t], yv_t[target_t])
+            cur["oct_only"][e] = H.auroc(s[src_t == "oct"], y_t[src_t == "oct"])
+            cur["nov_only"][e] = H.auroc(s[src_t == "nov"], y_t[src_t == "nov"])
+            cur["october_above_november_among_normal_calls"][e] = H.auroc(s[nm], (src_t[nm] == "oct").astype(np.int64))
+            cur["caught_at_5pct_false_alarms"][e] = TE.op_point(s, y_t, 0.05)["tp"]
+        s_main = s_all[MAIN_EPOCH - 1].astype(np.float64)
+        entry = {"ko": ko, "pos_weight": float(pw), "seconds": round(time.time() - f0, 1),
+                 "at_main_epoch": TE.metrics_for(s_main, D, vis_t, sets, with_ci=True),
+                 "pooled_all_ci95": pooled_ci(s_main, y_t, D["family"]),
+                 "at_main_epoch_extra": {k: float(cur[k][MAIN_EPOCH - 1]) for k in cur},
+                 "per_epoch": {k: r6(v) for k, v in cur.items()},
+                 "peak_on_test_for_reference_only": {k: {"epoch": int(np.nanargmax(cur[k])) + 1, "value": float(np.nanmax(cur[k]))}
+                                                     for k in ("visible_min3", "all_violations_min3", "pooled_all")}}
+        if tag == "baseline":
+            entry["max_abs_diff_vs_frozen_main_model_scores"] = float(np.max(np.abs(s_main - frozen_main)))
+            if entry["max_abs_diff_vs_frozen_main_model_scores"] > 1e-5:
+                raise SystemExit("the baseline all-rows fit does not give back the frozen main model's test scores")
+        res["settings"][tag] = entry
+        m = entry["at_main_epoch"]
+        log(f"{tag:9s} weight {pw:6.1f} | epoch {MAIN_EPOCH}: visible same-tool {m['visible_min3']['value']:.4f} | all same-tool "
+            f"{m['all_violations_min3']['value']:.4f} | all calls {m['pooled_all_violations']['auroc']:.4f} {np.round(entry['pooled_all_ci95'], 3).tolist()} "
+            f"| oct {cur['oct_only'][MAIN_EPOCH - 1]:.3f} nov {cur['nov_only'][MAIN_EPOCH - 1]:.3f} | Oct>Nov normals "
+            f"{cur['october_above_november_among_normal_calls'][MAIN_EPOCH - 1]:.3f} | caught@5% {int(cur['caught_at_5pct_false_alarms'][MAIN_EPOCH - 1])}/{int(y_t.sum())}"
+            + (f" | vs frozen main model {entry['max_abs_diff_vs_frozen_main_model_scores']}" if tag == "baseline" else ""))
+    EP.class_weight = BASELINE_RULE
+    b = res["settings"]["baseline"]["at_main_epoch"]["visible_min3"]["value"]
+    res["reading"] = {t: {"main_metric_difference": res["settings"][t]["at_main_epoch"]["visible_min3"]["value"] - b,
+                          "pairs": round((res["settings"][t]["at_main_epoch"]["visible_min3"]["value"] - b) * pairs, 2),
+                          "reads_as": ("no difference" if abs(res["settings"][t]["at_main_epoch"]["visible_min3"]["value"] - b) * pairs <= PAIRS_SAME + 1e-9
+                                       else "different")} for t in SETTINGS}
+    res["scored_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    res["seconds"] = round(time.time() - t0, 1)
+    res["evaluation_sha256"] = E.evaluate_sha256()
+    (REPORT / "class_weight_check_test.json").write_text(json.dumps(E.to_jsonable(res), ensure_ascii=False), encoding="utf-8")
+    log("DONE", json.dumps(res["reading"]), f"{res['seconds']}s")
+
+
 def figure():
     """Two panels from the saved summary: the main metric and the all-calls AUROC per epoch, one line per weight."""
     from experiments.risk_loop.argus_loop import argus_v_p_plots as PP
@@ -320,5 +444,7 @@ if __name__ == "__main__":
         figure()
     elif "diag" in sys.argv[1:]:
         diag()
+    elif "test" in sys.argv[1:]:
+        test(sys.argv[1:])
     else:
         train(sys.argv[1:])
