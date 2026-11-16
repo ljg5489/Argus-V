@@ -53,6 +53,13 @@ def scaled(x: np.ndarray, med: np.ndarray, scale: np.ndarray) -> np.ndarray:
     return out
 
 
+def class_weight(neg: float, pos: float) -> float:
+    """Weight of one positive row in the loss: argus_v_em.fit_model's rule (square root of the class ratio, at most 20).
+
+    A separate function only so that argus_v_em_weight_check.py can swap it; every other run uses this default."""
+    return min(20.0, float(np.sqrt(neg / pos)))
+
+
 def fit_logged(x_train, y_train, width, seed, score_sets, stats=None, snapshot_epochs=()):
     """argus_v_em.fit_model line for line, plus an evaluation-mode scoring pass after each epoch.
 
@@ -69,7 +76,7 @@ def fit_logged(x_train, y_train, width, seed, score_sets, stats=None, snapshot_e
     model = EM.LinearScorer(x_train.shape[1]) if width == 0 else EM.LearnedEmbedding(x_train.shape[1], width)
     pos = max(float(yt.sum()), 1.0)
     neg = max(float(len(yt) - yt.sum()), 1.0)
-    pos_weight = torch.tensor(min(20.0, float(np.sqrt(neg / pos))), dtype=torch.float32)
+    pos_weight = torch.tensor(class_weight(neg, pos), dtype=torch.float32)
     loss_fn = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
     opt = torch.optim.AdamW(model.parameters(), lr=EM.LR, weight_decay=EM.WEIGHT_DECAY)
     extra = {k: torch.from_numpy(scaled(v, med, scale)) for k, v in score_sets.items()}

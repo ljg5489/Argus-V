@@ -1,5 +1,14 @@
 # HANDOFF — Argus-V1 성능 향상 루프
 
+## 인수인계 기록 추가 — 2026-11-16 21:44 KST (Claude) — 위반 가중치 확인 실험 시작 (사용자 승인 "시작해")
+
+- **지금 돌고 있는 것**: `PYTHONUTF8=1 py -3.11 -u experiments/risk_loop/argus_loop/argus_v_em_weight_check.py --approved > artifacts/risk-loop/argus-v-em300/class_weight_check/run.log 2>&1` (백그라운드). 끝나면 로그 마지막에 `DONE`. 중간에 끊기면 같은 명령을 다시 실행하면 끝난 설정은 건너뛴다.
+- **무엇인가**: 사용자가 "드문 위반에 가중치를 크게 줘야지"라고 제안 → 지금도 약 15배를 주고 있다고 답하고, 더 키우면 달라지는지 확인하는 실험 계획을 보여 준 뒤 승인받음. 계획은 `reports/risk-loop/argus-v-em300/class-weight-check.md`(실행 전에 고정).
+- **내용**: Argus-V-em 64차원 하나, 위반 가중치만 바꿈(약 60배 = (정상÷위반)^0.75, 약 230배 = 정상÷위반). train 안 5-fold 교차검증 × 나누기 3가지, 100 epoch, 학습 30번 + 확인용 1번(기준 가중치로 한 번 다시 맞춰 저장된 점수와 같은지 확인), 약 15분. 기준(약 15배)은 저장된 Argus-V-em300 기록을 그대로 쓴다. test·validation은 읽지 않고, 최종 모델도 만들지 않는다.
+- **읽는 기준(미리 정함)**: 67 epoch의 주 지표 차이가 0.02 이내면 "차이 없음". 이 숫자는 전부 train 안 교차검증 값이다.
+- **끝난 뒤 할 일**: `… argus_v_em_weight_check.py figure`(그림 1장, 학습 없음) → `class-weight-check.md`에 "결과" 절 추가 → 이 파일 갱신 → 커밋 → 사용자에게 보고. 결과가 좋아 보여도 validation을 여는 것은 사용자 결정이다.
+- 기록 코드 변경: `argus_v_em_epochs.py`의 위반 가중치 계산을 `class_weight()` 함수로 뺌(기본값은 전과 같은 식. 이 실험만 바꿔 끼운다).
+
 ## 인수인계 기록 추가 — 2026-11-16 21:10 KST, 21:16 보충 (Claude) — 사용자 지적: "300 epoch 하기 전에는 처음 보는 시나리오에 대해 0.9라며" → 표현을 고침
 
 - 지금 돌고 있는 것 없음. 새 학습·새 채점 없음(저장된 점수와 기록만 읽어 그림·표를 다시 만듦).
