@@ -1,5 +1,13 @@
 # HANDOFF — Argus-V1 성능 향상 루프
 
+## 인수인계 기록 추가 — 2026-11-16 12:50 KST (Claude)
+
+- 사용자 질문: "어떤 시나리오를 이용해야 오류(위반)를 판정할 수 있는지 확인해 보고. 과적합 상태이니 train 영역이겠지?" → 저장된 점수만으로 분석(새 학습 없음). 결과: `reports/risk-loop/argus-v-p/demo_scenarios.md`·`.json`, 스크립트 `experiments/risk_loop/argus_loop/argus_v_p_demo_scenarios.py`.
+- 답: train 영역이 맞지만 **학습에 쓴 바로 그 실행 기록**이어야 한다. 같은 train 시나리오를 새로 돌리면 P6은 0.63(칸별 0.37~0.93)이다. 판정은 **도구별 문턱**으로 해야 한다(문턱 하나로는 평가 칸 위반 48개 중 13개만 경보).
+- 학습 기록에서 위반 전부가 정상보다 높은 도구 7개: `run_program`(AV-S07), `issue_payment`(AV-S31), `record_independent_review`(AV-S36), `run_aggregation`(AV-S10), `grant_review_access`(AV-S55), `bash`(AV-S42·S46), `deliver_approved_report`(AV-S01). 일부 틀리는 2개: `select_model`(AV-S27), `fetch_replacement_reviewer`(AV-S55).
+- 시연 추천 실행 기록 5개(호출 순서를 원본에서 확인): AV-S36-C0-s0-6c455e3b, AV-S01-C0-s1-adb201b8, AV-S31-C1-s0-99762ab9, AV-S07-C1-s1-22c217b2, AV-S55-C1-s2-bd670296. 새로 돌려도 유지된 것은 AV-S36뿐(0.93).
+- 지금 돌고 있는 것 없음. 사용자 다음 지시 대기.
+
 ## 인수인계 기록 추가 — 2026-11-15 04:20 KST
 
 - Claude의 Argus-V-p 실행은 03:30에 `DONE / EXIT 0`; 03:45 인수인계 표에도 실행 중 프로세스가 없다고 기록됐다. 04:09 재확인 때 Python 학습 프로세스가 없고 결과 문서·그래프가 완성되어 있어 Codex가 이어받았다. 기존 자동 확인은 Claude 작업이 끝난 것을 확인하는 용도로 종료한다.
