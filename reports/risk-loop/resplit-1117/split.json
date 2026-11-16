@@ -1,0 +1,1038 @@
+{
+ "name": "resplit-1117",
+ "created_at": "2026-11-17 00:13:15",
+ "instruction": "데이터셋부터 다시 train, validation, test 제대로 나누고 시작해 이번에 나눈 것은 지금까지 모델 학습시킨 것에는 영향을 미치지 않게 하고",
+ "pool": {
+  "rows": 16090,
+  "violations": 129,
+  "visible_violations": 43,
+  "families": 71,
+  "scenarios": 176,
+  "dropped": {
+   "train:report tool": 1780,
+   "train:report tool violations": 391,
+   "validation:report tool": 751,
+   "validation:report tool violations": 117,
+   "test:report tool": 543,
+   "test:report tool violations": 62
+  },
+  "not_included": "sealed units (AV-S61~S80, no split)"
+ },
+ "unit": "scenario family",
+ "target_shares": {
+  "train": 0.6,
+  "validation": 0.2,
+  "test": 0.2
+ },
+ "seed": 20261117,
+ "starts": 200,
+ "weights": {
+  "visible_oct": 4.0,
+  "visible_nov": 4.0,
+  "visible_cells": 4.0,
+  "violations_oct": 2.0,
+  "violations_nov": 2.0,
+  "cells_oct": 2.0,
+  "cells_nov": 2.0,
+  "calls_oct": 1.0,
+  "calls_nov": 1.0,
+  "runs": 1.0,
+  "families": 1.0
+ },
+ "cost": 0.3566996346727902,
+ "starts_reaching_the_best_cost": 1,
+ "families": {
+  "F01": "validation",
+  "F02": "train",
+  "F03": "test",
+  "F04": "train",
+  "F05": "test",
+  "F06": "train",
+  "F07": "train",
+  "F08": "train",
+  "F09": "train",
+  "F10": "train",
+  "F11": "train",
+  "F12": "validation",
+  "F13": "test",
+  "F14": "validation",
+  "F15": "train",
+  "aggregate_batch_review": "train",
+  "artifact_authenticity": "test",
+  "artifact_entitlement": "validation",
+  "artifact_provenance_reconciliation": "train",
+  "beneficiary_binding": "test",
+  "certificate_revocation_evidence": "validation",
+  "closed_period_write": "validation",
+  "compute_spend_authorization": "train",
+  "cross_run_provenance": "train",
+  "deletion_tombstone_attestation": "train",
+  "dependency_lock_integrity": "train",
+  "document_signature_verification": "validation",
+  "evidence_provenance": "train",
+  "executable_allowlist": "train",
+  "hidden_output_field_leakage": "train",
+  "idempotency_boundary": "train",
+  "identity_provisioning": "train",
+  "inspection_release_condition": "train",
+  "job_ownership_mutex": "train",
+  "maintenance_window_integrity": "train",
+  "marketing_opt_out_enforcement": "train",
+  "minimum_disclosure": "test",
+  "minimum_group_disclosure": "validation",
+  "model_allowlist": "test",
+  "nonexportable_key_boundary": "train",
+  "optimistic_concurrency": "train",
+  "output_redaction": "train",
+  "principal_impersonation": "test",
+  "processing_location": "train",
+  "project_access": "train",
+  "protected_control_write": "test",
+  "protected_object_deletion": "test",
+  "pseudonym_reidentification_boundary": "validation",
+  "public_link_acl": "train",
+  "publication_approval": "train",
+  "purpose_limited_identifier_join": "train",
+  "read_only_task_side_effect": "train",
+  "recipient_identity_verification": "train",
+  "recipient_scope": "validation",
+  "recording_consent_gate": "test",
+  "retention_access": "train",
+  "retention_hold_delete": "train",
+  "revocation_over_cached_grant": "validation",
+  "scan_hidden_text_redaction": "train",
+  "separation_of_duties": "test",
+  "share_link_expiry_enforcement": "train",
+  "source_immutability": "train",
+  "staged_rollout_evidence": "test",
+  "tenant_access": "validation",
+  "test_oracle_integrity": "train",
+  "tls_chain_identity": "validation",
+  "transaction_quota": "validation",
+  "trusted_freshness_attestation": "test",
+  "unapproved_network_access": "train",
+  "unauthorized_data_destination": "train",
+  "verified_replica_routing": "train"
+ },
+ "scenarios": {
+  "AV-S01": "train",
+  "AV-S02": "train",
+  "AV-S03": "train",
+  "AV-S04": "validation",
+  "AV-S05": "test",
+  "AV-S06": "train",
+  "AV-S07": "train",
+  "AV-S08": "train",
+  "AV-S09": "validation",
+  "AV-S10": "train",
+  "AV-S11": "train",
+  "AV-S12": "test",
+  "AV-S13": "train",
+  "AV-S14": "validation",
+  "AV-S15": "test",
+  "AV-S16": "train",
+  "AV-S17": "train",
+  "AV-S18": "test",
+  "AV-S19": "validation",
+  "AV-S20": "train",
+  "AV-S21": "train",
+  "AV-S22": "validation",
+  "AV-S23": "test",
+  "AV-S24": "test",
+  "AV-S25": "test",
+  "AV-S26": "train",
+  "AV-S27": "test",
+  "AV-S28": "train",
+  "AV-S29": "train",
+  "AV-S30": "test",
+  "AV-S31": "test",
+  "AV-S32": "train",
+  "AV-S33": "train",
+  "AV-S34": "test",
+  "AV-S35": "validation",
+  "AV-S36": "test",
+  "AV-S37": "train",
+  "AV-S38": "train",
+  "AV-S39": "validation",
+  "AV-S40": "train",
+  "AV-S41": "validation",
+  "AV-S42": "test",
+  "AV-S43": "train",
+  "AV-S44": "train",
+  "AV-S45": "train",
+  "AV-S46": "train",
+  "AV-S47": "train",
+  "AV-S48": "test",
+  "AV-S49": "validation",
+  "AV-S50": "train",
+  "AV-S51": "validation",
+  "AV-S52": "train",
+  "AV-S53": "train",
+  "AV-S54": "test",
+  "AV-S55": "validation",
+  "AV-S56": "train",
+  "AV-S57": "train",
+  "AV-S58": "train",
+  "AV-S59": "train",
+  "AV-S60": "train",
+  "AVv2-F01-FIN-01": "validation",
+  "AVv2-F01-FIN-02": "validation",
+  "AVv2-F01-HRI-01": "validation",
+  "AVv2-F01-HRI-02": "validation",
+  "AVv2-F01-OPS-01": "validation",
+  "AVv2-F01-OPS-02": "validation",
+  "AVv2-F01-PRC-01": "validation",
+  "AVv2-F01-PRC-02": "validation",
+  "AVv2-F01-PRV-01": "validation",
+  "AVv2-F01-PUB-01": "validation",
+  "AVv2-F02-FIN-01": "train",
+  "AVv2-F02-HRI-01": "train",
+  "AVv2-F02-OPS-01": "train",
+  "AVv2-F02-OPS-02": "train",
+  "AVv2-F02-PRC-01": "train",
+  "AVv2-F02-PRV-01": "train",
+  "AVv2-F02-PRV-02": "train",
+  "AVv2-F02-PUB-01": "train",
+  "AVv2-F03-FIN-01": "test",
+  "AVv2-F03-HRI-01": "test",
+  "AVv2-F03-OPS-01": "test",
+  "AVv2-F03-OPS-02": "test",
+  "AVv2-F03-PRC-01": "test",
+  "AVv2-F03-PRV-01": "test",
+  "AVv2-F03-PUB-01": "test",
+  "AVv2-F03-PUB-02": "test",
+  "AVv2-F04-FIN-01": "train",
+  "AVv2-F04-FIN-02": "train",
+  "AVv2-F04-HRI-01": "train",
+  "AVv2-F04-HRI-02": "train",
+  "AVv2-F04-OPS-01": "train",
+  "AVv2-F04-OPS-02": "train",
+  "AVv2-F04-PRC-01": "train",
+  "AVv2-F04-PRC-02": "train",
+  "AVv2-F04-PRV-01": "train",
+  "AVv2-F04-PUB-01": "train",
+  "AVv2-F05-FIN-01": "test",
+  "AVv2-F05-FIN-02": "test",
+  "AVv2-F05-HRI-01": "test",
+  "AVv2-F05-OPS-01": "test",
+  "AVv2-F05-PRC-01": "test",
+  "AVv2-F05-PRC-02": "test",
+  "AVv2-F05-PRV-01": "test",
+  "AVv2-F05-PUB-01": "test",
+  "AVv2-F06-FIN-01": "train",
+  "AVv2-F06-HRI-01": "train",
+  "AVv2-F06-OPS-01": "train",
+  "AVv2-F06-OPS-02": "train",
+  "AVv2-F06-PRC-01": "train",
+  "AVv2-F06-PRV-01": "train",
+  "AVv2-F06-PRV-02": "train",
+  "AVv2-F06-PUB-01": "train",
+  "AVv2-F07-FIN-01": "train",
+  "AVv2-F07-FIN-02": "train",
+  "AVv2-F07-HRI-01": "train",
+  "AVv2-F07-OPS-01": "train",
+  "AVv2-F07-OPS-02": "train",
+  "AVv2-F07-PRC-01": "train",
+  "AVv2-F07-PRV-01": "train",
+  "AVv2-F07-PUB-01": "train",
+  "AVv2-F08-FIN-01": "train",
+  "AVv2-F08-HRI-01": "train",
+  "AVv2-F08-HRI-02": "train",
+  "AVv2-F08-OPS-01": "train",
+  "AVv2-F08-PRC-01": "train",
+  "AVv2-F08-PRV-01": "train",
+  "AVv2-F08-PRV-02": "train",
+  "AVv2-F08-PUB-01": "train",
+  "AVv2-F09-FIN-01": "train",
+  "AVv2-F09-FIN-02": "train",
+  "AVv2-F09-HRI-01": "train",
+  "AVv2-F09-OPS-01": "train",
+  "AVv2-F09-PRC-01": "train",
+  "AVv2-F09-PRC-02": "train",
+  "AVv2-F09-PRV-01": "train",
+  "AVv2-F09-PUB-01": "train",
+  "AVv2-F10-FIN-01": "train",
+  "AVv2-F10-HRI-01": "train",
+  "AVv2-F10-HRI-02": "train",
+  "AVv2-F10-OPS-01": "train",
+  "AVv2-F10-OPS-02": "train",
+  "AVv2-F10-PRC-01": "train",
+  "AVv2-F10-PRV-01": "train",
+  "AVv2-F10-PUB-01": "train",
+  "AVv2-F11-FIN-01": "train",
+  "AVv2-F11-HRI-01": "train",
+  "AVv2-F11-OPS-01": "train",
+  "AVv2-F11-PRC-01": "train",
+  "AVv2-F11-PRV-01": "train",
+  "AVv2-F11-PUB-01": "train",
+  "AVv2-F12-FIN-01": "validation",
+  "AVv2-F12-FIN-02": "validation",
+  "AVv2-F12-HRI-01": "validation",
+  "AVv2-F12-OPS-01": "validation",
+  "AVv2-F12-PRC-01": "validation",
+  "AVv2-F12-PRV-01": "validation",
+  "AVv2-F12-PUB-01": "validation",
+  "AVv2-F12-PUB-02": "validation",
+  "AVv2-F13-FIN-01": "test",
+  "AVv2-F13-HRI-01": "test",
+  "AVv2-F13-OPS-01": "test",
+  "AVv2-F13-PRC-01": "test",
+  "AVv2-F13-PRV-01": "test",
+  "AVv2-F13-PUB-01": "test",
+  "AVv2-F14-FIN-01": "validation",
+  "AVv2-F14-HRI-01": "validation",
+  "AVv2-F14-OPS-01": "validation",
+  "AVv2-F14-PRC-01": "validation",
+  "AVv2-F14-PRV-01": "validation",
+  "AVv2-F14-PUB-01": "validation",
+  "AVv2-F15-FIN-01": "train",
+  "AVv2-F15-HRI-01": "train",
+  "AVv2-F15-OPS-01": "train",
+  "AVv2-F15-PRC-01": "train",
+  "AVv2-F15-PRV-01": "train",
+  "AVv2-F15-PUB-01": "train"
+ },
+ "families_moved(old split -> new split)": {
+  "test -> test": 1,
+  "test -> train": 12,
+  "test -> validation": 2,
+  "train -> test": 7,
+  "train -> train": 25,
+  "train -> validation": 8,
+  "train+validation -> test": 1,
+  "validation -> test": 5,
+  "validation -> train": 6,
+  "validation -> validation": 4
+ },
+ "composition": {
+  "test": {
+   "calls": 3220,
+   "violations": 26,
+   "scenarios": 37,
+   "families": 14,
+   "runs": 576,
+   "visible_violations": 10,
+   "oct": {
+    "calls": 261,
+    "violations": 15,
+    "normals": 246,
+    "violation_rate": 0.05747126436781609,
+    "scenarios": 9,
+    "runs": 60,
+    "families_with_a_violation": 7,
+    "visible_violations": 8,
+    "cells_scorable": [
+     "record_independent_review|oct"
+    ],
+    "cells_scorable_visible": [
+     "record_independent_review|oct"
+    ]
+   },
+   "nov": {
+    "calls": 2959,
+    "violations": 11,
+    "normals": 2948,
+    "violation_rate": 0.0037174721189591076,
+    "scenarios": 32,
+    "runs": 516,
+    "families_with_a_violation": 2,
+    "visible_violations": 2,
+    "cells_scorable": [
+     "issue_payment|nov",
+     "select_model|nov"
+    ],
+    "cells_scorable_visible": []
+   },
+   "cell_table": {
+    "bash|oct": {
+     "violations": 1,
+     "normals": 11,
+     "visible": 1
+    },
+    "classify_requests|nov": {
+     "violations": 1,
+     "normals": 7,
+     "visible": 0
+    },
+    "complete_rollout|oct": {
+     "violations": 1,
+     "normals": 4,
+     "visible": 0
+    },
+    "create_meeting_notes|oct": {
+     "violations": 1,
+     "normals": 4,
+     "visible": 0
+    },
+    "fetch_canary_metrics|oct": {
+     "violations": 2,
+     "normals": 2,
+     "visible": 2
+    },
+    "issue_payment|nov": {
+     "violations": 3,
+     "normals": 6,
+     "visible": 2
+    },
+    "record_independent_review|oct": {
+     "violations": 4,
+     "normals": 6,
+     "visible": 4
+    },
+    "select_model|nov": {
+     "violations": 7,
+     "normals": 6,
+     "visible": 0
+    },
+    "start_recording|oct": {
+     "violations": 2,
+     "normals": 4,
+     "visible": 1
+    },
+    "submit_support_ticket|oct": {
+     "violations": 1,
+     "normals": 7,
+     "visible": 0
+    },
+    "update_stock|oct": {
+     "violations": 1,
+     "normals": 2,
+     "visible": 0
+    },
+    "write_file|oct": {
+     "violations": 2,
+     "normals": 0,
+     "visible": 0
+    }
+   }
+  },
+  "train": {
+   "calls": 9653,
+   "violations": 77,
+   "scenarios": 104,
+   "families": 43,
+   "runs": 1707,
+   "visible_violations": 26,
+   "oct": {
+    "calls": 784,
+    "violations": 44,
+    "normals": 740,
+    "violation_rate": 0.05612244897959184,
+    "scenarios": 24,
+    "runs": 217,
+    "families_with_a_violation": 8,
+    "visible_violations": 23,
+    "cells_scorable": [
+     "bash|oct",
+     "deliver_approved_report|oct",
+     "run_aggregation|oct",
+     "run_program|oct",
+     "schedule_approved_maintenance|oct"
+    ],
+    "cells_scorable_visible": [
+     "bash|oct",
+     "deliver_approved_report|oct",
+     "schedule_approved_maintenance|oct"
+    ]
+   },
+   "nov": {
+    "calls": 8869,
+    "violations": 33,
+    "normals": 8836,
+    "violation_rate": 0.003720825346713271,
+    "scenarios": 80,
+    "runs": 1490,
+    "families_with_a_violation": 10,
+    "visible_violations": 3,
+    "cells_scorable": [
+     "apply_in_change_window|nov",
+     "download_with_access_window|nov",
+     "export_with_support_window|nov",
+     "invite_reviewer|nov",
+     "post_in_late_window|nov"
+    ],
+    "cells_scorable_visible": []
+   },
+   "cell_table": {
+    "apply_in_change_window|nov": {
+     "violations": 4,
+     "normals": 15,
+     "visible": 0
+    },
+    "bash|oct": {
+     "violations": 4,
+     "normals": 34,
+     "visible": 4
+    },
+    "confirm_relief_transfer|nov": {
+     "violations": 1,
+     "normals": 18,
+     "visible": 0
+    },
+    "deliver_approved_report|oct": {
+     "violations": 4,
+     "normals": 6,
+     "visible": 4
+    },
+    "deliver_in_release_window|nov": {
+     "violations": 2,
+     "normals": 15,
+     "visible": 0
+    },
+    "download_with_access_window|nov": {
+     "violations": 3,
+     "normals": 15,
+     "visible": 0
+    },
+    "execute_refund_batch|nov": {
+     "violations": 1,
+     "normals": 6,
+     "visible": 1
+    },
+    "export_with_support_window|nov": {
+     "violations": 4,
+     "normals": 15,
+     "visible": 0
+    },
+    "fetch_verified_document|oct": {
+     "violations": 7,
+     "normals": 1,
+     "visible": 7
+    },
+    "handoff_partner_link|oct": {
+     "violations": 10,
+     "normals": 2,
+     "visible": 2
+    },
+    "invite_reviewer|nov": {
+     "violations": 7,
+     "normals": 5,
+     "visible": 2
+    },
+    "post_in_late_window|nov": {
+     "violations": 3,
+     "normals": 18,
+     "visible": 0
+    },
+    "publish_release|nov": {
+     "violations": 1,
+     "normals": 6,
+     "visible": 0
+    },
+    "publish_via_window|nov": {
+     "violations": 1,
+     "normals": 18,
+     "visible": 0
+    },
+    "reconcile_cycle_counts|nov": {
+     "violations": 1,
+     "normals": 26,
+     "visible": 0
+    },
+    "record_official_decision|oct": {
+     "violations": 1,
+     "normals": 3,
+     "visible": 1
+    },
+    "release_trip_package|nov": {
+     "violations": 1,
+     "normals": 15,
+     "visible": 0
+    },
+    "run_aggregation|oct": {
+     "violations": 7,
+     "normals": 5,
+     "visible": 0
+    },
+    "run_locked_build|oct": {
+     "violations": 2,
+     "normals": 6,
+     "visible": 0
+    },
+    "run_program|oct": {
+     "violations": 6,
+     "normals": 12,
+     "visible": 2
+    },
+    "run_window_masking|nov": {
+     "violations": 1,
+     "normals": 17,
+     "visible": 0
+    },
+    "schedule_approved_maintenance|oct": {
+     "violations": 3,
+     "normals": 5,
+     "visible": 3
+    },
+    "send_reply_link|nov": {
+     "violations": 1,
+     "normals": 23,
+     "visible": 0
+    },
+    "submit_annual_report|nov": {
+     "violations": 1,
+     "normals": 20,
+     "visible": 0
+    },
+    "write_file|nov": {
+     "violations": 1,
+     "normals": 3,
+     "visible": 0
+    }
+   }
+  },
+  "validation": {
+   "calls": 3217,
+   "violations": 26,
+   "scenarios": 35,
+   "families": 14,
+   "runs": 576,
+   "visible_violations": 7,
+   "oct": {
+    "calls": 261,
+    "violations": 15,
+    "normals": 246,
+    "violation_rate": 0.05747126436781609,
+    "scenarios": 8,
+    "runs": 69,
+    "families_with_a_violation": 4,
+    "visible_violations": 7,
+    "cells_scorable": [
+     "fetch_replacement_reviewer|oct",
+     "grant_review_access|oct"
+    ],
+    "cells_scorable_visible": [
+     "fetch_replacement_reviewer|oct"
+    ]
+   },
+   "nov": {
+    "calls": 2956,
+    "violations": 11,
+    "normals": 2945,
+    "violation_rate": 0.0037212449255751017,
+    "scenarios": 27,
+    "runs": 507,
+    "families_with_a_violation": 5,
+    "visible_violations": 0,
+    "cells_scorable": [
+     "post_entry|nov"
+    ],
+    "cells_scorable_visible": []
+   },
+   "cell_table": {
+    "export_research_dataset|nov": {
+     "violations": 1,
+     "normals": 11,
+     "visible": 0
+    },
+    "fetch_certificate_chain|oct": {
+     "violations": 1,
+     "normals": 0,
+     "visible": 1
+    },
+    "fetch_cohort_aggregate|oct": {
+     "violations": 1,
+     "normals": 5,
+     "visible": 1
+    },
+    "fetch_replacement_reviewer|oct": {
+     "violations": 3,
+     "normals": 3,
+     "visible": 3
+    },
+    "grant_review_access|oct": {
+     "violations": 9,
+     "normals": 8,
+     "visible": 2
+    },
+    "post_entry|nov": {
+     "violations": 6,
+     "normals": 3,
+     "visible": 0
+    },
+    "read_tenant_file|nov": {
+     "violations": 2,
+     "normals": 7,
+     "visible": 0
+    },
+    "remove_departed_mailboxes|nov": {
+     "violations": 1,
+     "normals": 9,
+     "visible": 0
+    },
+    "send_message|oct": {
+     "violations": 1,
+     "normals": 6,
+     "visible": 0
+    },
+    "upload_to_syndicate_dataroom|nov": {
+     "violations": 1,
+     "normals": 2,
+     "visible": 0
+    }
+   }
+  }
+ },
+ "old_composition": {
+  "test": {
+   "calls": 2842,
+   "violations": 24,
+   "scenarios": 32,
+   "families": 15,
+   "runs": 509,
+   "visible_violations": 7,
+   "oct": {
+    "calls": 357,
+    "violations": 16,
+    "normals": 341,
+    "violation_rate": 0.04481792717086835,
+    "scenarios": 10,
+    "runs": 91,
+    "families_with_a_violation": 3,
+    "visible_violations": 7,
+    "cells_scorable": [
+     "schedule_approved_maintenance|oct"
+    ],
+    "cells_scorable_visible": [
+     "schedule_approved_maintenance|oct"
+    ]
+   },
+   "nov": {
+    "calls": 2485,
+    "violations": 8,
+    "normals": 2477,
+    "violation_rate": 0.0032193158953722333,
+    "scenarios": 22,
+    "runs": 418,
+    "families_with_a_violation": 3,
+    "visible_violations": 0,
+    "cells_scorable": [
+     "post_entry|nov"
+    ],
+    "cells_scorable_visible": []
+   },
+   "cell_table": {
+    "complete_rollout|oct": {
+     "violations": 1,
+     "normals": 4,
+     "visible": 0
+    },
+    "fetch_canary_metrics|oct": {
+     "violations": 2,
+     "normals": 2,
+     "visible": 2
+    },
+    "handoff_partner_link|oct": {
+     "violations": 10,
+     "normals": 2,
+     "visible": 2
+    },
+    "post_entry|nov": {
+     "violations": 6,
+     "normals": 3,
+     "visible": 0
+    },
+    "publish_release|nov": {
+     "violations": 1,
+     "normals": 6,
+     "visible": 0
+    },
+    "remove_departed_mailboxes|nov": {
+     "violations": 1,
+     "normals": 9,
+     "visible": 0
+    },
+    "schedule_approved_maintenance|oct": {
+     "violations": 3,
+     "normals": 5,
+     "visible": 3
+    }
+   }
+  },
+  "train": {
+   "calls": 9278,
+   "violations": 76,
+   "scenarios": 102,
+   "families": 41,
+   "runs": 1642,
+   "visible_violations": 33,
+   "oct": {
+    "calls": 784,
+    "violations": 55,
+    "normals": 729,
+    "violation_rate": 0.07015306122448979,
+    "scenarios": 25,
+    "runs": 203,
+    "families_with_a_violation": 14,
+    "visible_violations": 31,
+    "cells_scorable": [
+     "bash|oct",
+     "deliver_approved_report|oct",
+     "fetch_replacement_reviewer|oct",
+     "grant_review_access|oct",
+     "record_independent_review|oct",
+     "run_aggregation|oct",
+     "run_program|oct"
+    ],
+    "cells_scorable_visible": [
+     "bash|oct",
+     "deliver_approved_report|oct",
+     "fetch_replacement_reviewer|oct",
+     "record_independent_review|oct"
+    ]
+   },
+   "nov": {
+    "calls": 8494,
+    "violations": 21,
+    "normals": 8473,
+    "violation_rate": 0.002472333411820108,
+    "scenarios": 80,
+    "runs": 1439,
+    "families_with_a_violation": 11,
+    "visible_violations": 2,
+    "cells_scorable": [
+     "issue_payment|nov",
+     "select_model|nov"
+    ],
+    "cells_scorable_visible": []
+   },
+   "cell_table": {
+    "bash|oct": {
+     "violations": 5,
+     "normals": 41,
+     "visible": 5
+    },
+    "classify_requests|nov": {
+     "violations": 1,
+     "normals": 7,
+     "visible": 0
+    },
+    "confirm_relief_transfer|nov": {
+     "violations": 1,
+     "normals": 18,
+     "visible": 0
+    },
+    "create_meeting_notes|oct": {
+     "violations": 1,
+     "normals": 4,
+     "visible": 0
+    },
+    "deliver_approved_report|oct": {
+     "violations": 4,
+     "normals": 6,
+     "visible": 4
+    },
+    "export_research_dataset|nov": {
+     "violations": 1,
+     "normals": 11,
+     "visible": 0
+    },
+    "fetch_certificate_chain|oct": {
+     "violations": 1,
+     "normals": 0,
+     "visible": 1
+    },
+    "fetch_cohort_aggregate|oct": {
+     "violations": 1,
+     "normals": 5,
+     "visible": 1
+    },
+    "fetch_replacement_reviewer|oct": {
+     "violations": 3,
+     "normals": 3,
+     "visible": 3
+    },
+    "fetch_verified_document|oct": {
+     "violations": 7,
+     "normals": 1,
+     "visible": 7
+    },
+    "grant_review_access|oct": {
+     "violations": 9,
+     "normals": 8,
+     "visible": 2
+    },
+    "issue_payment|nov": {
+     "violations": 3,
+     "normals": 6,
+     "visible": 2
+    },
+    "read_tenant_file|nov": {
+     "violations": 2,
+     "normals": 7,
+     "visible": 0
+    },
+    "reconcile_cycle_counts|nov": {
+     "violations": 1,
+     "normals": 26,
+     "visible": 0
+    },
+    "record_independent_review|oct": {
+     "violations": 4,
+     "normals": 6,
+     "visible": 4
+    },
+    "record_official_decision|oct": {
+     "violations": 1,
+     "normals": 3,
+     "visible": 1
+    },
+    "release_trip_package|nov": {
+     "violations": 1,
+     "normals": 15,
+     "visible": 0
+    },
+    "run_aggregation|oct": {
+     "violations": 7,
+     "normals": 5,
+     "visible": 0
+    },
+    "run_locked_build|oct": {
+     "violations": 2,
+     "normals": 6,
+     "visible": 0
+    },
+    "run_program|oct": {
+     "violations": 6,
+     "normals": 12,
+     "visible": 2
+    },
+    "select_model|nov": {
+     "violations": 7,
+     "normals": 6,
+     "visible": 0
+    },
+    "send_message|oct": {
+     "violations": 1,
+     "normals": 6,
+     "visible": 0
+    },
+    "send_reply_link|nov": {
+     "violations": 1,
+     "normals": 23,
+     "visible": 0
+    },
+    "start_recording|oct": {
+     "violations": 2,
+     "normals": 4,
+     "visible": 1
+    },
+    "submit_annual_report|nov": {
+     "violations": 1,
+     "normals": 20,
+     "visible": 0
+    },
+    "update_stock|oct": {
+     "violations": 1,
+     "normals": 2,
+     "visible": 0
+    },
+    "upload_to_syndicate_dataroom|nov": {
+     "violations": 1,
+     "normals": 2,
+     "visible": 0
+    },
+    "write_file|nov": {
+     "violations": 1,
+     "normals": 3,
+     "visible": 0
+    }
+   }
+  },
+  "validation": {
+   "calls": 3970,
+   "violations": 29,
+   "scenarios": 42,
+   "families": 16,
+   "runs": 708,
+   "visible_violations": 3,
+   "oct": {
+    "calls": 165,
+    "violations": 3,
+    "normals": 162,
+    "violation_rate": 0.01818181818181818,
+    "scenarios": 6,
+    "runs": 52,
+    "families_with_a_violation": 2,
+    "visible_violations": 0,
+    "cells_scorable": [],
+    "cells_scorable_visible": []
+   },
+   "nov": {
+    "calls": 3805,
+    "violations": 26,
+    "normals": 3779,
+    "violation_rate": 0.00683311432325887,
+    "scenarios": 37,
+    "runs": 656,
+    "families_with_a_violation": 3,
+    "visible_violations": 3,
+    "cells_scorable": [
+     "apply_in_change_window|nov",
+     "download_with_access_window|nov",
+     "export_with_support_window|nov",
+     "invite_reviewer|nov",
+     "post_in_late_window|nov"
+    ],
+    "cells_scorable_visible": []
+   },
+   "cell_table": {
+    "apply_in_change_window|nov": {
+     "violations": 4,
+     "normals": 15,
+     "visible": 0
+    },
+    "deliver_in_release_window|nov": {
+     "violations": 2,
+     "normals": 15,
+     "visible": 0
+    },
+    "download_with_access_window|nov": {
+     "violations": 3,
+     "normals": 15,
+     "visible": 0
+    },
+    "execute_refund_batch|nov": {
+     "violations": 1,
+     "normals": 6,
+     "visible": 1
+    },
+    "export_with_support_window|nov": {
+     "violations": 4,
+     "normals": 15,
+     "visible": 0
+    },
+    "invite_reviewer|nov": {
+     "violations": 7,
+     "normals": 5,
+     "visible": 2
+    },
+    "post_in_late_window|nov": {
+     "violations": 3,
+     "normals": 18,
+     "visible": 0
+    },
+    "publish_via_window|nov": {
+     "violations": 1,
+     "normals": 18,
+     "visible": 0
+    },
+    "run_window_masking|nov": {
+     "violations": 1,
+     "normals": 17,
+     "visible": 0
+    },
+    "submit_support_ticket|oct": {
+     "violations": 1,
+     "normals": 7,
+     "visible": 0
+    },
+    "write_file|oct": {
+     "violations": 2,
+     "normals": 0,
+     "visible": 0
+    }
+   }
+  }
+ }
+}
