@@ -1,0 +1,90 @@
+{
+ "instruction": "test를 이용한 성능평가뽑는 채점은 제일 성능이 좋았던 epoch을 이용해 (user, 2026-11-16, before any test score)",
+ "rule": "highest mean train cross-validation same-tool AUROC on visible violations (>= 3 per cell) over widths 32/64/128 and epochs 1..300; ties: earlier epoch, then smaller width. Test data is not used.",
+ "choice": {
+  "model": "EM64",
+  "width": 64,
+  "epoch": 67,
+  "cv_value": 0.9679880000000001,
+  "cv_per_seed": [
+   0.963415,
+   0.980183,
+   0.960366
+  ],
+  "cv_min2_per_seed": [
+   0.846499,
+   0.851118,
+   0.849963
+  ],
+  "cv_all_violations_per_seed": [
+   0.549437,
+   0.52829,
+   0.534879
+  ],
+  "per_width": {
+   "EM32": {
+    "best_epoch": 56,
+    "best_value": 0.9625676666666667,
+    "at_epoch_60": 0.9595193333333333,
+    "at_last_epoch": 0.898374
+   },
+   "EM64": {
+    "best_epoch": 67,
+    "best_value": 0.9679880000000001,
+    "at_epoch_60": 0.9482556666666667,
+    "at_last_epoch": 0.9537603333333333
+   },
+   "EM128": {
+    "best_epoch": 175,
+    "best_value": 0.965447,
+    "at_epoch_60": 0.9433436666666667,
+    "at_last_epoch": 0.9618903333333333
+   }
+  },
+  "top5": [
+   {
+    "model": "EM64",
+    "epoch": 67,
+    "cv_value": 0.9679880000000001
+   },
+   {
+    "model": "EM64",
+    "epoch": 68,
+    "cv_value": 0.9664633333333335
+   },
+   {
+    "model": "EM64",
+    "epoch": 70,
+    "cv_value": 0.965955
+   },
+   {
+    "model": "EM64",
+    "epoch": 69,
+    "cv_value": 0.965447
+   },
+   {
+    "model": "EM128",
+    "epoch": 175,
+    "cv_value": 0.965447
+   }
+  ]
+ },
+ "export": {
+  "path": "artifacts/risk-loop/argus-v-em300/argus_v_em300_best.pt",
+  "sha256": "381ec4ef9dd1bfb1923faacd8c429ed9a4199d9da0885cbbd89e86931797b72c",
+  "seed": 910032,
+  "train_rows": 5096,
+  "visible_positives": 22
+ },
+ "checks_max_abs_diff": {
+  "exported_file_vs_fit": 4.76837158203125e-07
+ },
+ "training_rows_rescored": {
+  "min3": 1.0,
+  "min2": 1.0,
+  "all": 0.6182291666666667
+ },
+ "loss_at_stop": 0.034436654299497604,
+ "note": "The cross-validation value at the picked epoch is the maximum of 900 noisy candidates on development rows, so it overstates what to expect; the test evaluation is the check.",
+ "created_at": "2026-11-16 20:11:30"
+}

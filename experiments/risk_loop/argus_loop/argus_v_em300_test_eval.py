@@ -234,9 +234,10 @@ def visible_mask(D: dict, flags: dict) -> np.ndarray:
 
 # ---------------------------------------------------------------------- frozen files and scoring
 def model_files() -> dict:
-    res = json.loads((REPORT / "results.json").read_text(encoding="utf-8"))
-    if res.get("partial", True):
-        raise SystemExit("Argus-V-em300 training has not finished (results.json is partial)")
+    # the 300-epoch model and its snapshots are complete once the final fit has written epochs/final.npz
+    # (the label-shuffle check that follows uses train rows only and changes none of these files)
+    if not ((ART / "argus_v_em300.pt").is_file() and (ART / "epochs" / "final.npz").is_file()):
+        raise SystemExit("the Argus-V-em300 final model is not written yet")
     files = {}
     if (ART / "argus_v_em300_best.pt").is_file():                  # the epoch picked by train cross-validation (addendum 1)
         files["best"] = ART / "argus_v_em300_best.pt"
@@ -250,17 +251,15 @@ def cmd_freeze() -> dict:
     path = REPORT / "test_eval_frozen.json"
     if path.is_file():
         return json.loads(path.read_text(encoding="utf-8"))
-    res = json.loads((REPORT / "results.json").read_text(encoding="utf-8"))
     files = model_files()
     doc = {"frozen_at": time.strftime("%Y-%m-%d %H:%M:%S"), "primary": "best" if "best" in files else "em300",
-           "selected_width_at_300_epochs": res["selected_on_development_oof"],
+           "width_of_the_300_epoch_model": int(np.load(ART / "epochs" / "final.npz")["width"]),
            "files": {k: {"path": str(p.relative_to(ROOT)).replace("\\", "/"), "sha256": sha256(p)} for k, p in files.items()}}
     if "best" in files:
         best = json.loads((REPORT / "best_epoch.json").read_text(encoding="utf-8"))
         assert doc["files"]["best"]["sha256"] == best["export"]["sha256"]
         doc["best_choice"] = {k: best["choice"][k] for k in ("model", "width", "epoch", "cv_value", "cv_per_seed",
                                                              "cv_min2_per_seed", "cv_all_violations_per_seed")}
-    assert doc["files"]["em300"]["sha256"] == res["export"]["sha256"]
     assert doc["files"]["em60"]["sha256"] == EM60_SHA
     path.write_text(json.dumps(doc, indent=1), encoding="utf-8")
     log("frozen: primary =", doc["primary"], doc["files"][doc["primary"]])
