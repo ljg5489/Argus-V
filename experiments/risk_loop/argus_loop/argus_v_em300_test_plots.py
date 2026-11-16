@@ -42,14 +42,14 @@ def set_models(res):
     if PK == "best":
         b = res["frozen"]["best_choice"]
         MODELS["best"] = f"Argus-V-em300 · 가장 좋았던 epoch ({b['width']}차원, {b['epoch']} epoch) · 주 모델"
-        SHORT["best"] = f"가장 좋았던 epoch ({b['epoch']} epoch)"
+        SHORT["best"] = f"가장 좋았던 epoch ({b['width']}차원, {b['epoch']} epoch)"
         MODELS["em300"] = "Argus-V-em300 · 300 epoch까지 학습 · 참고"
-        SHORT["em300"] = "300 epoch까지"
+        SHORT["em300"] = f"300 epoch까지 ({res['frozen']['width_of_the_300_epoch_model']}차원)"
     else:
         MODELS["em300"] = "Argus-V-em300 (300 epoch) · 주 모델"
         SHORT["em300"] = "Argus-V-em300"
     MODELS["em60"] = "Argus-V-em (60 epoch) · 참고"
-    SHORT["em60"] = "Argus-V-em (60 epoch)"
+    SHORT["em60"] = "Argus-V-em (32차원, 60 epoch)"
     MODELS["P5"] = "Argus-V-p (P5) · 참고"
     SHORT["P5"] = "Argus-V-p"
 
@@ -104,8 +104,8 @@ def wroc(R, s, mask, min_pos):
 
 def fig01_scores(res, T):
     rows = [(k, res["models"][k]) for k in MODELS]
-    fig, ax = plt.subplots(figsize=(FIG_W, 4.6))
-    fig.subplots_adjust(top=0.76, left=0.37, right=0.93, bottom=0.36)
+    fig, ax = plt.subplots(figsize=(FIG_W, 5.0))
+    fig.subplots_adjust(top=0.78, left=0.36, right=0.95, bottom=0.36)
     for i, (k, m) in enumerate(rows):
         yy = len(rows) - 1 - i
         col = TEST if k == PK else MUTED
@@ -114,23 +114,23 @@ def fig01_scores(res, T):
         if len(pts) > 1:
             ax.plot([min(pts), max(pts)], [yy, yy], color=BASE, lw=1.6, zorder=2)
         ci = m["visible_min3"].get("ci95")
-        if ci:
+        if ci and ci["families"] > 1 and ci["high"] > ci["low"]:
             ax.plot([ci["low"], ci["high"]], [yy + 0.22, yy + 0.22], color=INK2, lw=1.2, zorder=3, solid_capstyle="butt")
         if va is not None:
             ax.plot(va, yy, "s", markersize=9.5, color=MUTED, markeredgecolor=SURFACE, markeredgewidth=2, zorder=3)
-            ax.text(va - 0.02, yy, f"{va:.2f}", va="center", ha="right", fontsize=9.6, color=INK2, bbox=LBL, zorder=6)
+            ax.text(va, yy - 0.33, f"{va:.2f}", va="center", ha="center", fontsize=9.4, color=INK2, zorder=6)
         if v2 is not None:
             ax.plot(v2, yy, "o", markersize=10, markerfacecolor=SURFACE, markeredgecolor=col, markeredgewidth=2, zorder=4)
         if v3 is not None:
             ax.plot(v3, yy, "o", markersize=10, color=col, markeredgecolor=SURFACE, markeredgewidth=2, zorder=5)
-            ax.text(v3 + 0.02, yy, f"{v3:.2f}", va="center", ha="left", fontsize=9.8, color=INK, bbox=LBL, zorder=6)
+            ax.text(v3, yy + 0.33, f"{v3:.2f}", va="center", ha="center", fontsize=9.8, color=INK, zorder=6)
         elif v2 is not None:
-            ax.text(v2 + 0.02, yy, f"{v2:.2f}", va="center", ha="left", fontsize=9.8, color=INK, bbox=LBL, zorder=6)
+            ax.text(v2, yy + 0.33, f"{v2:.2f}", va="center", ha="center", fontsize=9.8, color=INK, zorder=6)
     ax.set_yticks(range(len(rows)))
-    ax.set_yticklabels([MODELS[k] for k, _ in rows][::-1])
+    ax.set_yticklabels([SHORT[k] + (" · 주 모델" if k == PK else " · 참고") for k, _ in rows][::-1])
     ax.set_xlim(0.0, 1.07)
-    ax.set_ylim(-0.6, len(rows) - 0.4)
-    ax.set_xlabel("같은 도구 안 AUROC (같은 도구를 쓴 호출끼리 위반과 정상을 비교, 0.5 = 우연)")
+    ax.set_ylim(-0.7, len(rows) - 0.3)
+    ax.set_xlabel("같은 도구 안 AUROC (0.5 = 우연)")
     ax.grid(axis="y", visible=False)
     PP.ref_line(ax, x=0.5, label="우연")
     PP.ref_line(ax, x=0.9, label="목표 0.90")
@@ -139,15 +139,16 @@ def fig01_scores(res, T):
     ax.legend(handles=[handle(TEST, f"근거가 보인 위반, 칸에 3개 이상 ({p3['violations']}개 · 칸 {p3['cells']}개) — 주 지표"),
                        handle(TEST, f"근거가 보인 위반, 칸에 2개 이상 ({p2['violations']}개 · 칸 {p2['cells']}개)", hollow=True),
                        handle(MUTED, f"위반 전체 ({pa['violations']}개 · 칸 {pa['cells']}개)", marker="s"),
-                       Line2D([0], [0], color=INK2, lw=1.2, label="주 지표의 95% 구간(시나리오 계열을 다시 뽑아 계산)")],
-              loc="upper center", bbox_to_anchor=(0.22, -0.18), ncol=1, handletextpad=0.3, labelspacing=0.35, fontsize=9.3)
+                       Line2D([0], [0], color=INK2, lw=1.2, label="주 지표의 95% 구간(시나리오 계열이 하나뿐이면 낼 수 없어 그리지 않음)")],
+              loc="upper center", bbox_to_anchor=(0.22, -0.17), ncol=1, handletextpad=0.3, labelspacing=0.35, fontsize=9.3)
+    PP.note(fig, "위 숫자 = 주 지표, 아래 숫자 = 위반 전체 · 같은 도구를 쓴 호출끼리 위반과 정상을 비교한 값이다")
     PP.title(fig, T["headline"], f"test 분할(학습·설정에 한 번도 쓰지 않은 시나리오 {d['scenarios']}개, 실행 {d['units']}개, 채점한 호출 {d['judged_rows']:,}개)")
     PP.save(fig, OUT, "01_test_모델별_점수.png")
 
 
 def fig02_cv_vs_test(res, cvres, base, T):
     """Cross-validation inside train (development) next to the test score, same model, same metric."""
-    sel = cvres["selected_on_development_oof"]
+    sel = f"EM{res['frozen']['width_of_the_300_epoch_model']}"
     bsel = base["selected_on_development_oof"]
     cv = {"em300": cvres["architectures"][sel], "em60": base["architectures"][bsel]}
     rows = [("em300", f"300 epoch까지 ({sel.replace('EM', '')}차원)"), ("em60", f"Argus-V-em ({bsel.replace('EM', '')}차원, 60 epoch)")]
@@ -286,7 +287,7 @@ def fig06_epochs(res, hist, cvres, T):
     key3 = "visible_min3" if res["models"][PK]["visible_min3"]["value"] is not None else "visible_min2"
     t3 = [res["models"][f"em300_epoch_{e:03d}"][key3]["value"] for e in eps]
     ta = [res["models"][f"em300_epoch_{e:03d}"]["all_violations_min3"]["value"] for e in eps]
-    sel = cvres["selected_on_development_oof"]
+    sel = f"EM{res['frozen']['width_of_the_300_epoch_model']}"
     cvk = "auroc_heldout_min3" if key3 == "visible_min3" else "auroc_heldout_min2"
     cv = np.asarray(hist["models"][sel]["per_epoch"][cvk], dtype=float).mean(0)
     ep = np.arange(1, len(cv) + 1)
@@ -413,7 +414,7 @@ def main(argv):
     fig08_confusion(res, T)
 
     d = res["data"]
-    sel, bsel = cvres["selected_on_development_oof"], base["selected_on_development_oof"]
+    sel, bsel = f"EM{res['frozen']['width_of_the_300_epoch_model']}", base["selected_on_development_oof"]
     L = ["# Argus-V-em300 test 평가 — 숫자 표", "",
          f"사전 고정: `test-eval-prereg.md`. 채점 시각 {res['evaluated_at']}. 표시 규칙 {res['rule']}.",
          f"**사전에 정한 읽는 기준에 따른 결과: {res['verdict_by_the_prereg_rule']}**", "",
@@ -433,7 +434,11 @@ def main(argv):
 
     def ci(m, key):
         c = m[key].get("ci95")
-        return "—" if not c else f"{c['low']:.3f}–{c['high']:.3f}"
+        if not c:
+            return "—"
+        if c["families"] <= 1:
+            return "낼 수 없음 (시나리오 계열 1개)"
+        return f"{c['low']:.3f}–{c['high']:.3f}"
 
     for k in MODELS:
         m = res["models"][k]
