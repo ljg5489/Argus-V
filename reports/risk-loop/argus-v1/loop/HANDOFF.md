@@ -1,5 +1,19 @@
 # HANDOFF — Argus-V1 성능 향상 루프
 
+## 인수인계 기록 추가 — 2026-11-17 04:09 KST (Claude) — Argus-V-p P3·P5를 다시 학습해 모델 파일로 저장, Argus-V-emp 모델 폴더 완성
+
+- **지금 돌고 있는 것 없음.** 학습은 04:07에 시작해 04:08에 끝났다(P3 17초, P5 21초).
+- **사용자 승인**: "Argus-V-p P3·P5를 모델 파일로 저장하는 학습 시작하고 저장해". 앞서 보여 준 계획 그대로다: 같은 두 설정, 같은 구조·설정, 같은 데이터(새 train 호출 9,653개, 위반 77개), 다시 학습한 점수가 저장된 점수와 같은지 확인.
+- **왜 필요했나**: `resplit_run01.py`의 Argus-V-p 단계가 점수만 `.npz`로 저장하고 모델을 파일로 남기지 않았다. Argus-V-em 36개는 그때 파일로 저장돼 있었다.
+- **만든 것**: `artifacts/risk-loop/resplit-1117/argus_v_emp/`(git 제외, 58 MB) — `em/*_e067.pt` 36개(복사), `P3.pkl`(sha256 `bb8256602b76919d…`), `P5.pkl`(sha256 `c006f8b3734438df…`), `reference_validation.npz`(모델 38개의 validation 점수 기준표), `manifest.json`(정의, 커트라인 0.864 / 0.932, 파일별 sha256, 라이브러리 버전, 확인 결과), `export.log`.
+- **코드**: `experiments/risk_loop/argus_loop/argus_v_emp_export.py`(`fit-p --approved` → `bundle` → `check`), `argus_v_emp_model.py`(`EmpModel().score(x23, x16)` — 층 23 관측 지점별 최댓값 [n, 2880]과 층 16 행동 직전 값 [n, 2880]을 넣으면 0~1 점수, `model.cut["5%"]` = 0.864).
+- **확인 결과**:
+  - 다시 학습한 P3·P5의 점수 대 처음 저장한 점수(train 9,653 · validation 3,217 · test 3,220 호출 전부): 가장 큰 차이 0.
+  - 모델 폴더만으로 낸 Argus-V-emp 점수 대 저장돼 있던 점수(validation · test 전부): 가장 큰 차이 0. 새 validation AUROC 0.837, 새 test AUROC 0.913 그대로. 커트라인 0.864에서 새 test 위반 26개 중 12개, 오경보 145개 그대로.
+  - 호출을 하나씩 넣어도 같은 점수(차이 2e-16). 불러오기 6.8초(한 번), 호출 하나에 56ms(이 노트북 CPU).
+- 새 분할 test 사용 기록 6번째 줄에 적었다(새 값이 아니라 같은 점수가 나오는지 확인한 것).
+- **남은 것**: 재생 도구·hook에 연결(gpt-oss-20b에서 은닉층 값을 뽑아 `EmpModel.score`에 넣는 부분)은 하지 않았다. 사용자 지시가 있으면 한다. `reports/risk-loop/model_history_figures/README.md`는 다른 작업자가 고친 상태라 건드리지 않았다.
+
 ## 인수인계 기록 추가 — 2026-11-17 03:57 KST (Claude) — 발표용 그림 22장: 모든 모델의 성능지표 (ROC 곡선은 그릴 수 있는 모델 전부)
 
 - **지금 돌고 있는 것 없음.** 새 학습 없음(저장된 점수와 기록만 읽음).
@@ -474,6 +488,7 @@
 | 2026-11-17 02:41 | **돌고 있는 것 없음.** 전체 모델 정리 문서 작성 | `reports/risk-loop/model_history.md`(표 31개: Argus-V-p 6개 설정, Argus-V-em 4개 모델 × 위반 가중치, Argus-V-emp, 단계별 흐름). 새 분할 19개 모델을 같은 방법으로 다시 채점: test 위반 26개 전부 비교가 0.9를 넘는 것은 128차원·300배(0.914)와 Argus-V-emp(0.913), 같은 시기끼리는 0.774 대 0.822 | 사용자 결정(시연에 Argus-V-emp를 쓸지, P3·P5 저장 학습 승인) |
 | 2026-11-17 02:55 | **돌고 있는 것 없음.** 사용자 지시로 정리 문서와 표의 모든 숫자에 "어디서 잰 값 · 어떤 지표"를 붙임 | `model_history.md` 표 33개, 생성 스크립트의 열 이름, `argus-v-emp/README.md`. 새 test · 5% 문턱의 F1을 모델마다 계산: Argus-V-emp 0.131(가장 높음), Argus-V-p 0.010 ~ 0.099, Argus-V-em 0.074 ~ 0.111 | 사용자 결정(시연에 Argus-V-emp를 쓸지, P3·P5 저장 학습 승인) |
 | 2026-11-17 03:57 | **돌고 있는 것 없음.** 사용자 지시로 발표용 그림 22장 작성(모든 모델의 성능지표, ROC 곡선은 그릴 수 있는 모델 전부) | `reports/risk-loop/model_history_figures/`(PNG 22장, README.md, numbers.json), 스크립트 `argus_v_history_figures.py`. 새 학습 없음. 기존 분할 값은 저장된 점수로 다시 계산해 기록과 일치 확인. 그 사이 사용자 질문(무엇을 섞었나, 점수만 있다는 뜻, 0~1 변환, 커트라인)에 답함 | 사용자 결정(P3·P5 모델 파일 저장 학습 승인) |
+| 2026-11-17 04:09 | **돌고 있는 것 없음.** 사용자 승인으로 Argus-V-p P3·P5를 다시 학습(04:07~04:08)해 모델 파일로 저장, Argus-V-emp 모델 폴더 완성 | `artifacts/risk-loop/resplit-1117/argus_v_emp/`(Argus-V-em 36개 + P3.pkl + P5.pkl + 기준표 + manifest, 58 MB). 다시 학습한 점수와 저장된 점수의 차이 0, 모델 폴더만으로 다시 채점해도 차이 0(새 test AUROC 0.913). 호출 하나에 56ms. 코드: `argus_v_emp_export.py`, `argus_v_emp_model.py` | 재생 도구·hook 연결은 사용자 지시 대기 |
 
 # 지금 상태 — 2026-11-15 (가장 최신. 아래 3단계 대시보드는 2026-11-11까지의 기록)
 
