@@ -1,5 +1,14 @@
 # HANDOFF — Argus-V1 성능 향상 루프
 
+## 인수인계 기록 추가 — 2026-11-17 00:31 KST (Claude) — 새 분할 1차 학습 시작 (사용자 승인 "루프 시작")
+
+- **지금 돌고 있는 것**: `PYTHONUTF8=1 py -3.11 -u experiments/risk_loop/argus_loop/resplit_run01.py em p --approved > artifacts/risk-loop/resplit-1117/run01/run.log 2>&1` (백그라운드, 00:31 시작, 예상 20분 안팎). 로그에 `EM DONE`, `P DONE`이 찍히고 마지막 줄에 `exit=0`. 끊기면 같은 명령을 다시 실행하면 끝난 학습은 건너뛴다.
+- **사용자 지시**: "Argus-V-p 에 모든 모델도 함께 학습을 하고 Argus-V-em 에 모든 모델 그리고 Argus-V-em 의 모든 모델은 각각 15배, 60배, 300배 위험 가중치에 대한 것도 추가해서 각각 모든 모델에 대해 100epoch씩 학습을 진행 해 그리고 성능평가에 필요한 모든 정보를 저장하고 루프 시작".
+- **내용**(계획: `reports/risk-loop/resplit-1117/run01/README.md`, 학습 전에 고정): 새 train으로만 학습. Argus-V-em 4개 모델(32·64·128차원, 선형 대조) × 위반 가중치 3가지(약 15배 14.3 / 약 60배 54.2 / 300배) × 반복 3번(seed 910032~910034) = 학습 36번, 각 100 epoch, epoch마다 validation·test 모든 행 점수 기록. Argus-V-p는 P1~P6 학습 6번. 학습 대상 행: Argus-V-em은 정상 5,334개(표본) + 근거가 보인 위반 26개, Argus-V-p는 train 9,653개 전부(위반 77개).
+- **읽는 법(미리 정함)**: 고르는 기준은 validation의 넓힌 지표(같은 도구끼리, 근거가 보인 위반 2개 이상 도구). 보고는 ① 정해 둔 레시피(64차원·약 15배·67 epoch) ② 설정마다 validation으로 고른 epoch의 test 값 ③ 전체에서 고른 하나의 test 값. test로는 고르지 않는다.
+- **끝난 뒤 할 일**: `resplit_run01.py metrics`(지표 계산, 아직 작성 중) → 그림 → `run01/results.md` → 이 파일 갱신 → 커밋 → 사용자에게 보고. 20분마다 진행 상황을 보고하고 이 파일에 적는다.
+- 기존 분할·기존 모델·기존 결과는 건드리지 않는다. 봉인 단위(AV-S61~S80)는 쓰지 않는다.
+
 ## 인수인계 기록 추가 — 2026-11-17 00:15 KST (Claude) — 사용자 지시로 train / validation / test를 새로 나눔 (resplit-1117)
 
 - **지금 돌고 있는 것 없음.** 분할과 특징 준비까지 끝. 학습은 아직 시작하지 않았다(계획을 보여 주고 승인을 기다리는 중).

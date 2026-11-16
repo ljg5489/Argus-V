@@ -91,7 +91,7 @@ def pool():
                 rows.append({"cache": cache, "cache_row": int(r["row"]), "unit_id": r["unit_id"], "scenario_id": r["scenario_id"],
                              "family": r["family"], "source": r["source"], "tool": r["tool"], "kind": r["kind"],
                              "step_index": int(r["step_index"]), "label": int(r["label"]), "label_status": r["label_status"],
-                             "condition": r["condition"], "seed": r["seed"], "old_split": r["split"],
+                             "condition": r["condition"], "seed": r["seed"], "old_split": r["split"], "trajectory_id": r["trajectory_id"],
                              "cell": f"{r['tool']}|{r['source']}"})
     return rows, drop
 
@@ -383,7 +383,7 @@ def stage_build(argv):
         assert np.isfinite(np.asarray(chk[:: max(1, n // 500)], dtype=np.float32)).all()
         log(name, "written", chk.shape, chk.dtype)
     cols = ["row", "split", "old_split", "unit_id", "scenario_id", "family", "source", "tool", "kind", "step_index", "label", "visible",
-            "label_status", "condition", "seed", "cell", "cache", "cache_row"]
+            "label_status", "condition", "seed", "trajectory_id", "cell", "cache", "cache_row"]
     with open(feat / "steps.csv", "w", newline="", encoding="utf-8") as h:
         wr = csv.writer(h)
         wr.writerow(cols)
