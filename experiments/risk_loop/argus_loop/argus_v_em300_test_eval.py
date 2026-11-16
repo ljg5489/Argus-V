@@ -237,7 +237,10 @@ def model_files() -> dict:
     res = json.loads((REPORT / "results.json").read_text(encoding="utf-8"))
     if res.get("partial", True):
         raise SystemExit("Argus-V-em300 training has not finished (results.json is partial)")
-    files = {"em300": ART / "argus_v_em300.pt", "em60": EM60, "P5": P5_BUNDLE}
+    files = {}
+    if (ART / "argus_v_em300_best.pt").is_file():                  # the epoch picked by train cross-validation (addendum 1)
+        files["best"] = ART / "argus_v_em300_best.pt"
+    files.update({"em300": ART / "argus_v_em300.pt", "em60": EM60, "P5": P5_BUNDLE})
     for p in sorted((ART / "snapshots").glob("epoch_*.pt")):
         files[f"em300_epoch_{int(p.stem.split('_')[1]):03d}"] = p
     return files
@@ -249,12 +252,18 @@ def cmd_freeze() -> dict:
         return json.loads(path.read_text(encoding="utf-8"))
     res = json.loads((REPORT / "results.json").read_text(encoding="utf-8"))
     files = model_files()
-    doc = {"frozen_at": time.strftime("%Y-%m-%d %H:%M:%S"), "primary": "em300", "selected_width": res["selected_on_development_oof"],
+    doc = {"frozen_at": time.strftime("%Y-%m-%d %H:%M:%S"), "primary": "best" if "best" in files else "em300",
+           "selected_width_at_300_epochs": res["selected_on_development_oof"],
            "files": {k: {"path": str(p.relative_to(ROOT)).replace("\\", "/"), "sha256": sha256(p)} for k, p in files.items()}}
+    if "best" in files:
+        best = json.loads((REPORT / "best_epoch.json").read_text(encoding="utf-8"))
+        assert doc["files"]["best"]["sha256"] == best["export"]["sha256"]
+        doc["best_choice"] = {k: best["choice"][k] for k in ("model", "width", "epoch", "cv_value", "cv_per_seed",
+                                                             "cv_min2_per_seed", "cv_all_violations_per_seed")}
     assert doc["files"]["em300"]["sha256"] == res["export"]["sha256"]
     assert doc["files"]["em60"]["sha256"] == EM60_SHA
     path.write_text(json.dumps(doc, indent=1), encoding="utf-8")
-    log("frozen:", doc["files"]["em300"])
+    log("frozen: primary =", doc["primary"], doc["files"][doc["primary"]])
     return doc
 
 
@@ -301,19 +310,28 @@ def op_point(s, y, fa):
 
 
 def family_ci(s, y, g, fam, mask, min_pos, reps=2000, seed=0):
+    """Percentile 95% interval of the same-tool AUROC, resampling scenario families with replacement.
+    Every family of the masked rows is resampled; only cells that hold a violation can ever count, so the
+    AUROC work is done on those rows."""
     idx = np.flatnonzero(mask)
     if not len(idx):
         return None
-    f, gg, yy, ss = fam[idx].astype(str), g[idx], y[idx], np.asarray(s, dtype=np.float64)[idx]
-    fams = sorted(set(f.tolist()))
-    members = [np.flatnonzero(f == x) for x in fams]
+    fams_all = sorted(set(fam[idx].astype(str).tolist()))
+    has_pos = {c for c in set(g[idx].tolist()) if y[idx][g[idx] == c].sum() > 0}
+    idx = idx[np.isin(g[idx], list(has_pos))]
+    f, yy, ss = fam[idx].astype(str), y[idx], np.asarray(s, dtype=np.float64)[idx]
+    _, gi = np.unique(g[idx].astype(str), return_inverse=True)
+    members = [np.flatnonzero(f == x) for x in fams_all]            # empty for families without such cells
     rng = np.random.default_rng(seed)
     vals = []
     for _ in range(reps):
-        loc = np.concatenate([members[i] for i in rng.integers(0, len(fams), len(fams))])
+        loc = np.concatenate([members[i] for i in rng.integers(0, len(fams_all), len(fams_all))])
+        if not len(loc):
+            continue
         num, den = 0.0, 0
-        for cell in set(gg[loc].tolist()):
-            m = loc[gg[loc] == cell]
+        gl = gi[loc]
+        for cell in np.unique(gl):
+            m = loc[gl == cell]
             p = int(yy[m].sum())
             if p < min_pos or len(m) - p < E.MIN_NEG:
                 continue
@@ -324,10 +342,10 @@ def family_ci(s, y, g, fam, mask, min_pos, reps=2000, seed=0):
     if not vals:
         return None
     lo, hi = np.percentile(vals, [2.5, 97.5])
-    return {"low": float(lo), "high": float(hi), "valid_resamples": len(vals), "resamples": reps, "families": len(fams)}
+    return {"low": float(lo), "high": float(hi), "valid_resamples": len(vals), "resamples": reps, "families": len(fams_all)}
 
 
-def metrics_for(s, D, vis, sets) -> dict:
+def metrics_for(s, D, vis, sets, with_ci=True) -> dict:
     from sklearn.metrics import average_precision_score
     y, g = D["y"], D["cell"]
     yv = vis.astype(np.int64)
@@ -339,9 +357,9 @@ def metrics_for(s, D, vis, sets) -> dict:
         r = wt(s, lab, g, mask, mp) if mask.any() else {"value": None, "n_tools": 0, "n_positives_included": 0, "per_tool": []}
         out[key] = {"value": r["value"], "cells": r["n_tools"], "violations": r["n_positives_included"],
                     "per_cell": [p for p in r["per_tool"] if p["included"]]}
-    out["visible_min3"]["ci95"] = family_ci(s, yv, g, D["family"], sets["mask3"], 3) if out["visible_min3"]["value"] is not None else None
-    out["visible_min2"]["ci95"] = family_ci(s, yv, g, D["family"], sets["mask2"], 2) if out["visible_min2"]["value"] is not None else None
-    out["all_violations_min3"]["ci95"] = family_ci(s, y, g, D["family"], np.ones(D["n"], bool), 3) if out["all_violations_min3"]["value"] is not None else None
+    for key, lab, mask, mp in (("visible_min3", yv, sets["mask3"], 3), ("visible_min2", yv, sets["mask2"], 2),
+                               ("all_violations_min3", y, np.ones(D["n"], bool), 3)):
+        out[key]["ci95"] = family_ci(s, lab, g, D["family"], mask, mp) if (with_ci and out[key]["value"] is not None) else None
     for key, pos in (("pooled_visible", yv), ("pooled_all_violations", y)):
         m = (y == 0) | (pos == 1)
         if pos[m].sum() == 0:
@@ -388,9 +406,11 @@ def cmd_report() -> None:
                                        "scenarios": sorted(set(D["scenario_id"][D["cell"] == c].tolist()))}
                                    for c in sorted(call) if call[c][0] > 0}},
            "models": {}}
+    pk = frozen["primary"]
+    res["primary"] = pk
     for name in frozen["files"]:
-        res["models"][name] = metrics_for(sc[name], D, vis, sets)
-    p = res["models"]["em300"]["visible_min3"]
+        res["models"][name] = metrics_for(sc[name], D, vis, sets, with_ci=name in ("best", "em300", "em60", "P5"))
+    p = res["models"][pk]["visible_min3"]
     if p["value"] is None:
         verdict = "주 지표가 정의되지 않음 (근거가 보인 위반 3개 이상·정상 3개 이상인 칸이 test에 없음)"
     elif p["value"] >= 0.90 and p["ci95"] and p["ci95"]["low"] >= 0.80:
@@ -412,8 +432,8 @@ def cmd_report() -> None:
                         int(D["step_index"][i]), D["tool"][i], D["source"][i], D["cell"][i], int(D["y"][i]), D["label_status"][i],
                         int(vis[i]), cat.get(i, ""), int(sets["mask3"][i]), int(sets["mask2"][i]), int(distinct[i]), D["hash"][i][:16]]
                        + [f"{sc[n][i]:.6f}" for n in names])
-    log("VERDICT:", verdict)
-    for name in ("em300", "em60", "P5"):
+    log("VERDICT (primary =", pk + "):", verdict)
+    for name in [n for n in ("best", "em300", "em60", "P5") if n in res["models"]]:
         m = res["models"][name]
         log(f"{name:6s} visible>=3 {m['visible_min3']['value']} ({m['visible_min3']['violations']} violations, {m['visible_min3']['cells']} cells)"
             f" | visible>=2 {m['visible_min2']['value']} | all violations {m['all_violations_min3']['value']}"
