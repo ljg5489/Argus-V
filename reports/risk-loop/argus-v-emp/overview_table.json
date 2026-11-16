@@ -1,0 +1,2325 @@
+{
+ "note": "new split resplit-1117; Argus-V-em = mean of three repeats at epoch 67; mixed = all calls compared, period = same collection period, tool = same tool (every tool with a violation and a normal call), tool3 = same tool, only tools with three or more visible violations and normal calls; caught = test violations above the threshold at which 5% of the validation normal calls alarm; period lean = October normal calls ranked above November normal calls (0.5 = not at all)",
+ "splits": {
+  "train": {
+   "calls": 9653,
+   "violations": 77,
+   "visible_violations": 26,
+   "normal_calls": 9576,
+   "october_share_of_normal_calls": 0.0772765246449457
+  },
+  "validation": {
+   "calls": 3217,
+   "violations": 26,
+   "visible_violations": 7,
+   "normal_calls": 3191,
+   "october_share_of_normal_calls": 0.0770918207458477
+  },
+  "test": {
+   "calls": 3220,
+   "violations": 26,
+   "visible_violations": 10,
+   "normal_calls": 3194,
+   "october_share_of_normal_calls": 0.07701941139636818
+  }
+ },
+ "period_only_rule": {
+  "validation_all": {
+   "mixed": 0.7499156280886146,
+   "period": 0.5,
+   "tool": 0.5
+  },
+  "validation_all_range": {
+   "mixed": [
+    0.7499156280886146,
+    0.7499156280886146
+   ],
+   "period": [
+    0.5,
+    0.5
+   ],
+   "tool": [
+    0.5,
+    0.5
+   ]
+  },
+  "validation_all_tool_violations": 25,
+  "validation_visible": {
+   "mixed": 0.9614540896270761,
+   "period": 0.5,
+   "tool": 0.5
+  },
+  "validation_visible_range": {
+   "mixed": [
+    0.9614540896270761,
+    0.9614540896270761
+   ],
+   "period": [
+    0.5,
+    0.5
+   ],
+   "tool": [
+    0.5,
+    0.5
+   ]
+  },
+  "validation_visible_tool_violations": 6,
+  "validation_visible_tool3": 0.5,
+  "validation_visible_tool3_per_repeat": [
+   0.5
+  ],
+  "validation_period_lean_normal_calls": 1.0,
+  "test_all": {
+   "mixed": 0.7499518327633544,
+   "period": 0.5,
+   "tool": 0.5174632352941176
+  },
+  "test_all_range": {
+   "mixed": [
+    0.7499518327633544,
+    0.7499518327633544
+   ],
+   "period": [
+    0.5,
+    0.5
+   ],
+   "tool": [
+    0.5174632352941176,
+    0.5174632352941176
+   ]
+  },
+  "test_all_tool_violations": 24,
+  "test_visible": {
+   "mixed": 0.8614902943018159,
+   "period": 0.5,
+   "tool": 0.5419117647058823
+  },
+  "test_visible_range": {
+   "mixed": [
+    0.8614902943018159,
+    0.8614902943018159
+   ],
+   "period": [
+    0.5,
+    0.5
+   ],
+   "tool": [
+    0.5419117647058823,
+    0.5419117647058823
+   ]
+  },
+  "test_visible_tool_violations": 10,
+  "test_visible_tool3": 0.5,
+  "test_visible_tool3_per_repeat": [
+   0.5
+  ],
+  "test_period_lean_normal_calls": 1.0,
+  "test_caught_at_validation_5pct": {
+   "all": 0.0,
+   "visible": 0.0,
+   "false_alarms": 0.0,
+   "false_alarms_october_share": 0.0,
+   "october": 0.0,
+   "november": 0.0
+  },
+  "repeats": 1
+ },
+ "argus_v_em_part_of_the_mix": {
+  "validation_all": {
+   "mixed": 0.7282742328182629,
+   "period": 0.6232602401118695,
+   "tool": 0.3890764790764791
+  },
+  "validation_all_range": {
+   "mixed": [
+    0.7282742328182629,
+    0.7282742328182629
+   ],
+   "period": [
+    0.6232602401118695,
+    0.6232602401118695
+   ],
+   "tool": [
+    0.3890764790764791,
+    0.3890764790764791
+   ]
+  },
+  "validation_all_tool_violations": 25,
+  "validation_visible": {
+   "mixed": 0.9565295250033576,
+   "period": 0.8519163763066201,
+   "tool": 0.576388888888889
+  },
+  "validation_visible_range": {
+   "mixed": [
+    0.9565295250033576,
+    0.9565295250033576
+   ],
+   "period": [
+    0.8519163763066201,
+    0.8519163763066201
+   ],
+   "tool": [
+    0.576388888888889,
+    0.576388888888889
+   ]
+  },
+  "validation_visible_tool_violations": 6,
+  "validation_visible_tool3": 0.7777777777777778,
+  "validation_visible_tool3_per_repeat": [
+   0.7777777777777778
+  ],
+  "validation_period_lean_normal_calls": 0.7377862437368007,
+  "test_all": {
+   "mixed": 0.840560425798372,
+   "period": 0.7186408270773033,
+   "tool": 0.5224964985994398
+  },
+  "test_all_range": {
+   "mixed": [
+    0.840560425798372,
+    0.840560425798372
+   ],
+   "period": [
+    0.7186408270773033,
+    0.7186408270773033
+   ],
+   "tool": [
+    0.5224964985994398,
+    0.5224964985994398
+   ]
+  },
+  "test_all_tool_violations": 24,
+  "test_visible": {
+   "mixed": 0.8945522855353788,
+   "period": 0.7399857695998941,
+   "tool": 0.6730392156862746
+  },
+  "test_visible_range": {
+   "mixed": [
+    0.8945522855353788,
+    0.8945522855353788
+   ],
+   "period": [
+    0.7399857695998941,
+    0.7399857695998941
+   ],
+   "tool": [
+    0.6730392156862746,
+    0.6730392156862746
+   ]
+  },
+  "test_visible_tool_violations": 10,
+  "test_visible_tool3": 0.75,
+  "test_visible_tool3_per_repeat": [
+   0.75
+  ],
+  "test_period_lean_normal_calls": 0.7492691751883598,
+  "test_caught_at_validation_5pct": {
+   "all": 9.0,
+   "visible": 5.0,
+   "false_alarms": 166.0,
+   "false_alarms_october_share": 0.3674698795180723,
+   "october": 6.0,
+   "november": 3.0
+  },
+  "repeats": 1
+ },
+ "same_tool_three_or_more": {
+  "validation": {
+   "cells": [
+    {
+     "cell": "fetch_replacement_reviewer|oct",
+     "violations": 3,
+     "normals": 3
+    }
+   ],
+   "violations": 3,
+   "pairs": 9
+  },
+  "test": {
+   "cells": [
+    {
+     "cell": "record_independent_review|oct",
+     "violations": 4,
+     "normals": 6
+    }
+   ],
+   "violations": 4,
+   "pairs": 24
+  }
+ },
+ "argus_v_em_fit": {
+  "w15": {
+   "fit_rows": 5360,
+   "visible_violations": 26,
+   "pos_weight": 14.323192596435547
+  },
+  "w60": {
+   "fit_rows": 5360,
+   "visible_violations": 26,
+   "pos_weight": 54.20754623413086
+  },
+  "w300": {
+   "fit_rows": 5360,
+   "visible_violations": 26,
+   "pos_weight": 300.0
+  }
+ },
+ "models": {
+  "Argus-V-p P1": {
+   "family": "Argus-V-p",
+   "setting": "P1",
+   "validation_all": {
+    "mixed": 0.800496588964154,
+    "period": 0.7688664710860247,
+    "tool": 0.5638383838383839
+   },
+   "validation_all_range": {
+    "mixed": [
+     0.800496588964154,
+     0.800496588964154
+    ],
+    "period": [
+     0.7688664710860247,
+     0.7688664710860247
+    ],
+    "tool": [
+     0.5638383838383839,
+     0.5638383838383839
+    ]
+   },
+   "validation_all_tool_violations": 25,
+   "validation_visible": {
+    "mixed": 0.8053006222858934,
+    "period": 0.705574912891986,
+    "tool": 0.5625
+   },
+   "validation_visible_range": {
+    "mixed": [
+     0.8053006222858934,
+     0.8053006222858934
+    ],
+    "period": [
+     0.705574912891986,
+     0.705574912891986
+    ],
+    "tool": [
+     0.5625,
+     0.5625
+    ]
+   },
+   "validation_visible_tool_violations": 6,
+   "validation_visible_tool3": 0.3333333333333333,
+   "validation_visible_tool3_per_repeat": [
+    0.3333333333333333
+   ],
+   "validation_period_lean_normal_calls": 0.6270418374811931,
+   "test_all": {
+    "mixed": 0.8327753961755214,
+    "period": 0.745478909817279,
+    "tool": 0.6161006069094305
+   },
+   "test_all_range": {
+    "mixed": [
+     0.8327753961755214,
+     0.8327753961755214
+    ],
+    "period": [
+     0.745478909817279,
+     0.745478909817279
+    ],
+    "tool": [
+     0.6161006069094305,
+     0.6161006069094305
+    ]
+   },
+   "test_all_tool_violations": 24,
+   "test_visible": {
+    "mixed": 0.8606293049467753,
+    "period": 0.7345626358231018,
+    "tool": 0.6607843137254902
+   },
+   "test_visible_range": {
+    "mixed": [
+     0.8606293049467753,
+     0.8606293049467753
+    ],
+    "period": [
+     0.7345626358231018,
+     0.7345626358231018
+    ],
+    "tool": [
+     0.6607843137254902,
+     0.6607843137254902
+    ]
+   },
+   "test_visible_tool_violations": 10,
+   "test_visible_tool3": 0.6666666666666666,
+   "test_visible_tool3_per_repeat": [
+    0.6666666666666666
+   ],
+   "test_period_lean_normal_calls": 0.6990580633418274,
+   "test_caught_at_validation_5pct": {
+    "all": 7.0,
+    "visible": 2.0,
+    "false_alarms": 161.0,
+    "false_alarms_october_share": 0.16770186335403728,
+    "october": 3.0,
+    "november": 4.0
+   },
+   "repeats": 1,
+   "train_all_mixed": 0.9050487419848322,
+   "train_visible_mixed": 0.9148833622517833
+  },
+  "Argus-V-p P2": {
+   "family": "Argus-V-p",
+   "setting": "P2",
+   "validation_all": {
+    "mixed": 0.7810609165200203,
+    "period": 0.5760645182526005,
+    "tool": 0.5097777777777778
+   },
+   "validation_all_range": {
+    "mixed": [
+     0.7810609165200203,
+     0.7810609165200203
+    ],
+    "period": [
+     0.5760645182526005,
+     0.5760645182526005
+    ],
+    "tool": [
+     0.5097777777777778,
+     0.5097777777777778
+    ]
+   },
+   "validation_all_tool_violations": 25,
+   "validation_visible": {
+    "mixed": 0.8597170613779828,
+    "period": 0.4819976771196283,
+    "tool": 0.6541666666666667
+   },
+   "validation_visible_range": {
+    "mixed": [
+     0.8597170613779828,
+     0.8597170613779828
+    ],
+    "period": [
+     0.4819976771196283,
+     0.4819976771196283
+    ],
+    "tool": [
+     0.6541666666666667,
+     0.6541666666666667
+    ]
+   },
+   "validation_visible_tool_violations": 6,
+   "validation_visible_tool3": 0.6666666666666666,
+   "validation_visible_tool3_per_repeat": [
+    0.6666666666666666
+   ],
+   "validation_period_lean_normal_calls": 0.8769141579361465,
+   "test_all": {
+    "mixed": 0.7397885458311256,
+    "period": 0.533064996525135,
+    "tool": 0.5783730158730159
+   },
+   "test_all_range": {
+    "mixed": [
+     0.7397885458311256,
+     0.7397885458311256
+    ],
+    "period": [
+     0.533064996525135,
+     0.533064996525135
+    ],
+    "tool": [
+     0.5783730158730159,
+     0.5783730158730159
+    ]
+   },
+   "test_all_tool_violations": 24,
+   "test_visible": {
+    "mixed": 0.7607545397620539,
+    "period": 0.4733271006387133,
+    "tool": 0.65
+   },
+   "test_visible_range": {
+    "mixed": [
+     0.7607545397620539,
+     0.7607545397620539
+    ],
+    "period": [
+     0.4733271006387133,
+     0.4733271006387133
+    ],
+    "tool": [
+     0.65,
+     0.65
+    ]
+   },
+   "test_visible_tool_violations": 10,
+   "test_visible_tool3": 0.5,
+   "test_visible_tool3_per_repeat": [
+    0.5
+   ],
+   "test_period_lean_normal_calls": 0.8386773174041102,
+   "test_caught_at_validation_5pct": {
+    "all": 1.0,
+    "visible": 1.0,
+    "false_alarms": 181.0,
+    "false_alarms_october_share": 0.2596685082872928,
+    "october": 1.0,
+    "november": 0.0
+   },
+   "repeats": 1,
+   "train_all_mixed": 0.7531816554372945,
+   "train_visible_mixed": 0.8790525994473363
+  },
+  "Argus-V-p P3": {
+   "family": "Argus-V-p",
+   "setting": "P3",
+   "validation_all": {
+    "mixed": 0.7715148374032736,
+    "period": 0.7835287547076855,
+    "tool": 0.5263203463203464
+   },
+   "validation_all_range": {
+    "mixed": [
+     0.7715148374032736,
+     0.7715148374032736
+    ],
+    "period": [
+     0.7835287547076855,
+     0.7835287547076855
+    ],
+    "tool": [
+     0.5263203463203464,
+     0.5263203463203464
+    ]
+   },
+   "validation_all_tool_violations": 25,
+   "validation_visible": {
+    "mixed": 0.852665980212204,
+    "period": 0.870499419279907,
+    "tool": 0.5972222222222222
+   },
+   "validation_visible_range": {
+    "mixed": [
+     0.852665980212204,
+     0.852665980212204
+    ],
+    "period": [
+     0.870499419279907,
+     0.870499419279907
+    ],
+    "tool": [
+     0.5972222222222222,
+     0.5972222222222222
+    ]
+   },
+   "validation_visible_tool_violations": 6,
+   "validation_visible_tool3": 0.4444444444444444,
+   "validation_visible_tool3_per_repeat": [
+    0.4444444444444444
+   ],
+   "validation_period_lean_normal_calls": 0.5595290350187033,
+   "test_all": {
+    "mixed": 0.8353342806223207,
+    "period": 0.7964106637204562,
+    "tool": 0.6147000466853408
+   },
+   "test_all_range": {
+    "mixed": [
+     0.8353342806223207,
+     0.8353342806223207
+    ],
+    "period": [
+     0.7964106637204562,
+     0.7964106637204562
+    ],
+    "tool": [
+     0.6147000466853408,
+     0.6147000466853408
+    ]
+   },
+   "test_all_tool_violations": 24,
+   "test_visible": {
+    "mixed": 0.9034752661239824,
+    "period": 0.883417447132409,
+    "tool": 0.7598039215686274
+   },
+   "test_visible_range": {
+    "mixed": [
+     0.9034752661239824,
+     0.9034752661239824
+    ],
+    "period": [
+     0.883417447132409,
+     0.883417447132409
+    ],
+    "tool": [
+     0.7598039215686274,
+     0.7598039215686274
+    ]
+   },
+   "test_visible_tool_violations": 10,
+   "test_visible_tool3": 0.8333333333333334,
+   "test_visible_tool3_per_repeat": [
+    0.8333333333333334
+   ],
+   "test_period_lean_normal_calls": 0.6208915235353167,
+   "test_caught_at_validation_5pct": {
+    "all": 1.0,
+    "visible": 0.0,
+    "false_alarms": 134.0,
+    "false_alarms_october_share": 0.08208955223880597,
+    "october": 0.0,
+    "november": 1.0
+   },
+   "repeats": 1,
+   "train_all_mixed": 0.9529356399657152,
+   "train_visible_mixed": 0.9390001445922499
+  },
+  "Argus-V-p P4": {
+   "family": "Argus-V-p",
+   "setting": "P4",
+   "validation_all": {
+    "mixed": 0.605531181447822,
+    "period": 0.506749443359655,
+    "tool": 0.686868686868687
+   },
+   "validation_all_range": {
+    "mixed": [
+     0.605531181447822,
+     0.605531181447822
+    ],
+    "period": [
+     0.506749443359655,
+     0.506749443359655
+    ],
+    "tool": [
+     0.686868686868687,
+     0.686868686868687
+    ]
+   },
+   "validation_all_tool_violations": 25,
+   "validation_visible": {
+    "mixed": 0.800644670278014,
+    "period": 0.6672473867595817,
+    "tool": 0.8125
+   },
+   "validation_visible_range": {
+    "mixed": [
+     0.800644670278014,
+     0.800644670278014
+    ],
+    "period": [
+     0.6672473867595817,
+     0.6672473867595817
+    ],
+    "tool": [
+     0.8125,
+     0.8125
+    ]
+   },
+   "validation_visible_tool_violations": 6,
+   "validation_visible_tool3": 0.6666666666666666,
+   "validation_visible_tool3_per_repeat": [
+    0.6666666666666666
+   ],
+   "validation_period_lean_normal_calls": 0.68953993954201,
+   "test_all": {
+    "mixed": 0.6241570733587014,
+    "period": 0.5277722974756102,
+    "tool": 0.5753968253968254
+   },
+   "test_all_range": {
+    "mixed": [
+     0.6241570733587014,
+     0.6241570733587014
+    ],
+    "period": [
+     0.5277722974756102,
+     0.5277722974756102
+    ],
+    "tool": [
+     0.5753968253968254,
+     0.5753968253968254
+    ]
+   },
+   "test_all_tool_violations": 24,
+   "test_visible": {
+    "mixed": 0.7342830306825298,
+    "period": 0.5909672811110743,
+    "tool": 0.7083333333333334
+   },
+   "test_visible_range": {
+    "mixed": [
+     0.7342830306825298,
+     0.7342830306825298
+    ],
+    "period": [
+     0.5909672811110743,
+     0.5909672811110743
+    ],
+    "tool": [
+     0.7083333333333334,
+     0.7083333333333334
+    ]
+   },
+   "test_visible_tool_violations": 10,
+   "test_visible_tool3": 0.7083333333333334,
+   "test_visible_tool3_per_repeat": [
+    0.7083333333333334
+   ],
+   "test_period_lean_normal_calls": 0.7146453155508489,
+   "test_caught_at_validation_5pct": {
+    "all": 1.0,
+    "visible": 1.0,
+    "false_alarms": 141.0,
+    "false_alarms_october_share": 0.05673758865248227,
+    "october": 1.0,
+    "november": 0.0
+   },
+   "repeats": 1,
+   "train_all_mixed": 0.7011813896212392,
+   "train_visible_mixed": 0.7861882269777006
+  },
+  "Argus-V-p P5": {
+   "family": "Argus-V-p",
+   "setting": "P5",
+   "validation_all": {
+    "mixed": 0.8166779162548514,
+    "period": 0.7642327388403831,
+    "tool": 0.5245526695526695
+   },
+   "validation_all_range": {
+    "mixed": [
+     0.8166779162548514,
+     0.8166779162548514
+    ],
+    "period": [
+     0.7642327388403831,
+     0.7642327388403831
+    ],
+    "tool": [
+     0.5245526695526695,
+     0.5245526695526695
+    ]
+   },
+   "validation_all_tool_violations": 25,
+   "validation_visible": {
+    "mixed": 0.8631418722299324,
+    "period": 0.7166085946573751,
+    "tool": 0.5069444444444444
+   },
+   "validation_visible_range": {
+    "mixed": [
+     0.8631418722299324,
+     0.8631418722299324
+    ],
+    "period": [
+     0.7166085946573751,
+     0.7166085946573751
+    ],
+    "tool": [
+     0.5069444444444444,
+     0.5069444444444444
+    ]
+   },
+   "validation_visible_tool_violations": 6,
+   "validation_visible_tool3": 0.2222222222222222,
+   "validation_visible_tool3_per_repeat": [
+    0.2222222222222222
+   ],
+   "validation_period_lean_normal_calls": 0.704196170993968,
+   "test_all": {
+    "mixed": 0.8751505226145176,
+    "period": 0.7646058361611693,
+    "tool": 0.6041958450046685
+   },
+   "test_all_range": {
+    "mixed": [
+     0.8751505226145176,
+     0.8751505226145176
+    ],
+    "period": [
+     0.7646058361611693,
+     0.7646058361611693
+    ],
+    "tool": [
+     0.6041958450046685,
+     0.6041958450046685
+    ]
+   },
+   "test_all_tool_violations": 24,
+   "test_visible": {
+    "mixed": 0.9061051972448341,
+    "period": 0.753348832334999,
+    "tool": 0.6607843137254902
+   },
+   "test_visible_range": {
+    "mixed": [
+     0.9061051972448341,
+     0.9061051972448341
+    ],
+    "period": [
+     0.753348832334999,
+     0.753348832334999
+    ],
+    "tool": [
+     0.6607843137254902,
+     0.6607843137254902
+    ]
+   },
+   "test_visible_tool_violations": 10,
+   "test_visible_tool3": 0.6666666666666666,
+   "test_visible_tool3_per_repeat": [
+    0.6666666666666666
+   ],
+   "test_period_lean_normal_calls": 0.7690510860332483,
+   "test_caught_at_validation_5pct": {
+    "all": 10.0,
+    "visible": 5.0,
+    "false_alarms": 167.0,
+    "false_alarms_october_share": 0.2275449101796407,
+    "october": 6.0,
+    "november": 4.0
+   },
+   "repeats": 1,
+   "train_all_mixed": 0.9469025648536926,
+   "train_visible_mixed": 0.9536702332754964
+  },
+  "Argus-V-p P6": {
+   "family": "Argus-V-p",
+   "setting": "P6",
+   "validation_all": {
+    "mixed": 0.7044994335028807,
+    "period": 0.5638405157722729,
+    "tool": 0.6507575757575758
+   },
+   "validation_all_range": {
+    "mixed": [
+     0.7044994335028807,
+     0.7044994335028807
+    ],
+    "period": [
+     0.5638405157722729,
+     0.5638405157722729
+    ],
+    "tool": [
+     0.6507575757575758,
+     0.6507575757575758
+    ]
+   },
+   "validation_all_tool_violations": 25,
+   "validation_visible": {
+    "mixed": 0.9208040470967453,
+    "period": 0.7247386759581882,
+    "tool": 0.8333333333333334
+   },
+   "validation_visible_range": {
+    "mixed": [
+     0.9208040470967453,
+     0.9208040470967453
+    ],
+    "period": [
+     0.7247386759581882,
+     0.7247386759581882
+    ],
+    "tool": [
+     0.8333333333333334,
+     0.8333333333333334
+    ]
+   },
+   "validation_visible_tool_violations": 6,
+   "validation_visible_tool3": 0.6666666666666666,
+   "validation_visible_tool3_per_repeat": [
+    0.6666666666666666
+   ],
+   "validation_period_lean_normal_calls": 0.7935573591729126,
+   "test_all": {
+    "mixed": 0.7452675689995665,
+    "period": 0.6037168222506774,
+    "tool": 0.5833333333333334
+   },
+   "test_all_range": {
+    "mixed": [
+     0.7452675689995665,
+     0.7452675689995665
+    ],
+    "period": [
+     0.6037168222506774,
+     0.6037168222506774
+    ],
+    "tool": [
+     0.5833333333333334,
+     0.5833333333333334
+    ]
+   },
+   "test_all_tool_violations": 24,
+   "test_visible": {
+    "mixed": 0.852035065748278,
+    "period": 0.6640453497479344,
+    "tool": 0.725
+   },
+   "test_visible_range": {
+    "mixed": [
+     0.852035065748278,
+     0.852035065748278
+    ],
+    "period": [
+     0.6640453497479344,
+     0.6640453497479344
+    ],
+    "tool": [
+     0.725,
+     0.725
+    ]
+   },
+   "test_visible_tool_violations": 10,
+   "test_visible_tool3": 0.7083333333333334,
+   "test_visible_tool3_per_repeat": [
+    0.7083333333333334
+   ],
+   "test_period_lean_normal_calls": 0.8173799792611224,
+   "test_caught_at_validation_5pct": {
+    "all": 4.0,
+    "visible": 3.0,
+    "false_alarms": 182.0,
+    "false_alarms_october_share": 0.37362637362637363,
+    "october": 3.0,
+    "november": 1.0
+   },
+   "repeats": 1,
+   "train_all_mixed": 0.8448095346591588,
+   "train_visible_mixed": 0.9098105841526894
+  },
+  "Argus-V-em EM32 w15": {
+   "family": "Argus-V-em",
+   "arch": "EM32",
+   "weight": "w15",
+   "validation_all": {
+    "mixed": 0.612268881228455,
+    "period": 0.5570575554260179,
+    "tool": 0.38740596440596436
+   },
+   "validation_all_range": {
+    "mixed": [
+     0.5512378564713256,
+     0.684087457512716
+    ],
+    "period": [
+     0.49957433073090035,
+     0.6340449410762881
+    ],
+    "tool": [
+     0.3285295815295815,
+     0.4317604617604618
+    ]
+   },
+   "validation_all_tool_violations": 25,
+   "validation_visible": {
+    "mixed": 0.8337586366417454,
+    "period": 0.7518389469608983,
+    "tool": 0.6097222222222222
+   },
+   "validation_visible_range": {
+    "mixed": [
+     0.7847965259435018,
+     0.8896897524287057
+    ],
+    "period": [
+     0.718931475029036,
+     0.8077816492450639
+    ],
+    "tool": [
+     0.5222222222222223,
+     0.673611111111111
+    ]
+   },
+   "validation_visible_tool_violations": 6,
+   "validation_visible_tool3": 0.8888888888888888,
+   "validation_visible_tool3_per_repeat": [
+    0.7777777777777778,
+    0.8888888888888888,
+    1.0
+   ],
+   "validation_period_lean_normal_calls": 0.6341320781628869,
+   "test_all": {
+    "mixed": 0.6499626703915996,
+    "period": 0.5880619501842654,
+    "tool": 0.5025774198568316
+   },
+   "test_all_range": {
+    "mixed": [
+     0.6294434275805597,
+     0.666869370454217
+    ],
+    "period": [
+     0.5653972589720678,
+     0.6035712406753542
+    ],
+    "tool": [
+     0.452906162464986,
+     0.5415207749766573
+    ]
+   },
+   "test_all_tool_violations": 24,
+   "test_visible": {
+    "mixed": 0.7188165309956168,
+    "period": 0.6287583700124654,
+    "tool": 0.683169934640523
+   },
+   "test_visible_range": {
+    "mixed": [
+     0.6404508453350032,
+     0.7856606136505949
+    ],
+    "period": [
+     0.5527418340669159,
+     0.6996996723698581
+    ],
+    "tool": [
+     0.6294117647058823,
+     0.7441176470588236
+    ]
+   },
+   "test_visible_tool_violations": 10,
+   "test_visible_tool3": 0.7916666666666666,
+   "test_visible_tool3_per_repeat": [
+    0.75,
+    0.75,
+    0.875
+   ],
+   "test_period_lean_normal_calls": 0.6252826775214835,
+   "test_caught_at_validation_5pct": {
+    "all": 8.0,
+    "visible": 4.0,
+    "false_alarms": 163.33333333333334,
+    "false_alarms_october_share": 0.25603517186250996,
+    "october": 4.0,
+    "november": 4.0
+   },
+   "repeats": 3,
+   "train_all_mixed": 0.7345756617373159,
+   "train_visible_mixed": 0.999967868388921
+  },
+  "Argus-V-em EM32 w60": {
+   "family": "Argus-V-em",
+   "arch": "EM32",
+   "weight": "w60",
+   "validation_all": {
+    "mixed": 0.632355422703276,
+    "period": 0.5364449802915163,
+    "tool": 0.38204810004810014
+   },
+   "validation_all_range": {
+    "mixed": [
+     0.5959549695055806,
+     0.6632234891401297
+    ],
+    "period": [
+     0.4821997194766253,
+     0.5918648752244347
+    ],
+    "tool": [
+     0.35777922077922086,
+     0.4062135642135642
+    ]
+   },
+   "validation_all_tool_violations": 25,
+   "validation_visible": {
+    "mixed": 0.8430108489650953,
+    "period": 0.6891211769260549,
+    "tool": 0.5430555555555556
+   },
+   "validation_visible_range": {
+    "mixed": [
+     0.7932578233424363,
+     0.8949276984375699
+    ],
+    "period": [
+     0.5981416957026713,
+     0.7415795586527294
+    ],
+    "tool": [
+     0.5222222222222223,
+     0.563888888888889
+    ]
+   },
+   "validation_visible_tool_violations": 6,
+   "validation_visible_tool3": 0.7777777777777778,
+   "validation_visible_tool3_per_repeat": [
+    0.7777777777777778,
+    0.7777777777777778,
+    0.7777777777777778
+   ],
+   "validation_period_lean_normal_calls": 0.709257802255442,
+   "test_all": {
+    "mixed": 0.7228718109275404,
+    "period": 0.6424128292530185,
+    "tool": 0.5844907407407408
+   },
+   "test_all_range": {
+    "mixed": [
+     0.6457841626125909,
+     0.7902377053128462
+    ],
+    "period": [
+     0.5899783234603038,
+     0.7070474423040859
+    ],
+    "tool": [
+     0.5009045284780579,
+     0.6297852474323062
+    ]
+   },
+   "test_all_tool_violations": 24,
+   "test_visible": {
+    "mixed": 0.7854831976622835,
+    "period": 0.6726405849540179,
+    "tool": 0.7027777777777778
+   },
+   "test_visible_range": {
+    "mixed": [
+     0.7350657482780213,
+     0.8665936130244208
+    ],
+    "period": [
+     0.606077704603369,
+     0.7599841700587969
+    ],
+    "tool": [
+     0.6602941176470589,
+     0.7720588235294118
+    ]
+   },
+   "test_visible_tool_violations": 10,
+   "test_visible_tool3": 0.8333333333333334,
+   "test_visible_tool3_per_repeat": [
+    0.75,
+    0.75,
+    1.0
+   ],
+   "test_period_lean_normal_calls": 0.682496148231496,
+   "test_caught_at_validation_5pct": {
+    "all": 9.666666666666666,
+    "visible": 5.0,
+    "false_alarms": 167.0,
+    "false_alarms_october_share": 0.2797840182603924,
+    "october": 5.666666666666667,
+    "november": 4.0
+   },
+   "repeats": 3,
+   "train_all_mixed": 0.7351339658670485,
+   "train_visible_mixed": 0.999990628280102
+  },
+  "Argus-V-em EM32 w300": {
+   "family": "Argus-V-em",
+   "arch": "EM32",
+   "weight": "w300",
+   "validation_all": {
+    "mixed": 0.7396885471156859,
+    "period": 0.5959571329421013,
+    "tool": 0.4727960557960558
+   },
+   "validation_all_range": {
+    "mixed": [
+     0.7176795313742979,
+     0.7548995974254514
+    ],
+    "period": [
+     0.5642200505196903,
+     0.6166827526966663
+    ],
+    "tool": [
+     0.4630894660894661,
+     0.4831240981240981
+    ]
+   },
+   "validation_all_tool_violations": 25,
+   "validation_visible": {
+    "mixed": 0.966572652251123,
+    "period": 0.753968253968254,
+    "tool": 0.5453703703703704
+   },
+   "validation_visible_range": {
+    "mixed": [
+     0.9585888883914582,
+     0.973989345032905
+    ],
+    "period": [
+     0.7015098722415795,
+     0.7950058072009292
+    ],
+    "tool": [
+     0.4388888888888889,
+     0.6625
+    ]
+   },
+   "validation_visible_tool_violations": 6,
+   "validation_visible_tool3": 0.5185185185185185,
+   "validation_visible_tool3_per_repeat": [
+    0.4444444444444444,
+    0.4444444444444444,
+    0.6666666666666666
+   ],
+   "validation_period_lean_normal_calls": 0.8629195595860882,
+   "test_all": {
+    "mixed": 0.8815547581201933,
+    "period": 0.7410415445089634,
+    "tool": 0.610264939309057
+   },
+   "test_all_range": {
+    "mixed": [
+     0.8615131737392225,
+     0.904129136361447
+    ],
+    "period": [
+     0.7211143879782396,
+     0.7514148725925209
+    ],
+    "tool": [
+     0.5914157329598505,
+     0.6365546218487396
+    ]
+   },
+   "test_all_tool_violations": 24,
+   "test_visible": {
+    "mixed": 0.8889271550824462,
+    "period": 0.6783744801491434,
+    "tool": 0.6844771241830067
+   },
+   "test_visible_range": {
+    "mixed": [
+     0.8468378209142141,
+     0.9173137132122731
+    ],
+    "period": [
+     0.6245973568962284,
+     0.7211004291182668
+    ],
+    "tool": [
+     0.678921568627451,
+     0.6955882352941176
+    ]
+   },
+   "test_visible_tool_violations": 10,
+   "test_visible_tool3": 0.7083333333333334,
+   "test_visible_tool3_per_repeat": [
+    0.75,
+    0.75,
+    0.625
+   ],
+   "test_period_lean_normal_calls": 0.8519576452548785,
+   "test_caught_at_validation_5pct": {
+    "all": 11.666666666666666,
+    "visible": 4.666666666666667,
+    "false_alarms": 178.0,
+    "false_alarms_october_share": 0.5258176228177474,
+    "october": 8.0,
+    "november": 3.6666666666666665
+   },
+   "repeats": 3,
+   "train_all_mixed": 0.8172824286546091,
+   "train_visible_mixed": 0.9999410920463552
+  },
+  "Argus-V-em EM64 w15": {
+   "family": "Argus-V-em",
+   "arch": "EM64",
+   "weight": "w15",
+   "validation_all": {
+    "mixed": 0.6276446576509253,
+    "period": 0.5696594114955125,
+    "tool": 0.3728403078403078
+   },
+   "validation_all_range": {
+    "mixed": [
+     0.5896813152375672,
+     0.64803654509076
+    ],
+    "period": [
+     0.527542681068707,
+     0.5939104024055782
+    ],
+    "tool": [
+     0.3351010101010101,
+     0.41756854256854253
+    ]
+   },
+   "validation_all_tool_violations": 25,
+   "validation_visible": {
+    "mixed": 0.8272074733998895,
+    "period": 0.7456445993031359,
+    "tool": 0.6018518518518517
+   },
+   "validation_visible_range": {
+    "mixed": [
+     0.77875274208712,
+     0.8869140887317007
+    ],
+    "period": [
+     0.6980255516840883,
+     0.8159117305458768
+    ],
+    "tool": [
+     0.5,
+     0.7291666666666666
+    ]
+   },
+   "validation_visible_tool_violations": 6,
+   "validation_visible_tool3": 0.8148148148148148,
+   "validation_visible_tool3_per_repeat": [
+    1.0,
+    0.6666666666666666,
+    0.7777777777777778
+   ],
+   "validation_period_lean_normal_calls": 0.6378598607717826,
+   "test_all": {
+    "mixed": 0.6991574747523401,
+    "period": 0.6358972449707797,
+    "tool": 0.5117005135387488
+   },
+   "test_all_range": {
+    "mixed": [
+     0.6776106642261933,
+     0.7295831125668321
+    ],
+    "period": [
+     0.617004946273239,
+     0.6723889506925546
+    ],
+    "tool": [
+     0.43793767507002795,
+     0.6058006535947713
+    ]
+   },
+   "test_all_tool_violations": 24,
+   "test_visible": {
+    "mixed": 0.8285326654143185,
+    "period": 0.7381633039532568,
+    "tool": 0.7661764705882352
+   },
+   "test_visible_range": {
+    "mixed": [
+     0.7947714464621165,
+     0.863337507827176
+    ],
+    "period": [
+     0.6967110125646712,
+     0.7869375406779848
+    ],
+    "tool": [
+     0.6911764705882353,
+     0.8539215686274509
+    ]
+   },
+   "test_visible_tool_violations": 10,
+   "test_visible_tool3": 0.8333333333333334,
+   "test_visible_tool3_per_repeat": [
+    0.75,
+    0.75,
+    1.0
+   ],
+   "test_period_lean_normal_calls": 0.6243778796336131,
+   "test_caught_at_validation_5pct": {
+    "all": 7.333333333333333,
+    "visible": 4.0,
+    "false_alarms": 164.0,
+    "false_alarms_october_share": 0.26471885744383644,
+    "october": 4.0,
+    "november": 3.3333333333333335
+   },
+   "repeats": 3,
+   "train_all_mixed": 0.7434131414394572,
+   "train_visible_mixed": 0.9999745624745625
+  },
+  "Argus-V-em EM64 w60": {
+   "family": "Argus-V-em",
+   "arch": "EM64",
+   "weight": "w60",
+   "validation_all": {
+    "mixed": 0.6795233388777732,
+    "period": 0.5534159012087704,
+    "tool": 0.38439201539201545
+   },
+   "validation_all_range": {
+    "mixed": [
+     0.5967745823590387,
+     0.7241400091603789
+    ],
+    "period": [
+     0.5299575498693474,
+     0.5730420434673198
+    ],
+    "tool": [
+     0.3817893217893218,
+     0.3883910533910534
+    ]
+   },
+   "validation_all_tool_violations": 25,
+   "validation_visible": {
+    "mixed": 0.8677679783916075,
+    "period": 0.6864111498257839,
+    "tool": 0.5166666666666666
+   },
+   "validation_visible_range": {
+    "mixed": [
+     0.7988091507364462,
+     0.9124322872364239
+    ],
+    "period": [
+     0.6672473867595817,
+     0.7073170731707317
+    ],
+    "tool": [
+     0.4875,
+     0.5416666666666666
+    ]
+   },
+   "validation_visible_tool_violations": 6,
+   "validation_visible_tool3": 0.6666666666666666,
+   "validation_visible_tool3_per_repeat": [
+    0.6666666666666666,
+    0.6666666666666666,
+    0.6666666666666666
+   ],
+   "validation_period_lean_normal_calls": 0.7436562820636695,
+   "test_all": {
+    "mixed": 0.767261933432879,
+    "period": 0.663162985742163,
+    "tool": 0.6225684718331778
+   },
+   "test_all_range": {
+    "mixed": [
+     0.6736007417754444,
+     0.8430049130581379
+    ],
+    "period": [
+     0.6082367456593886,
+     0.7207702957156907
+    ],
+    "tool": [
+     0.5587943510737629,
+     0.7069911297852474
+    ]
+   },
+   "test_all_tool_violations": 24,
+   "test_visible": {
+    "mixed": 0.8378626591525777,
+    "period": 0.7009416149114003,
+    "tool": 0.7735294117647059
+   },
+   "test_visible_range": {
+    "mixed": [
+     0.7446149029430181,
+     0.9059486537257357
+    ],
+    "period": [
+     0.6534985824756484,
+     0.7510921004732436
+    ],
+    "tool": [
+     0.6803921568627451,
+     0.8622549019607844
+    ]
+   },
+   "test_visible_tool_violations": 10,
+   "test_visible_tool3": 0.9166666666666666,
+   "test_visible_tool3_per_repeat": [
+    1.0,
+    0.75,
+    1.0
+   ],
+   "test_period_lean_normal_calls": 0.7239290888499115,
+   "test_caught_at_validation_5pct": {
+    "all": 9.0,
+    "visible": 4.666666666666667,
+    "false_alarms": 155.33333333333334,
+    "false_alarms_october_share": 0.30356666156998474,
+    "october": 5.0,
+    "november": 4.0
+   },
+   "repeats": 3,
+   "train_all_mixed": 0.7623425898801838,
+   "train_visible_mixed": 0.9999892894629737
+  },
+  "Argus-V-em EM64 w300": {
+   "family": "Argus-V-em",
+   "arch": "EM64",
+   "weight": "w300",
+   "validation_all": {
+    "mixed": 0.7797772581539425,
+    "period": 0.6282296731155896,
+    "tool": 0.4593150553150553
+   },
+   "validation_all_range": {
+    "mixed": [
+     0.75536966950317,
+     0.813007738109587
+    ],
+    "period": [
+     0.603200642167059,
+     0.6686823577129594
+    ],
+    "tool": [
+     0.4326854256854256,
+     0.48261183261183255
+    ]
+   },
+   "validation_all_tool_violations": 25,
+   "validation_visible": {
+    "mixed": 0.9773470027308949,
+    "period": 0.8013937282229966,
+    "tool": 0.6694444444444444
+   },
+   "validation_visible_range": {
+    "mixed": [
+     0.9768993150378296,
+     0.9780185342704929
+    ],
+    "period": [
+     0.7897793263646922,
+     0.8199767711962834
+    ],
+    "tool": [
+     0.625,
+     0.7083333333333334
+    ]
+   },
+   "validation_visible_tool_violations": 6,
+   "validation_visible_tool3": 0.6666666666666666,
+   "validation_visible_tool3_per_repeat": [
+    0.6666666666666666,
+    0.6666666666666666,
+    0.6666666666666666
+   ],
+   "validation_period_lean_normal_calls": 0.8878649219429375,
+   "test_all": {
+    "mixed": 0.8948930687346467,
+    "period": 0.740839091539856,
+    "tool": 0.5740546218487395
+   },
+   "test_all_range": {
+    "mixed": [
+     0.8758068012138144,
+     0.9116913925148115
+    ],
+    "period": [
+     0.7228587151230035,
+     0.7593573154184731
+    ],
+    "tool": [
+     0.5661181139122315,
+     0.5879435107376284
+    ]
+   },
+   "test_all_tool_violations": 24,
+   "test_visible": {
+    "mixed": 0.8942183260279691,
+    "period": 0.6505155302570665,
+    "tool": 0.6066993464052287
+   },
+   "test_visible_range": {
+    "mixed": [
+     0.8733562930494677,
+     0.910738885410144
+    ],
+    "period": [
+     0.6457700411468158,
+     0.6571673230300824
+    ],
+    "tool": [
+     0.5789215686274509,
+     0.628921568627451
+    ]
+   },
+   "test_visible_tool_violations": 10,
+   "test_visible_tool3": 0.5416666666666666,
+   "test_visible_tool3_per_repeat": [
+    0.625,
+    0.5,
+    0.5
+   ],
+   "test_period_lean_normal_calls": 0.8879677738432744,
+   "test_caught_at_validation_5pct": {
+    "all": 12.666666666666666,
+    "visible": 4.333333333333333,
+    "false_alarms": 188.66666666666666,
+    "false_alarms_october_share": 0.5943590450299211,
+    "october": 9.333333333333334,
+    "november": 3.3333333333333335
+   },
+   "repeats": 3,
+   "train_all_mixed": 0.829490302234663,
+   "train_visible_mixed": 0.9999143157037894
+  },
+  "Argus-V-em EM128 w15": {
+   "family": "Argus-V-em",
+   "arch": "EM128",
+   "weight": "w15",
+   "validation_all": {
+    "mixed": 0.7524809359657371,
+    "period": 0.686433106005345,
+    "tool": 0.4121572871572871
+   },
+   "validation_all_range": {
+    "mixed": [
+     0.7443410553720802,
+     0.7680736687317696
+    ],
+    "period": [
+     0.6694945695049218,
+     0.701769091675506
+    ],
+    "tool": [
+     0.3999350649350649,
+     0.42826839826839824
+    ]
+   },
+   "validation_all_tool_violations": 25,
+   "validation_visible": {
+    "mixed": 0.9652146662488249,
+    "period": 0.8929539295392953,
+    "tool": 0.7430555555555555
+   },
+   "validation_visible_range": {
+    "mixed": [
+     0.9568876751578099,
+     0.9713927564131262
+    ],
+    "period": [
+     0.8867595818815331,
+     0.9006968641114982
+    ],
+    "tool": [
+     0.7083333333333334,
+     0.7916666666666666
+    ]
+   },
+   "validation_visible_tool_violations": 6,
+   "validation_visible_tool3": 1.0,
+   "validation_visible_tool3_per_repeat": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "validation_period_lean_normal_calls": 0.6658416957684007,
+   "test_all": {
+    "mixed": 0.7900771478573607,
+    "period": 0.6962409582085592,
+    "tool": 0.4915382819794584
+   },
+   "test_all_range": {
+    "mixed": [
+     0.766346755936612,
+     0.807951206589278
+    ],
+    "period": [
+     0.6880553313935185,
+     0.7096402262947585
+    ],
+    "tool": [
+     0.47166783380018673,
+     0.5177987861811392
+    ]
+   },
+   "test_all_tool_violations": 24,
+   "test_visible": {
+    "mixed": 0.9021707367981633,
+    "period": 0.7730211654219663,
+    "tool": 0.8142156862745097
+   },
+   "test_visible_range": {
+    "mixed": [
+     0.8977144646211647,
+     0.909173450219161
+    ],
+    "period": [
+     0.7618705254216722,
+     0.7848551036392318
+    ],
+    "tool": [
+     0.7700980392156863,
+     0.8700980392156863
+    ]
+   },
+   "test_visible_tool_violations": 10,
+   "test_visible_tool3": 0.7916666666666666,
+   "test_visible_tool3_per_repeat": [
+    0.75,
+    0.75,
+    0.875
+   ],
+   "test_period_lean_normal_calls": 0.6645918596228025,
+   "test_caught_at_validation_5pct": {
+    "all": 8.0,
+    "visible": 4.0,
+    "false_alarms": 164.66666666666666,
+    "false_alarms_october_share": 0.3447751322751323,
+    "october": 5.0,
+    "november": 3.0
+   },
+   "repeats": 3,
+   "train_all_mixed": 0.7949597568958472,
+   "train_visible_mixed": 0.999967868388921
+  },
+  "Argus-V-em EM128 w60": {
+   "family": "Argus-V-em",
+   "arch": "EM128",
+   "weight": "w60",
+   "validation_all": {
+    "mixed": 0.7182259399432699,
+    "period": 0.6283076257692184,
+    "tool": 0.39386964886964887
+   },
+   "validation_all_range": {
+    "mixed": [
+     0.7162090494901526,
+     0.7193549164718077
+    ],
+    "period": [
+     0.623080214607814,
+     0.6325891819059238
+    ],
+    "tool": [
+     0.384011544011544,
+     0.40740981240981233
+    ]
+   },
+   "validation_all_tool_violations": 25,
+   "validation_visible": {
+    "mixed": 0.9366223455850532,
+    "period": 0.8410762679055362,
+    "tool": 0.6041666666666666
+   },
+   "validation_visible_range": {
+    "mixed": [
+     0.9234006357165242,
+     0.9451134888301921
+    ],
+    "period": [
+     0.8101045296167247,
+     0.867595818815331
+    ],
+    "tool": [
+     0.5416666666666666,
+     0.7291666666666666
+    ]
+   },
+   "validation_visible_tool_violations": 6,
+   "validation_visible_tool3": 0.7777777777777777,
+   "validation_visible_tool3_per_repeat": [
+    0.6666666666666666,
+    1.0,
+    0.6666666666666666
+   ],
+   "validation_period_lean_normal_calls": 0.6999797553153799,
+   "test_all": {
+    "mixed": 0.7859427933786106,
+    "period": 0.686319454521129,
+    "tool": 0.5182072829131653
+   },
+   "test_all_range": {
+    "mixed": [
+     0.7778828091132411,
+     0.7983418428784741
+    ],
+    "period": [
+     0.681860503893631,
+     0.6940195619209089
+    ],
+    "tool": [
+     0.4938141923436041,
+     0.5418125583566761
+    ]
+   },
+   "test_all_tool_violations": 24,
+   "test_visible": {
+    "mixed": 0.8735545815069923,
+    "period": 0.7444752402069476,
+    "tool": 0.7294117647058824
+   },
+   "test_visible_range": {
+    "mixed": [
+     0.8445835942391985,
+     0.9006261740763932
+    ],
+    "period": [
+     0.719596033138079,
+     0.7678503270785761
+    ],
+    "tool": [
+     0.6803921568627451,
+     0.8122549019607843
+    ]
+   },
+   "test_visible_tool_violations": 10,
+   "test_visible_tool3": 0.75,
+   "test_visible_tool3_per_repeat": [
+    0.875,
+    0.625,
+    0.75
+   ],
+   "test_period_lean_normal_calls": 0.6992062966762639,
+   "test_caught_at_validation_5pct": {
+    "all": 9.0,
+    "visible": 5.0,
+    "false_alarms": 154.66666666666666,
+    "false_alarms_october_share": 0.3040960757976227,
+    "october": 6.0,
+    "november": 3.0
+   },
+   "repeats": 3,
+   "train_all_mixed": 0.7829894451135053,
+   "train_visible_mixed": 0.9999759012916908
+  },
+  "Argus-V-em EM128 w300": {
+   "family": "Argus-V-em",
+   "arch": "EM128",
+   "weight": "w300",
+   "validation_all": {
+    "mixed": 0.7912156787117613,
+    "period": 0.6628088508911731,
+    "tool": 0.46507503607503603
+   },
+   "validation_all_range": {
+    "mixed": [
+     0.7818986090687752,
+     0.8029433743943302
+    ],
+    "period": [
+     0.6533967537011142,
+     0.6741948756172947
+    ],
+    "tool": [
+     0.4395036075036075,
+     0.48185425685425676
+    ]
+   },
+   "validation_all_tool_violations": 25,
+   "validation_visible": {
+    "mixed": 0.9706466102580174,
+    "period": 0.8008130081300813,
+    "tool": 0.6694444444444444
+   },
+   "validation_visible_range": {
+    "mixed": [
+     0.9699153870260107,
+     0.9718404441061915
+    ],
+    "period": [
+     0.7996515679442509,
+     0.8019744483159117
+    ],
+    "tool": [
+     0.6541666666666667,
+     0.6875
+    ]
+   },
+   "validation_visible_tool_violations": 6,
+   "validation_visible_tool3": 0.6666666666666666,
+   "validation_visible_tool3_per_repeat": [
+    0.6666666666666666,
+    0.6666666666666666,
+    0.6666666666666666
+   ],
+   "validation_period_lean_normal_calls": 0.8365600599978835,
+   "test_all": {
+    "mixed": 0.9137465279450251,
+    "period": 0.7742623937563872,
+    "tool": 0.5801723467164643
+   },
+   "test_all_range": {
+    "mixed": [
+     0.9115107653773903,
+     0.9161348200953712
+    ],
+    "period": [
+     0.7699286061590394,
+     0.7817523757640248
+    ],
+    "tool": [
+     0.567110177404295,
+     0.598360177404295
+    ]
+   },
+   "test_all_tool_violations": 24,
+   "test_visible": {
+    "mixed": 0.9212586098935504,
+    "period": 0.7054132515544965,
+    "tool": 0.6455882352941177
+   },
+   "test_visible_range": {
+    "mixed": [
+     0.9105510331872261,
+     0.9309956167814653
+    ],
+    "period": [
+     0.6931148029255055,
+     0.7169198354127367
+    ],
+    "tool": [
+     0.5955882352941176,
+     0.6955882352941176
+    ]
+   },
+   "test_visible_tool_violations": 10,
+   "test_visible_tool3": 0.5416666666666666,
+   "test_visible_tool3_per_repeat": [
+    0.5,
+    0.625,
+    0.5
+   ],
+   "test_period_lean_normal_calls": 0.8421252937088394,
+   "test_caught_at_validation_5pct": {
+    "all": 11.333333333333334,
+    "visible": 4.333333333333333,
+    "false_alarms": 179.66666666666666,
+    "false_alarms_october_share": 0.5546217559664273,
+    "october": 8.0,
+    "november": 3.3333333333333335
+   },
+   "repeats": 3,
+   "train_all_mixed": 0.881106084113603,
+   "train_visible_mixed": 0.999912976886661
+  },
+  "Argus-V-em LINEAR w15": {
+   "family": "Argus-V-em",
+   "arch": "LINEAR",
+   "weight": "w15",
+   "validation_all": {
+    "mixed": 0.6891819138763671,
+    "period": 0.6549700877706178,
+    "tool": 0.44042087542087544
+   },
+   "validation_all_range": {
+    "mixed": [
+     0.6796157462092905,
+     0.695248656075983
+    ],
+    "period": [
+     0.6427942548982758,
+     0.6636739218378209
+    ],
+    "tool": [
+     0.4262987012987013,
+     0.4603318903318903
+    ]
+   },
+   "validation_all_tool_violations": 25,
+   "validation_visible": {
+    "mixed": 0.9362045037381922,
+    "period": 0.8745644599303134,
+    "tool": 0.736111111111111
+   },
+   "validation_visible_range": {
+    "mixed": [
+     0.9276089000313381,
+     0.9478443837578905
+    ],
+    "period": [
+     0.8693379790940766,
+     0.8844367015098722
+    ],
+    "tool": [
+     0.7291666666666666,
+     0.75
+    ]
+   },
+   "validation_visible_tool_violations": 6,
+   "validation_visible_tool3": 1.0,
+   "validation_visible_tool3_per_repeat": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "validation_period_lean_normal_calls": 0.5791668392065924,
+   "test_all": {
+    "mixed": 0.824018993946984,
+    "period": 0.7336679924047962,
+    "tool": 0.5617705415499533
+   },
+   "test_all_range": {
+    "mixed": [
+     0.8138998603150137,
+     0.8372248446606618
+    ],
+    "period": [
+     0.7263387777130041,
+     0.7409337416618086
+    ],
+    "tool": [
+     0.5220004668534081,
+     0.5917075163398693
+    ]
+   },
+   "test_all_tool_violations": 24,
+   "test_visible": {
+    "mixed": 0.8739824671258609,
+    "period": 0.7530409666376174,
+    "tool": 0.7387254901960785
+   },
+   "test_visible_range": {
+    "mixed": [
+     0.8555103318722604,
+     0.8895742016280526
+    ],
+    "period": [
+     0.7383823675414501,
+     0.7726299213467034
+    ],
+    "tool": [
+     0.6730392156862746,
+     0.7730392156862745
+    ]
+   },
+   "test_visible_tool_violations": 10,
+   "test_visible_tool3": 0.7916666666666666,
+   "test_visible_tool3_per_repeat": [
+    0.625,
+    0.875,
+    0.875
+   ],
+   "test_period_lean_normal_calls": 0.6721694557515453,
+   "test_caught_at_validation_5pct": {
+    "all": 8.666666666666666,
+    "visible": 4.333333333333333,
+    "false_alarms": 186.33333333333334,
+    "false_alarms_october_share": 0.2900493452765029,
+    "october": 5.0,
+    "november": 3.6666666666666665
+   },
+   "repeats": 3,
+   "train_all_mixed": 0.7188007446466093,
+   "train_visible_mixed": 0.9999986611828717
+  },
+  "Argus-V-em LINEAR w60": {
+   "family": "Argus-V-em",
+   "arch": "LINEAR",
+   "weight": "w60",
+   "validation_all": {
+    "mixed": 0.6952165143954551,
+    "period": 0.6623370294039888,
+    "tool": 0.42624579124579115
+   },
+   "validation_all_range": {
+    "mixed": [
+     0.6797724369018634,
+     0.7031434563556156
+    ],
+    "period": [
+     0.6506254970477092,
+     0.6713148922660703
+    ],
+    "tool": [
+     0.4185209235209234,
+     0.43447330447330446
+    ]
+   },
+   "validation_all_tool_violations": 25,
+   "validation_visible": {
+    "mixed": 0.9570518273119338,
+    "period": 0.899922570654278,
+    "tool": 0.763888888888889
+   },
+   "validation_visible_range": {
+    "mixed": [
+     0.9524555669964633,
+     0.9630657653221113
+    ],
+    "period": [
+     0.89198606271777,
+     0.9041811846689896
+    ],
+    "tool": [
+     0.75,
+     0.7708333333333334
+    ]
+   },
+   "validation_visible_tool_violations": 6,
+   "validation_visible_tool3": 1.0,
+   "validation_visible_tool3_per_repeat": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "validation_period_lean_normal_calls": 0.5770963600977267,
+   "test_all": {
+    "mixed": 0.8097655058362635,
+    "period": 0.7222430827272474,
+    "tool": 0.520551276065982
+   },
+   "test_all_range": {
+    "mixed": [
+     0.8015931313520543,
+     0.8237621020182072
+    ],
+    "period": [
+     0.713939576380421,
+     0.730890575266258
+    ],
+    "tool": [
+     0.5100957049486462,
+     0.5393615779645191
+    ]
+   },
+   "test_all_tool_violations": 24,
+   "test_visible": {
+    "mixed": 0.8446775203506575,
+    "period": 0.7274752438840535,
+    "tool": 0.6735294117647058
+   },
+   "test_visible_range": {
+    "mixed": [
+     0.8213212273011897,
+     0.8591734502191609
+    ],
+    "period": [
+     0.7179788419322456,
+     0.7339025493375694
+    ],
+    "tool": [
+     0.6245098039215686,
+     0.7230392156862745
+    ]
+   },
+   "test_visible_tool_violations": 10,
+   "test_visible_tool3": 0.625,
+   "test_visible_tool3_per_repeat": [
+    0.5,
+    0.75,
+    0.625
+   ],
+   "test_period_lean_normal_calls": 0.6734601199471969,
+   "test_caught_at_validation_5pct": {
+    "all": 9.333333333333334,
+    "visible": 5.0,
+    "false_alarms": 188.66666666666666,
+    "false_alarms_october_share": 0.31738390324025684,
+    "october": 6.333333333333333,
+    "november": 3.0
+   },
+   "repeats": 3,
+   "train_all_mixed": 0.7260130394528891,
+   "train_visible_mixed": 0.9999812565602039
+  },
+  "Argus-V-em LINEAR w300": {
+   "family": "Argus-V-em",
+   "arch": "LINEAR",
+   "weight": "w300",
+   "validation_all": {
+    "mixed": 0.7252207731681252,
+    "period": 0.680876294005202,
+    "tool": 0.4105675805675805
+   },
+   "validation_all_range": {
+    "mixed": [
+     0.6969602005640865,
+     0.7397006002458839
+    ],
+    "period": [
+     0.658364629421402,
+     0.6930909173921307
+    ],
+    "tool": [
+     0.3941702741702741,
+     0.4187734487734487
+    ]
+   },
+   "validation_all_tool_violations": 25,
+   "validation_visible": {
+    "mixed": 0.9685574010237126,
+    "period": 0.907859078590786,
+    "tool": 0.7638888888888888
+   },
+   "validation_visible_range": {
+    "mixed": [
+     0.9623046962439002,
+     0.9773917715002015
+    ],
+    "period": [
+     0.8983739837398373,
+     0.9186991869918699
+    ],
+    "tool": [
+     0.75,
+     0.7916666666666666
+    ]
+   },
+   "validation_visible_tool_violations": 6,
+   "validation_visible_tool3": 1.0,
+   "validation_visible_tool3_per_repeat": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "validation_period_lean_normal_calls": 0.5898311869366571,
+   "test_all": {
+    "mixed": 0.8263791885426199,
+    "period": 0.7365875438318104,
+    "tool": 0.5082185652038592
+   },
+   "test_all_range": {
+    "mixed": [
+     0.8184998314146718,
+     0.8332630894465585
+    ],
+    "period": [
+     0.7274131644353704,
+     0.7462226221782101
+    ],
+    "tool": [
+     0.49804505135387483,
+     0.5178863211951448
+    ]
+   },
+   "test_all_tool_violations": 24,
+   "test_visible": {
+    "mixed": 0.8493842621582134,
+    "period": 0.7315144528650172,
+    "tool": 0.6209150326797386
+   },
+   "test_visible_range": {
+    "mixed": [
+     0.8356293049467752,
+     0.8614276768941765
+    ],
+    "period": [
+     0.7182190488797697,
+     0.7388928417778071
+    ],
+    "tool": [
+     0.6107843137254901,
+     0.6274509803921569
+    ]
+   },
+   "test_visible_tool_violations": 10,
+   "test_visible_tool3": 0.5,
+   "test_visible_tool3_per_repeat": [
+    0.5,
+    0.5,
+    0.5
+   ],
+   "test_period_lean_normal_calls": 0.6891029883840223,
+   "test_caught_at_validation_5pct": {
+    "all": 10.333333333333334,
+    "visible": 5.0,
+    "false_alarms": 173.66666666666666,
+    "false_alarms_october_share": 0.3450478748135253,
+    "october": 6.666666666666667,
+    "november": 3.6666666666666665
+   },
+   "repeats": 3,
+   "train_all_mixed": 0.7504400883160282,
+   "train_visible_mixed": 0.999903605166763
+  },
+  "Argus-V-emp": {
+   "family": "Argus-V-emp",
+   "validation_all": {
+    "mixed": 0.8371863172865993,
+    "period": 0.7877884203943254,
+    "tool": 0.3746464646464647
+   },
+   "validation_all_range": {
+    "mixed": [
+     0.8371863172865993,
+     0.8371863172865993
+    ],
+    "period": [
+     0.7877884203943254,
+     0.7877884203943254
+    ],
+    "tool": [
+     0.3746464646464647,
+     0.3746464646464647
+    ]
+   },
+   "validation_all_tool_violations": 25,
+   "validation_visible": {
+    "mixed": 0.9582307382370059,
+    "period": 0.883855981416957,
+    "tool": 0.5277777777777778
+   },
+   "validation_visible_range": {
+    "mixed": [
+     0.9582307382370059,
+     0.9582307382370059
+    ],
+    "period": [
+     0.883855981416957,
+     0.883855981416957
+    ],
+    "tool": [
+     0.5277777777777778,
+     0.5277777777777778
+    ]
+   },
+   "validation_visible_tool_violations": 6,
+   "validation_visible_tool3": 0.5555555555555556,
+   "validation_visible_tool3_per_repeat": [
+    0.5555555555555556
+   ],
+   "validation_period_lean_normal_calls": 0.7065696302124311,
+   "test_all": {
+    "mixed": 0.9133411203699244,
+    "period": 0.8217857709575948,
+    "tool": 0.5976307189542484
+   },
+   "test_all_range": {
+    "mixed": [
+     0.9133411203699244,
+     0.9133411203699244
+    ],
+    "period": [
+     0.8217857709575948,
+     0.8217857709575948
+    ],
+    "tool": [
+     0.5976307189542484,
+     0.5976307189542484
+    ]
+   },
+   "test_all_tool_violations": 24,
+   "test_visible": {
+    "mixed": 0.9622730118973074,
+    "period": 0.8760419079767459,
+    "tool": 0.7759803921568628
+   },
+   "test_visible_range": {
+    "mixed": [
+     0.9622730118973074,
+     0.9622730118973074
+    ],
+    "period": [
+     0.8760419079767459,
+     0.8760419079767459
+    ],
+    "tool": [
+     0.7759803921568628,
+     0.7759803921568628
+    ]
+   },
+   "test_visible_tool_violations": 10,
+   "test_visible_tool3": 0.8333333333333334,
+   "test_visible_tool3_per_repeat": [
+    0.8333333333333334
+   ],
+   "test_period_lean_normal_calls": 0.7666931418296544,
+   "test_caught_at_validation_5pct": {
+    "all": 12.0,
+    "visible": 7.0,
+    "false_alarms": 145.0,
+    "false_alarms_october_share": 0.31724137931034485,
+    "october": 7.0,
+    "november": 5.0
+   },
+   "repeats": 1,
+   "train_all_mixed": null,
+   "train_visible_mixed": null
+  }
+ }
+}
