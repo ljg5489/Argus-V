@@ -17,9 +17,13 @@
 결과"이며, 새 상황에서의 성능이 아니다(reports/risk-loop/argus-v-p/results.md).
 
 화면 읽는 법
-  - 이 모델은 위반 사례를 학습한 도구의 호출만 판정한다. 그 도구의 기준보다 높으면 "경보", 낮으면 "경보 없음"이다.
-  - 옆의 숫자와 막대는 "그 도구의 기준에서 얼마나 떨어져 있는가"다(막대가 오른쪽이면 위반 쪽). 위반일 확률이 아니다.
-  - 그 밖의 호출은 "판정 안 함"으로만 표시한다.
+  - 모든 호출의 hidden state를 읽어 점수를 내고, 호출한 도구에 따라 세 가지로 판정한다.
+    ① 위반 사례를 학습한 도구: 그 도구의 기준보다 높으면 "경보", 낮으면 "경보 없음". 옆의 숫자와 막대는 그 도구의
+       기준에서 얼마나 떨어져 있는가다(막대가 오른쪽이면 위반 쪽).
+    ② 정상 호출만 학습한 도구(파일 읽기 등): 그 도구 정상 호출의 점수 범위를 넘을 때만 "경보". 이 범위는 같은 학습
+       기록으로 정한 것이라 학습 기록을 재생하면 항상 범위 안이다. 그래서 맞힌 수에는 넣지 않는다.
+    ③ 결과 보고용 호출(write_report, submit_result 등)과 검수에서 빠진 호출: 학습에 쓰지 않아 "판정 안 함".
+  - 화면의 숫자는 위반일 확률이 아니다.
   - 모델이 내는 원래 점수는 기본으로 숨긴다. 모델은 "같은 도구 안에서 위반이 정상보다 높게"만 맞추도록 학습해서
     도구마다 평소 점수 수준이 다르고(파일 읽기는 정상 호출도 0.9까지 나온다), 도구가 다른 호출끼리 원래 점수를
     비교하면 정상 호출이 위반보다 높게 보일 수 있기 때문이다. 원래 점수까지 보려면 --raw-scores.
@@ -339,17 +343,24 @@ def show_header(unit_id: str, unit: dict, rec: Records, model: str, mode_text: s
     print(f" 점수 모델: {MODEL_NAMES[model]}")
     print(f" 기록 출처: {rec.origin}")
     print(c(" 이 모델은 이 기록들로 학습했다. 아래 판정은 학습에 쓴 기록을 다시 채점한 것이다.", "yellow"))
-    print(c(" 읽는 법: 이 모델은 위반 사례를 학습한 도구의 호출만 판정한다(그 밖의 호출은 \"판정 안 함\").", "yellow"))
-    print(c("          숫자와 막대는 그 도구의 기준에서 얼마나 떨어져 있는지이고, 위반일 확률이 아니다.", "yellow"))
+    print(c(" 읽는 법: 모든 호출의 hidden state를 읽어 점수를 내고, 호출한 도구에 따라 이렇게 판정한다.", "yellow"))
+    print(c("   ① 위반 사례를 학습한 도구: 그 도구의 기준보다 높으면 경보, 낮으면 경보 없음 (막대로 표시)", "yellow"))
+    print(c("   ② 정상 호출만 학습한 도구: 그 도구 정상 호출의 점수 범위를 넘을 때만 경보", "yellow"))
+    print(c("   ③ 결과 보고용 호출 등 학습에 쓰지 않은 호출: 판정 안 함", "yellow"))
+    print(c("   숫자는 기준·범위에서 떨어진 거리이고, 위반일 확률이 아니다.", "yellow"))
     print(c("═" * 92, "bold"))
 
 
 def show_step(i: int, step: dict, info: dict | None, score: float | None, extra: str | None, show_reasoning: int,
               levels: dict | None = None) -> str:
-    """Print one step. Returns 'hit' / 'miss' (judged against the tool's own threshold) or 'unjudged'.
+    """Print one step and return how it was judged:
 
-    The only number shown by default is the distance from that tool's threshold: the model's raw score has a
-    different usual level in every tool, so raw scores of different tools must not be read side by side
+      'hit' / 'miss'              the tool has violation examples: judged against the tool's own threshold
+      'range_ok' / 'range_alarm'  the tool has normal calls only: alarm only above every normal score of that tool
+      'unjudged'                  no score, or nothing to compare with
+
+    The only number shown by default is a distance from that tool's threshold / normal range: the model's raw score
+    has a different usual level in every tool, so raw scores of different tools must not be read side by side
     (SHOW_RAW prints them anyway). ``levels`` = this tool's stored training scores (tool_levels)."""
     tool, args = describe_action(step)
     name = info["tool"] if info else tool
@@ -373,19 +384,32 @@ def show_step(i: int, step: dict, info: dict | None, score: float | None, extra:
                     f" {normals[0]:.3f}~{normals[-1]:.3f}, 위반 {len(violations)}개는 {violations[0]:.3f}~{violations[-1]:.3f})",
                     "dim"))
         verdict = "hit" if alarm == (info["label"] == 1) else "miss"
+    elif score is not None and info is not None and len(normals) and not len(violations):
+        # no violation example for this tool: the only reference is how its normal calls score
+        top = float(normals[-1])
+        margin = score - top
+        alarm = margin > 5e-4                       # stored scores are rounded to 4 decimals
+        if alarm:
+            how = f"이 도구 정상 호출 {len(normals)}개의 점수 범위를 {margin:.3f} 넘음"
+        elif margin > -5e-4:
+            how = f"이 도구의 정상 범위 안 (정상 호출 {len(normals)}개 중 가장 높은 값)"
+        else:
+            how = f"이 도구의 정상 범위 안 (정상 호출 {len(normals)}개의 최고값보다 {-margin:.3f} 낮음)"
+        print(f" 판정: {c('경보', 'red') + '     ' if alarm else c('경보 없음', 'green')}   {how}")
+        if SHOW_RAW:
+            print(c(f" (원래 점수 {score:.3f} · {name}의 학습 기록: 정상 {len(normals)}개는 {normals[0]:.3f}~{normals[-1]:.3f},"
+                    f" 위반 사례 없음)", "dim"))
+        verdict = "range_alarm" if alarm else "range_ok"
     else:
         if info is None:
-            why = "학습에 쓰지 않은 호출(결과 보고용 도구이거나 검수 대상에서 빠진 호출)"
-        elif not len(violations):
-            why = f"이 도구({name})는 위반 사례를 학습한 적이 없어 판정할 기준이 없음"
+            why = "학습에 쓰지 않은 호출(결과 보고용 호출이거나 검수 대상에서 빠진 호출)"
+        elif not len(normals):
+            why = f"이 도구({name})는 학습 기록에 정상 호출이 없어 비교할 기준이 없음"
         else:
-            why = f"이 도구({name})는 학습 기록에 정상 호출이 없어 기준을 정할 수 없음"
+            why = "점수를 계산하지 못함"
         print(f" 판정: {c('안 함', 'bold')} — {why}")
         if SHOW_RAW and score is not None:
-            detail = f"원래 점수 {score:.3f}"
-            if len(normals):
-                detail += f" · {name} 정상 호출 {len(normals)}개 중 {int((normals > score).sum())}개가 이보다 높음"
-            print(c(f" ({detail} · 도구가 다른 호출과는 비교할 수 없는 값)", "dim"))
+            print(c(f" (원래 점수 {score:.3f} · 도구가 다른 호출과는 비교할 수 없는 값)", "dim"))
     if extra:
         print(c(f" {extra}", "dim"))
     print(f" 실제 결과(기록): {result_text(step)}")
@@ -394,6 +418,8 @@ def show_step(i: int, step: dict, info: dict | None, score: float | None, extra:
         tail = ""
         if verdict in ("hit", "miss"):
             tail = "  → 판정 " + (c("맞음", "green") if verdict == "hit" else c("틀림", "red"))
+        elif verdict == "range_alarm":
+            tail = "  → 판정 " + c("틀림", "red")
         print(f" 기록된 라벨: {label_text}{tail}")
     elif step.get("policy_label") is not None:
         print(c(f" 기록된 라벨(규칙 초안): {'위반' if step['policy_label'] == 1 else '정상'}", "dim"))
@@ -405,11 +431,17 @@ def show_summary(verdicts: list[str], parity: list[float], unjudged_violations: 
     print(c("═" * 92, "bold"))
     judged = verdicts.count("hit") + verdicts.count("miss")
     if judged:
-        print(f" 판정한 호출 {judged}개 중 {verdicts.count('hit')}개 맞음, {verdicts.count('miss')}개 틀림")
+        print(f" ① 위반 사례를 학습한 도구의 호출 {judged}개: {verdicts.count('hit')}개 맞음, {verdicts.count('miss')}개 틀림")
     else:
-        print(" 이 실행에는 판정 기준이 있는 호출이 없습니다.")
+        print(" ① 위반 사례를 학습한 도구의 호출: 이 실행에는 없습니다.")
+    inside, outside = verdicts.count("range_ok"), verdicts.count("range_alarm")
+    if inside + outside:
+        print(f" ② 정상 호출만 학습한 도구의 호출 {inside + outside}개: {inside}개 정상 범위 안(경보 없음)"
+              + (f", {outside}개 범위 밖(경보)" if outside else ""))
+        print(c("    이 범위는 같은 학습 기록의 정상 호출로 정한 것이라, 학습 기록을 재생하면 범위 안으로 나오는 것이 당연합니다."
+                " 맞힌 수에 넣지 않습니다.", "dim"))
     if verdicts.count("unjudged"):
-        print(f" 판정하지 않은 호출 {verdicts.count('unjudged')}개 (위반 사례를 학습하지 않은 도구이거나 학습에 쓰지 않은 호출)")
+        print(f" ③ 판정하지 않은 호출 {verdicts.count('unjudged')}개 (결과 보고용 호출 등 학습에 쓰지 않은 호출)")
     if unjudged_violations:
         print(c(f" 이 중 위반으로 기록된 호출 {unjudged_violations}개는 기준이 없어 판정하지 못했습니다.", "red"))
     if parity:
