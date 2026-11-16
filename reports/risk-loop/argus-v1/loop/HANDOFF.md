@@ -1,5 +1,17 @@
 # HANDOFF — Argus-V1 성능 향상 루프
 
+## 인수인계 기록 추가 — 2026-11-16 20:45 KST (Claude) — Argus-V-em300 학습과 test 평가 완료
+
+- **지금 돌고 있는 것 없음.** 학습은 20:41에 끝남(종료 코드 0, 82분). test는 20:16에 한 번 채점했다.
+- **학습 결과(train 안 교차검증, 근거가 보인 위반 기준)**: 60 epoch → 가장 높은 epoch → 300 epoch 순서로 32차원 0.960 → 0.963(56) → 0.898 / 64차원 0.948 → 0.968(67) → 0.954 / 128차원 0.943 → 0.965(175) → 0.962 / 선형 대조 0.899 → 0.961(294) → 0.961. 네 모델 모두 60 epoch 시점 점수가 Argus-V-em과 차이 0. 교차검증 손실은 33~65 epoch에서 최저이고 그 뒤로 오른다. **선형 대조가 300 epoch에는 임베딩 모델과 같아진다**(임베딩의 이점이 사라짐). 라벨 섞기(128차원, 300 epoch) 평균 0.730(0.645~0.810).
+- **test 채점의 주 모델**: 사용자 지시("제일 성능이 좋았던 epoch")에 따라 교차검증으로 고른 **64차원 67 epoch**(교차검증 0.968). `artifacts/risk-loop/argus-v-em300/argus_v_em300_best.pt`, SHA-256 `381ec4ef…b72c`. 규칙·결과·SHA를 채점 전에 커밋(`2893f38`, `08cac39`, `eee4e47`).
+- **test 결과(커밋 `b47c92d`)**: 사전에 정한 기준으로 **"test에서 확인되지 않음"**. 주 모델의 주 지표 **0.667**(교차검증 0.968). test에는 근거가 보인 위반이 **3개뿐**(도구 `schedule_approved_maintenance` 하나, 시나리오 AV-S44, 비교 15쌍 중 10쌍)이라 구간을 낼 수 없고 단정도 어렵다. 위반 전체(위반 9개·도구 2개) 0.704, 95% 구간 0.25~0.81. 참고 모델: 300 epoch(128차원) 0.733 / 0.726, Argus-V-em(60 epoch) 0.667 / 0.704, Argus-V-p P5 0.600 / 0.644.
+- **test 데이터의 사정**: 실행 509개·시나리오 32개, 채점한 호출 2,842개 중 위반 24개(보고 내용 위반 62개는 train과 같은 규칙으로 제외). 위반 3개 이상·정상 3개 이상인 도구는 2개뿐. 위반 10개가 몰린 `handoff_partner_link`는 정상 호출이 2개라 채점 대상이 아니다.
+- **기록 위치**: `reports/risk-loop/argus-v-em300/` — `results.md`(전체 정리), `test_tables.md`·`test_eval.json`·`figures_test/`(test), `figures/`·`figures/tables.md`·`epoch_history.json`·`epoch_table.csv`(학습), `test-eval-prereg.md`·`test-eval-prereg-addendum-1.md`(사전 고정), `best_epoch.json`, `test_eval_frozen.json`, `visible_flag_test.json`. 큰 배열·모델·test 특징은 `artifacts/risk-loop/argus-v-em300/`, `artifacts/risk-loop/argus-v1-loop-test/`(git 제외).
+- **지킬 것**: test는 한 번 열었다. 이 결과를 보고 모델·규칙·epoch을 바꿔 test로 다시 재면 그 값은 test 점수가 아니다. validation 분할과 봉인 단위(AV-S61~S80)는 열지 않았다. 발표에는 "train 안 교차검증 0.97, test 0.67(위반 3개, 15쌍)"을 나란히 적는다.
+- **다시 그리기(학습 없음)**: `PYTHONUTF8=1 py -3.11 experiments/risk_loop/argus_loop/argus_v_em_plots.py --track em300`, `… argus_v_em300_test_plots.py`.
+- 대기 중인 사용자 결정: ① 재생 도구 2번 방식용 P6 1회 재학습 승인 ② 새 시나리오를 돌릴 때 행동 직후 hidden state 저장 여부(사용자는 "새 시나리오를 돌릴 시간은 없다"고 함) ③ validation 분할을 열지 여부(특징은 이미 로컬에 있어 내려받기 없이 채점 가능하지만, 지시 없이는 열지 않는다).
+
 ## 인수인계 기록 추가 — 2026-11-16 19:55 KST (Claude) — test 채점의 주 모델을 "가장 좋았던 epoch"으로 (사용자 지시), test 특징 준비 완료
 
 - **사용자 지시(19:49쯤, test 점수를 계산하기 전)**: "test를 이용한 성능평가뽑는 채점은 제일 성능이 좋았던 epoch을 이용해". 규칙을 `reports/risk-loop/argus-v-em300/test-eval-prereg-addendum-1.md`에 고정하고 커밋(`2893f38`): **train 안 교차검증만으로** 32·64·128차원 × epoch 1~300 중 주 지표가 가장 높은 (폭, epoch)을 고르고, 그 폭을 전체 train target 행에 같은 seed로 그 epoch까지만 학습한 모델을 주 모델로 쓴다. test로 epoch을 고르지 않는다. 300 epoch 모델·60 epoch 모델·중간 저장본·Argus-V-p P5는 참고로 함께 채점.
@@ -218,6 +230,7 @@
 | 2026-11-16 18:50 | **돌고 있는 것 없음.** 사용자 질문("과적합도 아닌데 validation 0.92?")에 답하려고 학습 없이 점검 | 학습/검증 사이에 새는 것 없음을 확인. 다만 0.96은 서로 다른 위반 입력 10개·시나리오 5개에 대한 값이고, 이전 모델과의 차이와 40 epoch 이후 상승은 쌍 9개짜리 칸 하나에서 나옴. 문서·표·그림 표기에 반영 | 사용자 결정 대기(위와 같음). 발표에서 "validation 0.96"이라고만 쓰지 않기 |
 | 2026-11-16 19:20 | **Argus-V-em300 학습**(`argus_v_em300.py --approved`, 로그 `artifacts/risk-loop/argus-v-em300/run.log`) — 사용자 지시 | 19:20 시작, 약 50분 예상. Argus-V-em과 epoch 수만 다름(300). 순서: 32 → 64 → 128차원 → 선형 대조 → 최종 모델 → 라벨 섞기. epoch별 기록 전부 저장 | 학습 끝 → em300 그래프·표 → test 평가 사전 고정 문서 → test 실행의 특징 받기 → test 한 번 채점 → 기록·커밋·보고 |
 | 2026-11-16 19:35 | **두 가지가 돌고 있음**: ① Argus-V-em300 학습(64차원 진행 중, 20:10쯤 끝) ② test 특징 만들기(`argus_v_em300_test_build.py all --user-approved-test`, 로그 `artifacts/risk-loop/argus-v1-loop-test/run.out`) | ① 32차원 모델 끝: 300 epoch 교차검증 0.898(나누기별 0.965 / 0.926 / 0.804), 60 epoch 시점 0.960 — **56 epoch이 정점이고 그 뒤로 내려감**(교차검증 손실은 65 epoch 최저 뒤 상승). 60 epoch 시점 점수는 Argus-V-em과 차이 0. ② test 평가 계획을 test를 읽기 전에 고정·커밋(`test-eval-prereg.md`, 커밋 `d8f1c7d`). test 라벨 표 생성 완료(실행 509개, 행동 3,385개; 같은 호출로 train·validation 표 15,779줄을 그대로 재현함). 표시 규칙 코드가 train의 저장된 표시 48개를 전부 재현. hidden state 내려받기 4.68 GB 중 진행 중(약 5 MB/s) | 내려받기 끝 → 학습 끝 → em300 그래프·표 → 모델 파일 SHA-256을 사전 고정 문서에 기록 → `argus_v_em300_test_eval.py all --user-approved-test`(표시 → 채점 → 지표) → 기록·그림·커밋·보고. 사용자에게 "주 모델을 em300으로 둘지 60 epoch 모델로 바꿀지 채점 전에 정해 달라"고 물어 둠(말이 없으면 em300) |
+| 2026-11-16 20:45 | **돌고 있는 것 없음.** Argus-V-em300 학습 20:41 종료, test 채점 20:16 완료 | 교차검증: 300 epoch까지 돌려도 0.96 근처에서 더 오르지 않음(32차원은 0.898로 내려감), 선형 대조가 0.961로 같아짐, 라벨 섞기 0.730. 가장 좋았던 epoch의 모델(64차원 67 epoch, 교차검증 0.968)의 **test 주 지표 0.667 — 사전 기준으로 "확인되지 않음"**. test에 근거가 보인 위반이 3개뿐. 그림: 학습 14장, test 8장. 결과 문서 `reports/risk-loop/argus-v-em300/results.md` | 사용자 결정 대기(P6 1회 재학습, validation을 열지 여부). test 결과를 보고 모델을 바꿔 다시 재지 않는다 |
 
 # 지금 상태 — 2026-11-15 (가장 최신. 아래 3단계 대시보드는 2026-11-11까지의 기록)
 

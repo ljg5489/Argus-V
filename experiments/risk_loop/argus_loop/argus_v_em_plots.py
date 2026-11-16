@@ -549,13 +549,14 @@ def fig11_epoch_loss(D: Data):
     ax.set_xticks(D.ticks)
     ax.set_xlabel("epoch (전체 학습 행을 한 번 본 횟수)")
     ax.set_ylabel("손실 (로그 눈금, 낮을수록 좋음)")
-    _end_labels(ax, len(ep) + 0.8, [(tr_m[-1], f"{tr_m[-1]:.2f}", TRAIN), (ho_m[-1], f"{ho_m[-1]:.2f}", HELD)], 0)
+    f2 = lambda v: f"{v:.2f}" if v >= 0.01 else f"{v:.3f}"     # noqa: E731  (small losses keep a digit)
+    _end_labels(ax, len(ep) + (0.8 if D.N <= 60 else 4), [(tr_m[-1], f2(tr_m[-1]), TRAIN), (ho_m[-1], f2(ho_m[-1]), HELD)], 0)
     ax.legend(handles=[handle(TRAIN, "학습에 쓴 행", marker=None), handle(HELD, "처음 보는 시나리오 (학습에서 뺀 묶음)", marker=None)],
               loc="upper center", bbox_to_anchor=(0.5, -0.13), ncol=2, handlelength=1.8, columnspacing=2.0)
     _mark_base_stop(ax, D)
     low = int(ho_m.argmin()) + 1
     if low < len(ep) - 1 and ho_m[-1] > 1.15 * ho_m.min():
-        tail = f"{low} epoch에서 가장 낮고 그 뒤로 다시 오른다"
+        tail = f"{low} epoch 뒤로 다시 오른다"
     elif low < len(ep) - 1:
         tail = f"{low} epoch 뒤로는 내려가지 않는다"
     elif 1 - ho_m[-1] / ho_m[-11] < 0.03:
@@ -563,7 +564,7 @@ def fig11_epoch_loss(D: Data):
     else:
         tail = "끝까지 내려가지만 더 느리다"
     PP.title(fig, f"epoch별 손실 — {D.sel_ko}",
-             f"학습 행의 손실은 계속 내려가고, 처음 보는 시나리오의 손실은 {tail} ({D.N} epoch 뒤 {tr_m[-1]:.2f} 대 {ho_m[-1]:.2f})")
+             f"학습 행의 손실은 계속 내려가고, 처음 보는 시나리오의 손실은 {tail} ({D.N} epoch 뒤 {f2(tr_m[-1])} 대 {f2(ho_m[-1])})")
     PP.note(fig, f"굵은 선 = 데이터 나누기 3가지 평균, 가는 선 = 나누기 하나 · 손실 = 학습에 쓴 가중 이진 교차 엔트로피(평가 모드) · {D.N} epoch 고정")
     PP.save(fig, OUT, "11_epoch별_손실.png")
 
@@ -590,9 +591,10 @@ def fig12_epoch_auroc(D: Data):
     ax.set_ylabel("같은 도구 안 AUROC")
     ax.axhline(0.9, color=MUTED, lw=1.0, ls=(0, (4, 3)), zorder=1)
     ax.axhline(0.5, color=MUTED, lw=1.0, ls=(0, (4, 3)), zorder=1)
-    ax.text(1.6, 0.905, "목표 0.90", va="bottom", ha="left", fontsize=9, color=INK2)
-    ax.text(1.6, 0.445, "우연 0.5", va="bottom", ha="left", fontsize=9, color=INK2)
-    _end_labels(ax, len(ep) + 0.8, [(tr[-1], f"{tr[-1]:.2f}", TRAIN), (ho_m[-1], f"{ho_m[-1]:.2f}", HELD), (allv[-1], f"{allv[-1]:.2f}", MUTED)], 0.035)
+    lx = 1.6 if D.N <= 60 else len(ep) * 0.80           # on a long run the left edge is crowded
+    ax.text(lx, 0.905, "목표 0.90", va="bottom", ha="left", fontsize=9, color=INK2)
+    ax.text(lx, 0.445, "우연 0.5", va="bottom", ha="left", fontsize=9, color=INK2)
+    _end_labels(ax, len(ep) + (0.8 if D.N <= 60 else 4), [(tr[-1], f"{tr[-1]:.2f}", TRAIN), (ho_m[-1], f"{ho_m[-1]:.2f}", HELD), (allv[-1], f"{allv[-1]:.2f}", MUTED)], 0.035)
     ax.legend(handles=[handle(TRAIN, "학습에 쓴 행 (학습 15번 평균)", marker=None),
                        handle(TRAIN, "전체 데이터로 맞춘 최종 모델의 학습 행", marker=None, ls=(0, (5, 2))),
                        handle(HELD, "처음 보는 시나리오 (굵은 선 평균, 가는 선 나누기 하나)", marker=None),
@@ -603,7 +605,7 @@ def fig12_epoch_auroc(D: Data):
     ninety = int(np.argmax(ho_m >= 0.90)) + 1 if (ho_m >= 0.90).any() else None
     best = int(ho_m.argmax()) + 1
     if best < len(ep) - 10:                      # the curve turned down before the end
-        sub = f"처음 보는 시나리오의 점수는 {best} epoch에서 {ho_m.max():.2f}로 가장 높고, {D.N} epoch에는 {ho_m[-1]:.2f}로 내려간다"
+        sub = f"처음 보는 시나리오의 점수가 가장 높은 곳은 {best} epoch({ho_m.max():.3f})이고, {D.N} epoch의 값은 {ho_m[-1]:.3f}이다"
     else:
         sub = (f"학습에 쓴 행은 {one} epoch에 1.00에 닿고, " if one else "") + (f"처음 보는 시나리오는 {ninety} epoch에 0.90을 넘는다" if ninety else "처음 보는 시나리오는 0.90에 닿지 않는다")
     PP.title(fig, f"epoch별 성능 — {D.sel_ko}", sub)
