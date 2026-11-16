@@ -61,6 +61,8 @@ SETTINGS = {
     "w100": {"ko": "가중치 약 230배", "rule": "neg / pos", "fn": lambda neg, pos: float(neg / pos)},
     # added on the user's instruction 2026-11-16 ("위반 가중치를 300배로 하고 한 번 학습 및 test를 진행해 보자"): fixed in every fit
     "w300": {"ko": "가중치 300배", "rule": "300 (fixed)", "fn": lambda neg, pos: 300.0},
+    # added on the user's instruction 2026-11-16 ("위험 가중치에 대해 1000배를 해보자"): fixed in every fit
+    "w1000": {"ko": "가중치 1000배", "rule": "1000 (fixed)", "fn": lambda neg, pos: 1000.0},
 }
 BASE_KO = "기준: 가중치 약 15배"
 MARKS = (10, 20, 30, 40, 50, 60, 67, 80, 100)
@@ -364,6 +366,15 @@ def test(argv):
                  "per_epoch": {k: r6(v) for k, v in cur.items()},
                  "peak_on_test_for_reference_only": {k: {"epoch": int(np.nanargmax(cur[k])) + 1, "value": float(np.nanmax(cur[k]))}
                                                      for k in ("visible_min3", "all_violations_min3", "pooled_all")}}
+        alarm = s_main > float(np.quantile(s_main[nm], 0.95))
+        fa, tp = alarm & nm, alarm & (y_t == 1)
+        entry["alarms_at_5pct_false_alarms"] = {
+            "false_alarms": int(fa.sum()), "false_alarms_from_october": int((fa & (src_t == "oct")).sum()),
+            "share_october_among_false_alarms": float((fa & (src_t == "oct")).sum() / max(1, int(fa.sum()))),
+            "october_normals_alarmed_share": float((fa & (src_t == "oct")).sum() / max(1, int((nm & (src_t == "oct")).sum()))),
+            "november_normals_alarmed_share": float((fa & (src_t == "nov")).sum() / max(1, int((nm & (src_t == "nov")).sum()))),
+            "caught": int(tp.sum()), "caught_october": int((tp & (src_t == "oct")).sum()),
+            "caught_november": int((tp & (src_t == "nov")).sum())}
         if tag == "baseline":
             entry["max_abs_diff_vs_frozen_main_model_scores"] = float(np.max(np.abs(s_main - frozen_main)))
             if entry["max_abs_diff_vs_frozen_main_model_scores"] > 1e-5:
@@ -393,13 +404,21 @@ def test(argv):
     res["seconds"] = round(time.time() - t0, 1)
     res["evaluation_sha256"] = E.evaluate_sha256()
     (REPORT / "class_weight_check_test.json").write_text(json.dumps(E.to_jsonable(res), ensure_ascii=False), encoding="utf-8")
+    (REPORT / "class_weight_check_test_alarms.json").write_text(json.dumps(
+        {"note": f"test split, epoch {MAIN_EPOCH}, alarms at the threshold where 5% of normal calls alarm; from the saved test scores",
+         "october_share_of_normal_calls": float((nm & (src_t == "oct")).sum() / max(1, int(nm.sum()))),
+         "values": {t: res["settings"][t]["alarms_at_5pct_false_alarms"] for t in res["settings"]}}, ensure_ascii=False, indent=1), encoding="utf-8")
+    for t in res["settings"]:
+        a = res["settings"][t]["alarms_at_5pct_false_alarms"]
+        log(f"{t:9s} false alarms {a['false_alarms']} of which October {a['false_alarms_from_october']} ({a['share_october_among_false_alarms']:.0%}) | "
+            f"caught {a['caught']} (October {a['caught_october']}, November {a['caught_november']})")
     log("DONE", json.dumps(res["reading"]), f"{res['seconds']}s")
 
 
-ORDER = ("baseline", "w075", "w100", "w300")
+ORDER = ("baseline", "w075", "w100", "w300", "w1000")
 # ordinal ramp, light to dark = small to large weight (validate_palette.js --ordinal: all checks pass)
-RAMP = {"baseline": "#86b6ef", "w075": "#4f93e6", "w100": "#2668bf", "w300": "#143f78"}
-NAMES = {"baseline": "약 15배 (지금 방식)", "w075": "약 60배", "w100": "약 230배 (총 가중치 균형)", "w300": "300배"}
+RAMP = {"baseline": "#86b6ef", "w075": "#5b9ae8", "w100": "#3478d0", "w300": "#1f5aa6", "w1000": "#123a70"}
+NAMES = {"baseline": "약 15배 (지금 방식)", "w075": "약 60배", "w100": "약 230배 (총 가중치 균형)", "w300": "300배", "w1000": "1000배"}
 
 
 def _panels(series, n_ep, main_epoch, panels, head, sub, note, fname, ylabel, ylim, ref=None):
