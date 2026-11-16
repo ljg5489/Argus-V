@@ -9,13 +9,16 @@
   54.20754623413086
  ],
  "split": "test (resplit-1117)",
+ "report_dir": "reports/risk-loop/resplit-1117/run01",
+ "figure_dir": "reports/risk-loop/resplit-1117/run01/figures_full_test",
+ "stem": "_EM64_w60",
  "test": {
   "calls": 3220,
   "violations": 26,
   "visible_violations": 10,
   "normal_calls": 3194
  },
- "computed_at": "2026-11-17 01:20:12",
+ "computed_at": "2026-11-17 02:14:13",
  "visible_violations_vs_normal_calls": {
   "positives": 10,
   "normal_calls": 3194,

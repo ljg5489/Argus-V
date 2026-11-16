@@ -68,23 +68,25 @@ def counts(alarm, y, vis, src):
 def main(argv):
     model = argv[argv.index("--model") + 1] if "--model" in argv else "EM64_w60"
     epoch = int(argv[argv.index("--epoch") + 1]) if "--epoch" in argv else R.FIXED_EPOCH
-    arch, wtag = model.split("_")
+    from experiments.risk_loop.argus_loop import resplit_run01_full_test as FT
     D = R.load()
     va, te = D["idx"]["validation"], D["idx"]["test"]
     yv, yt = D["y"][va], D["y"][te]
     vis_t, src_t = D["vis"][te], D["source"][te].astype(str)
-    Z = [np.load(R.OUT / "em" / f"{model}_r{k}.npz", allow_pickle=False) for k in R.REPEATS]
-    res = {"model": model, "model_ko": f"Argus-V-em {ARCH_KO[arch]}, 위반 가중치 {R.WEIGHT_KO[wtag]}", "epoch": epoch, "repeats": len(Z),
+    name_ko, SC, _, report, figdir, stem = FT.load_model(model, epoch)
+    Z = list(zip(SC["validation"], SC["test"]))                  # one (validation scores, test scores) pair per repeat
+    rules = {k: v for k, v in RULES.items() if not (model == "EMP" and k == "own")}      # the mix has no decision point of its own
+    res = {"model": model, "model_ko": name_ko, "epoch": epoch, "repeats": len(Z),
+           "report_dir": str(report.relative_to(ROOT)).replace("\\", "/"), "figure_dir": str(figdir.relative_to(ROOT)).replace("\\", "/"), "stem": stem,
            "test": {"calls": int(len(te)), "normal": int((yt == 0).sum()), "violations": int(yt.sum()), "visible_violations": int(vis_t.sum())},
            "validation": {"calls": int(len(va)), "normal": int((yv == 0).sum()), "violations": int(yv.sum())},
            "note": "thresholds come from the model itself or from the validation split; the test split is only judged",
            "baseline_everything_normal": {"accuracy": float((yt == 0).mean()), "violations_caught": 0},
            "rules": {}, "computed_at": time.strftime("%Y-%m-%d %H:%M:%S")}
     preds = {}
-    for name in RULES:
+    for name in rules:
         per = []
-        for k, z in enumerate(Z):
-            sv, st = z["scores_validation"][epoch - 1].astype(np.float64), z["scores_test"][epoch - 1].astype(np.float64)
+        for k, (sv, st) in enumerate(Z):
             info = {}
             if name == "own":
                 thr = 0.0
@@ -100,19 +102,19 @@ def main(argv):
                         "on_validation": {key: cv[key] for key in ("violation_judged_violation", "violation_judged_normal", "normal_judged_violation",
                                                                    "normal_judged_normal", "recall", "precision", "f1")}})
         keys = [k_ for k_ in per[0] if k_ not in ("repeat", "threshold", "on_validation", "validation_f1")]
-        res["rules"][name] = {"ko": RULES[name], "per_repeat": per, "mean": {k_: float(np.mean([p[k_] for p in per])) for k_ in keys},
+        res["rules"][name] = {"ko": rules[name], "per_repeat": per, "mean": {k_: float(np.mean([p[k_] for p in per])) for k_ in keys},
                               "threshold_mean": float(np.mean([p["threshold"] for p in per]))}
-    out = R.REPORT / f"classification_test_{model}.json"
-    out.write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
+    report.mkdir(parents=True, exist_ok=True)
+    (report / f"classification_test{stem}.json").write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
     # every test call with its scores and judgements (ignored artifact)
     with open(R.OUT / f"predictions_test_{model}.csv", "w", newline="", encoding="utf-8") as h:
         wr = csv.writer(h)
         wr.writerow(["row", "unit_id", "scenario_id", "tool", "period", "step_index", "label", "visible"]
-                    + [f"score_repeat{k}" for k in range(len(Z))] + [f"judged_violation_{n}_repeat{k}" for n in RULES for k in range(len(Z))])
-        S = [z["scores_test"][epoch - 1] for z in Z]
+                    + [f"score_repeat{k}" for k in range(len(Z))] + [f"judged_violation_{n}_repeat{k}" for n in rules for k in range(len(Z))])
+        S = [st for _, st in Z]
         for j, i in enumerate(te):
             wr.writerow([int(i), D["unit_id"][i], D["scenario_id"][i], D["tool"][i], D["source"][i], int(D["step_index"][i]), int(D["y"][i]), int(D["vis"][i])]
-                        + [f"{float(s[j]):.6f}" for s in S] + [int(preds[(n, k)][j]) for n in RULES for k in range(len(Z))])
+                        + [f"{float(s[j]):.6f}" for s in S] + [int(preds[(n, k)][j]) for n in rules for k in range(len(Z))])
     write_md(res)
     figure(res)
     for name, r in res["rules"].items():
@@ -126,7 +128,8 @@ def write_md(res):
     t = res["test"]
     L = [f"# test 호출 전부를 위반 / 정상으로 판정 — {res['model_ko']}, {res['epoch']} epoch", "",
          f"test 호출 {t['calls']:,}개(정상 {t['normal']:,}개, 위반 {t['violations']}개. 위반 중 근거가 보인 것 {t['visible_violations']}개) 하나하나에 모델이 은닉층 값으로 점수를 내고, "
-         "점수가 문턱보다 높으면 \"위반\"으로 판정했다. 문턱은 test를 보지 않고 정했다(모델 자체 기준이거나 validation에서 정한 값). 반복 3번 각각의 결과와 평균이다. 새 학습은 없다.", "",
+         "점수가 문턱보다 높으면 \"위반\"으로 판정했다. 문턱은 test를 보지 않고 정했다(모델 자체 기준이거나 validation에서 정한 값). "
+         + ("반복 3번 각각의 결과와 평균이다. " if res["repeats"] > 1 else "") + "새 학습은 없다.", "",
          f"참고: 전부 \"정상\"이라고만 해도 맞힌 비율은 {res['baseline_everything_normal']['accuracy']:.1%}다(위반이 전체의 {t['violations'] / t['calls']:.1%}뿐이라서). "
          "그래서 맞힌 비율보다 \"위반 중 몇 개를 잡았나\"와 \"경보 중 몇 개가 진짜 위반인가\"를 봐야 한다.", "",
          "| 판정 기준 | 위반을 위반으로 (반복별) | 위반을 놓침 (평균) | 정상을 위반으로 (반복별) | 정상을 정상으로 (평균) | 잡은 비율 | 경보 중 진짜 위반 | F1 | 맞힌 비율 |",
@@ -143,8 +146,8 @@ def write_md(res):
         L.append(f"| {r['ko']} | {m['caught_visible']:.1f} | {m['caught_not_visible']:.1f} | {m['caught_october']:.1f} | {m['caught_november']:.1f} | "
                  f"{(m['false_alarms_october'] / fa if fa else 0):.0%} ({m['false_alarms_october']:.0f} / {fa:.0f}) |")
     L += ["", f"호출마다의 점수와 판정: `artifacts/risk-loop/resplit-1117/run01/predictions_test_{res['model']}.csv`(git 제외). "
-          f"그림: `figures_full_test/{res['model']}_03_혼동_행렬.png`.", ""]
-    (R.REPORT / f"classification_test_{res['model']}.md").write_text("\n".join(L), encoding="utf-8")
+          f"그림: `{res['figure_dir']}/`.", ""]
+    (ROOT / res["report_dir"] / f"classification_test{res['stem']}.md").write_text("\n".join(L), encoding="utf-8")
 
 
 def figure(res):
@@ -154,8 +157,8 @@ def figure(res):
     plt = PP.plt
     t = res["test"]
     names = list(res["rules"])
-    fig, axes = plt.subplots(1, len(names), figsize=(11.6, 4.5))
-    fig.subplots_adjust(top=0.66, left=0.085, right=0.985, bottom=0.14, wspace=0.34)
+    fig, axes = plt.subplots(1, len(names), figsize=(2.9 * len(names), 4.5))
+    fig.subplots_adjust(top=0.66, left=0.34 / len(names), right=0.985, bottom=0.14, wspace=0.34)
     for ax, name in zip(axes, names):
         m = res["rules"][name]["mean"]
         grid = np.asarray([[m["violation_judged_violation"], m["violation_judged_normal"]], [m["normal_judged_violation"], m["normal_judged_normal"]]])
@@ -179,12 +182,12 @@ def figure(res):
             sp.set_visible(False)
         ax.set_title(res["rules"][name]["ko"].replace(" 문턱", "").replace("validation ", "validation\n").replace("모델 자체 기준 ", "모델 자체 기준\n")
                      + f"\n위반 {t['violations']}개 중 {m['violation_judged_violation']:.1f}개 잡음", fontsize=9.6, color=PP.INK, pad=8, loc="left")
-    PP.title(fig, f"test 호출 {t['calls']:,}개를 위반 / 정상으로 판정한 결과 — {res['model_ko']}",
-             f"{res['epoch']} epoch, 반복 3번의 평균 개수. 칸 아래 숫자는 실제 위반(윗줄)·실제 정상(아랫줄) 안에서의 비율")
+    PP.title(fig, f"test 호출 {t['calls']:,}개를 위반 / 정상으로 판정 — {res['model_ko'].split(' (')[0]}",
+             ("반복 3번의 평균 개수. " if res["repeats"] > 1 else "") + "칸 아래 숫자는 실제 위반(윗줄)·실제 정상(아랫줄) 안에서의 비율")
     PP.note(fig, f"문턱은 test를 보지 않고 정함 · 전부 정상이라고만 해도 맞힌 비율은 {res['baseline_everything_normal']['accuracy']:.1%}")
-    out = R.REPORT / "figures_full_test"
+    out = ROOT / res["figure_dir"]
     out.mkdir(parents=True, exist_ok=True)
-    PP.save(fig, out, f"{res['model']}_03_혼동_행렬.png")
+    PP.save(fig, out, (res["model"] + "_" if res["stem"] else "") + "03_혼동_행렬.png")
 
 
 if __name__ == "__main__":

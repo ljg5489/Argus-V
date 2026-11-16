@@ -1,0 +1,182 @@
+{
+ "model": "EMP",
+ "model_ko": "Argus-V-emp (Argus-V-em 12개 설정과 Argus-V-p P3·P5를 섞은 모델)",
+ "epoch": 67,
+ "repeats": 1,
+ "report_dir": "reports/risk-loop/argus-v-emp",
+ "figure_dir": "reports/risk-loop/argus-v-emp/figures",
+ "stem": "",
+ "test": {
+  "calls": 3220,
+  "normal": 3194,
+  "violations": 26,
+  "visible_violations": 10
+ },
+ "validation": {
+  "calls": 3217,
+  "normal": 3191,
+  "violations": 26
+ },
+ "note": "thresholds come from the model itself or from the validation split; the test split is only judged",
+ "baseline_everything_normal": {
+  "accuracy": 0.9919254658385093,
+  "violations_caught": 0
+ },
+ "rules": {
+  "val_f1": {
+   "ko": "validation에서 F1이 가장 높은 문턱",
+   "per_repeat": [
+    {
+     "repeat": 0,
+     "threshold": 0.9531366928009761,
+     "validation_f1": 0.09523809523809523,
+     "violation_judged_violation": 2,
+     "violation_judged_normal": 24,
+     "normal_judged_violation": 17,
+     "normal_judged_normal": 3177,
+     "accuracy": 0.9872670807453416,
+     "recall": 0.07692307692307693,
+     "precision": 0.10526315789473684,
+     "f1": 0.08888888888888889,
+     "false_alarm_rate": 0.005322479649342517,
+     "caught_visible": 1,
+     "caught_not_visible": 1,
+     "caught_october": 1,
+     "caught_november": 1,
+     "false_alarms_october": 7,
+     "false_alarms_november": 10,
+     "on_validation": {
+      "violation_judged_violation": 2,
+      "violation_judged_normal": 24,
+      "normal_judged_violation": 14,
+      "normal_judged_normal": 3177,
+      "recall": 0.07692307692307693,
+      "precision": 0.125,
+      "f1": 0.09523809523809523
+     }
+    }
+   ],
+   "mean": {
+    "violation_judged_violation": 2.0,
+    "violation_judged_normal": 24.0,
+    "normal_judged_violation": 17.0,
+    "normal_judged_normal": 3177.0,
+    "accuracy": 0.9872670807453416,
+    "recall": 0.07692307692307693,
+    "precision": 0.10526315789473684,
+    "f1": 0.08888888888888889,
+    "false_alarm_rate": 0.005322479649342517,
+    "caught_visible": 1.0,
+    "caught_not_visible": 1.0,
+    "caught_october": 1.0,
+    "caught_november": 1.0,
+    "false_alarms_october": 7.0,
+    "false_alarms_november": 10.0
+   },
+   "threshold_mean": 0.9531366928009761
+  },
+  "val_fa5": {
+   "ko": "validation 정상 호출의 5%가 경보가 되는 문턱",
+   "per_repeat": [
+    {
+     "repeat": 0,
+     "threshold": 0.8640123648671985,
+     "violation_judged_violation": 12,
+     "violation_judged_normal": 14,
+     "normal_judged_violation": 145,
+     "normal_judged_normal": 3049,
+     "accuracy": 0.9506211180124223,
+     "recall": 0.46153846153846156,
+     "precision": 0.07643312101910828,
+     "f1": 0.13114754098360656,
+     "false_alarm_rate": 0.04539762053850971,
+     "caught_visible": 7,
+     "caught_not_visible": 5,
+     "caught_october": 7,
+     "caught_november": 5,
+     "false_alarms_october": 46,
+     "false_alarms_november": 99,
+     "on_validation": {
+      "violation_judged_violation": 7,
+      "violation_judged_normal": 19,
+      "normal_judged_violation": 160,
+      "normal_judged_normal": 3031,
+      "recall": 0.2692307692307692,
+      "precision": 0.041916167664670656,
+      "f1": 0.07253886010362694
+     }
+    }
+   ],
+   "mean": {
+    "violation_judged_violation": 12.0,
+    "violation_judged_normal": 14.0,
+    "normal_judged_violation": 145.0,
+    "normal_judged_normal": 3049.0,
+    "accuracy": 0.9506211180124223,
+    "recall": 0.46153846153846156,
+    "precision": 0.07643312101910828,
+    "f1": 0.13114754098360656,
+    "false_alarm_rate": 0.04539762053850971,
+    "caught_visible": 7.0,
+    "caught_not_visible": 5.0,
+    "caught_october": 7.0,
+    "caught_november": 5.0,
+    "false_alarms_october": 46.0,
+    "false_alarms_november": 99.0
+   },
+   "threshold_mean": 0.8640123648671985
+  },
+  "val_fa1": {
+   "ko": "validation 정상 호출의 1%가 경보가 되는 문턱",
+   "per_repeat": [
+    {
+     "repeat": 0,
+     "threshold": 0.9316628098412368,
+     "violation_judged_violation": 2,
+     "violation_judged_normal": 24,
+     "normal_judged_violation": 35,
+     "normal_judged_normal": 3159,
+     "accuracy": 0.9816770186335404,
+     "recall": 0.07692307692307693,
+     "precision": 0.05405405405405406,
+     "f1": 0.06349206349206349,
+     "false_alarm_rate": 0.010958046336881654,
+     "caught_visible": 1,
+     "caught_not_visible": 1,
+     "caught_october": 1,
+     "caught_november": 1,
+     "false_alarms_october": 12,
+     "false_alarms_november": 23,
+     "on_validation": {
+      "violation_judged_violation": 2,
+      "violation_judged_normal": 24,
+      "normal_judged_violation": 32,
+      "normal_judged_normal": 3159,
+      "recall": 0.07692307692307693,
+      "precision": 0.058823529411764705,
+      "f1": 0.06666666666666667
+     }
+    }
+   ],
+   "mean": {
+    "violation_judged_violation": 2.0,
+    "violation_judged_normal": 24.0,
+    "normal_judged_violation": 35.0,
+    "normal_judged_normal": 3159.0,
+    "accuracy": 0.9816770186335404,
+    "recall": 0.07692307692307693,
+    "precision": 0.05405405405405406,
+    "f1": 0.06349206349206349,
+    "false_alarm_rate": 0.010958046336881654,
+    "caught_visible": 1.0,
+    "caught_not_visible": 1.0,
+    "caught_october": 1.0,
+    "caught_november": 1.0,
+    "false_alarms_october": 12.0,
+    "false_alarms_november": 23.0
+   },
+   "threshold_mean": 0.9316628098412368
+  }
+ },
+ "computed_at": "2026-11-17 02:13:03"
+}

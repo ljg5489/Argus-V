@@ -1,5 +1,17 @@
 # HANDOFF — Argus-V1 성능 향상 루프
 
+## 인수인계 기록 추가 — 2026-11-17 02:16 KST (Claude) — Argus-V-emp(섞은 모델) 정의 고정, test 전체 채점 완료
+
+- **지금 돌고 있는 것 없음.** 새 학습 없음.
+- **사용자 지시**: "앙상블 마냥 모델을 섞으면 되는거였잖아? … 섞은 모델을 Argus-V-emp로 이름잡고 그것으로 다시 전체 test 진행해봐". 그 앞에 봉인 시나리오는 "안 넣어도 돼".
+- **Argus-V-emp의 정의**(`experiments/risk_loop/argus_loop/argus_v_emp.py`, `reports/risk-loop/argus-v-emp/README.md`): 새 분할 run01의 Argus-V-em 12개 설정(각 반복 3번, 67 epoch, 점수 36벌) + Argus-V-p P3·P5. 구성 모델 점수를 "validation 호출 중 더 낮은 점수를 받은 비율"로 바꾼 뒤, Argus-V-em 평균·P3·P5를 같은 비중으로 평균. 라벨 미사용, 새 학습 없음.
+- **test 결과(호출 3,220 = 정상 3,194 + 위반 26, 근거가 보인 위반 10)**: 위반 26개 — 전부 비교 **0.913**(구간 0.79~0.96), 같은 시기끼리 **0.822**, 같은 도구끼리 0.598. 근거가 보인 위반 10개 — 전부 비교 **0.962**(0.90~0.98), 같은 시기끼리 **0.876**, 같은 도구끼리 0.776. validation: 0.837(0.788) / 0.958(0.884). 비교 대상인 Argus-V-em 64차원·약 60배 하나는 0.767 / 0.663 / 0.623, 0.838 / 0.701 / 0.774.
+- **판정**: validation 정상의 5%가 경보인 문턱에서 위반 26개 중 12개(근거가 보인 위반 10개 중 7개), 오경보 145개. 1% 문턱 2개 / 35개. test 정상 기준 10% 문턱이면 26개 중 20개, 10개 중 10개(오경보 320개).
+- **주의(문서에 적음)**: 같은 도구끼리 비교는 오르지 않음. "전부 비교"에는 기록 시기 영향(시기만 아는 점수 0.750 / 0.861). 조합은 16가지 탐색에서 validation 최고였던 것이고 test 값을 본 뒤에 고정했으므로 낙관적일 수 있음. 한 번도 쓰지 않은 데이터로 확인한 값이 아님.
+- **기록**: `reports/risk-loop/argus-v-emp/`(README.md, full_test.md/json, classification_test.md/json, figures/ 3장). 새 분할 test 사용 기록 3번째 줄. `resplit_run01_full_test.py`·`resplit_run01_classify.py`는 `--model EMP`도 받는다(기존 `--model EM64_w60` 결과는 그대로 재현됨).
+- **쓰려면**: Argus-V-p P3·P5는 점수만 저장돼 있어, 새 호출에 Argus-V-emp 점수를 내려면 두 모델을 다시 맞춰 저장해야 한다(학습, 승인 필요). 발표 시연에 쓸지는 사용자 결정.
+- **남은 방안(승인 대기)**: train+validation 합쳐 학습, Argus-V-em에 근거가 보이지 않은 위반도 학습, 입력 층 추가.
+
 ## 인수인계 기록 추가 — 2026-11-17 01:50 KST (Claude) — 사용자 요청 "현재에서 AUROC를 높일 수 있는 방안을 도출해"
 
 - **지금 돌고 있는 것 없음.** 새 학습 없이 저장된 점수로만 분석(`experiments/risk_loop/argus_loop/resplit_run01_levers.py` → `reports/risk-loop/resplit-1117/run01/auroc_levers.json`).

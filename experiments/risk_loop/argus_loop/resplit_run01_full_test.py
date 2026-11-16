@@ -38,6 +38,27 @@ PERIOD_KO = {"oct": "10월", "nov": "11월"}
 ARCH_KO = {"EM32": "32차원", "EM64": "64차원", "EM128": "128차원", "LINEAR": "선형 대조"}
 
 
+def load_model(model, epoch):
+    """-> (name in Korean, {'validation': [score vectors], 'test': [...]}, extra facts, report folder, figure folder, file stem)."""
+    if model == "EMP":
+        from experiments.risk_loop.argus_loop import argus_v_emp as AE
+        return (AE.NAME_KO, {s: [AE.scores(s, epoch)] for s in ("validation", "test")}, {"definition": AE.describe()},
+                AE.REPORT, AE.REPORT / "figures", "")
+    arch, wtag = model.split("_")
+    Z = [np.load(R.OUT / "em" / f"{model}_r{k}.npz", allow_pickle=False) for k in R.REPEATS]
+    return (f"Argus-V-em {ARCH_KO[arch]}, 위반 가중치 {R.WEIGHT_KO[wtag]}",
+            {s: [z[f"scores_{s}"][epoch - 1].astype(np.float64) for z in Z] for s in ("validation", "test")},
+            {"pos_weight": [float(z["pos_weight"]) for z in Z]}, R.REPORT, R.REPORT / "figures_full_test", f"_{model}")
+
+
+def scores_at(model, split, e):
+    """Score vectors of ``split`` at epoch e (1-based), one per repeat."""
+    if model == "EMP":
+        from experiments.risk_loop.argus_loop import argus_v_emp as AE
+        return [AE.scores(split, e)]
+    return [np.load(R.OUT / "em" / f"{model}_r{k}.npz", allow_pickle=False)[f"scores_{split}"][e - 1].astype(np.float64) for k in R.REPEATS]
+
+
 def auc(s, y):
     y = np.asarray(y)
     return float(H.auroc(np.asarray(s, dtype=np.float64), y)) if 0 < int(y.sum()) < len(y) else float("nan")
@@ -76,7 +97,7 @@ def boot(S, pos, rows_mask, fam, src, within, reps=2000, seed=0):
     return [float(lo), float(hi)]
 
 
-def read_out(S, pos, rows_mask, D, te):
+def read_out(S, pos, rows_mask, D, te, own=True):
     """One label set (positives = pos, rows = rows_mask) scored every way. S: [repeat][test row]."""
     y, tool, src, fam = D["y"][te], D["tool"][te].astype(str), D["source"][te].astype(str), D["family"][te].astype(str)
     norm = (y == 0) & rows_mask
@@ -112,7 +133,7 @@ def read_out(S, pos, rows_mask, D, te):
                           "positives_in_tools_without_a_normal_call": lonely,
                           "pairs": int(sum(t["pairs"] for t in tools)), "tools": sorted(tools, key=lambda t: -t["positives"])}
     ops = {}
-    for name, rule in [(f"{int(f * 100)}% false alarms", f) for f in FA] + [("model decision point (score > 0)", None)]:
+    for name, rule in [(f"{int(f * 100)}% false alarms", f) for f in FA] + ([("model decision point (score > 0)", None)] if own else []):
         tp, fp = [], []
         for s in S:
             thr = 0.0 if rule is None else float(np.quantile(s[norm], 1 - rule))
@@ -128,21 +149,19 @@ def read_out(S, pos, rows_mask, D, te):
 def main(argv):
     model = argv[argv.index("--model") + 1] if "--model" in argv else "EM64_w60"
     epoch = int(argv[argv.index("--epoch") + 1]) if "--epoch" in argv else R.FIXED_EPOCH
-    arch, wtag = model.split("_")
     D = R.load()
     te = D["idx"]["test"]
     y, vis = D["y"][te], D["vis"][te]
     tool, src = D["tool"][te].astype(str), D["source"][te].astype(str)
     norm = y == 0
-    files = [R.OUT / "em" / f"{model}_r{k}.npz" for k in R.REPEATS]
-    Z = [np.load(f, allow_pickle=False) for f in files]
-    S = [z["scores_test"][epoch - 1].astype(np.float64) for z in Z]
-    res = {"model": model, "model_ko": f"Argus-V-em {ARCH_KO[arch]}, 위반 가중치 {R.WEIGHT_KO[wtag]}", "epoch": epoch, "repeats": len(S),
-           "pos_weight": [float(z["pos_weight"]) for z in Z], "split": "test (resplit-1117)",
+    name_ko, SC, extra, report, figdir, stem = load_model(model, epoch)
+    S = SC["test"]
+    res = {"model": model, "model_ko": name_ko, "epoch": epoch, "repeats": len(S), **extra, "split": "test (resplit-1117)",
+           "report_dir": str(report.relative_to(ROOT)).replace("\\", "/"), "figure_dir": str(figdir.relative_to(ROOT)).replace("\\", "/"), "stem": stem,
            "test": {"calls": int(len(te)), "violations": int(y.sum()), "visible_violations": int(vis.sum()), "normal_calls": int(norm.sum())},
            "computed_at": time.strftime("%Y-%m-%d %H:%M:%S"),
-           "visible_violations_vs_normal_calls": read_out(S, vis, norm | vis, D, te),
-           "all_violations_vs_normal_calls": read_out(S, y == 1, np.ones(len(te), dtype=bool), D, te)}
+           "visible_violations_vs_normal_calls": read_out(S, vis, norm | vis, D, te, own=model != "EMP"),
+           "all_violations_vs_normal_calls": read_out(S, y == 1, np.ones(len(te), dtype=bool), D, te, own=model != "EMP")}
     # every visible violation, one by one
     rows = []
     for i in np.flatnonzero(vis):
@@ -161,7 +180,7 @@ def main(argv):
     keep = norm | vis
     lab = vis.astype(np.int64)
     for e in range(R.EPOCHS):
-        Se = [z["scores_test"][e].astype(np.float64) for z in Z]
+        Se = scores_at(model, "test", e + 1)
         curve["mixed"].append(float(np.mean([auc(s[keep], lab[keep]) for s in Se])))
         num, den = 0.0, 0
         for p in ("oct", "nov"):
@@ -171,15 +190,15 @@ def main(argv):
                 num, den = num + float(np.mean([auc(s[m], lab[m]) for s in Se])) * k, den + k
         curve["inside_period"].append(num / den)
     res["visible_per_epoch"] = curve
-    out = R.REPORT / f"full_test_{model}.json"
-    out.write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
+    report.mkdir(parents=True, exist_ok=True)
+    (report / f"full_test{stem}.json").write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
     write_md(res)
     figures(res, S, D, te)
     v = res["visible_violations_vs_normal_calls"]
     print(f"{model} epoch {epoch}: visible {v['positives']} vs normal {v['normal_calls']} | mixed {v['mixed']['auroc']:.3f} {np.round(v['mixed']['ci95'], 3).tolist()} "
           f"(period-only rule {v['mixed']['period_only_rule']:.3f}) | inside period {v['inside_period']['auroc']:.3f} {np.round(v['inside_period']['ci95'], 3).tolist()} "
           f"| inside tool {v['inside_tool']['auroc_weighted_by_positives']:.3f} over {v['inside_tool']['positives_compared']} violations "
-          f"| caught at 5% {v['operating_points']['5% false alarms']['caught_per_repeat']} | score > 0 {v['operating_points']['model decision point (score > 0)']['caught_per_repeat']}")
+          f"| caught at 5% {v['operating_points']['5% false alarms']['caught_per_repeat']}" + (f" | score > 0 {v['operating_points']['model decision point (score > 0)']['caught_per_repeat']}" if model != "EMP" else ""))
 
 
 def f3(v):
@@ -190,7 +209,8 @@ def write_md(res):
     t = res["test"]
     L = [f"# test 전체 채점 — {res['model_ko']}, {res['epoch']} epoch", "",
          f"새 분할(resplit-1117)의 test: 호출 {t['calls']:,}개 = 정상 {t['normal_calls']:,}개 + 위반 {t['violations']}개(그중 근거가 보인 위반 {t['visible_violations']}개). "
-         f"모델은 호출마다 은닉층 값으로 점수 하나를 낸다. 아래는 그 점수를 여러 방법으로 채점한 것이다. 반복 {res['repeats']}번의 평균이고, 저장된 점수만 썼다(새 학습 없음).", ""]
+         "모델은 호출마다 은닉층 값으로 점수 하나를 낸다. 아래는 그 점수를 여러 방법으로 채점한 것이다. "
+         + (f"반복 {res['repeats']}번의 평균이고, " if res["repeats"] > 1 else "") + "저장된 점수만 썼다(새 학습 없음).", ""]
     for key, title in (("visible_violations_vs_normal_calls", f"근거가 보인 위반 {t['visible_violations']}개 전부 대 정상 호출"),
                        ("all_violations_vs_normal_calls", f"위반 {t['violations']}개 전부 대 정상 호출")):
         v = res[key]
@@ -210,15 +230,18 @@ def write_md(res):
         for k, o in v["operating_points"].items():
             L.append(f"| {names[k]} | {' / '.join(map(str, o['caught_per_repeat']))} | {o['caught_mean']:.1f} / {v['positives']} | {o['false_alarms_mean']:.0f} | {o['precision_mean']:.1%} |")
         L.append("")
+    own = "model decision point (score > 0)" in res["visible_violations_vs_normal_calls"]["operating_points"]
     L += [f"## 근거가 보인 위반 {t['visible_violations']}개 하나하나", "",
-          "\"정상 호출의 몇 %보다 점수가 높은가\"(100%에 가까울수록 잘 가려낸 것). 반복 평균.", "",
-          "| 도구 | 기록 시기 | 시나리오 | 전체 정상 호출 대비 | 같은 시기 정상 호출 대비 | 같은 도구 정상 호출 대비 (개수) | 5% 오경보 기준에서 잡힌 반복 수 | 점수 0 초과인 반복 수 |", "|---|---|---|---|---|---|---|---|"]
+          "\"정상 호출의 몇 %보다 점수가 높은가\"(100%에 가까울수록 잘 가려낸 것).", "",
+          "| 도구 | 기록 시기 | 시나리오 | 전체 정상 호출 대비 | 같은 시기 정상 호출 대비 | 같은 도구 정상 호출 대비 (개수) | 정상의 5%가 경보인 기준에서 잡혔나 |"
+          + (" 점수 0 초과인 반복 수 |" if own else ""), "|---|---|---|---|---|---|---|" + ("---|" if own else "")]
     for r in res["each_visible_violation"]:
         st = "비교할 정상 호출 없음" if r["above_share_of_same_tool_normal_calls"] is None else f"{r['above_share_of_same_tool_normal_calls']:.0%} ({r['same_tool_normal_calls']}개)"
-        L.append(f"| `{r['tool']}` | {PERIOD_KO[r['period']]} | {r['scenario']} | {r['above_share_of_all_normal_calls']:.1%} | {r['above_share_of_same_period_normal_calls']:.1%} | {st} | "
-                 f"{r['caught_at_5pct_false_alarms_in_repeats']} / {res['repeats']} | {r['above_decision_point_in_repeats']} / {res['repeats']} |")
-    L += ["", f"그림: `figures_full_test/{res['model']}_*.png`. 전체 수치: `full_test_{res['model']}.json`.", ""]
-    (R.REPORT / f"full_test_{res['model']}.md").write_text("\n".join(L), encoding="utf-8")
+        got = (f"{r['caught_at_5pct_false_alarms_in_repeats']} / {res['repeats']}" if res["repeats"] > 1 else ("잡힘" if r["caught_at_5pct_false_alarms_in_repeats"] else "안 잡힘"))
+        L.append(f"| `{r['tool']}` | {PERIOD_KO[r['period']]} | {r['scenario']} | {r['above_share_of_all_normal_calls']:.1%} | {r['above_share_of_same_period_normal_calls']:.1%} | {st} | {got} |"
+                 + (f" {r['above_decision_point_in_repeats']} / {res['repeats']} |" if own else ""))
+    L += ["", f"그림: `{res['figure_dir']}/`. 전체 수치: `full_test{res['stem']}.json`.", ""]
+    (ROOT / res["report_dir"] / f"full_test{res['stem']}.md").write_text("\n".join(L), encoding="utf-8")
 
 
 def figures(res, S, D, te):
@@ -226,8 +249,9 @@ def figures(res, S, D, te):
 
     PP.setup()
     plt = PP.plt
-    out = R.REPORT / "figures_full_test"
+    out = ROOT / res["figure_dir"]
     out.mkdir(parents=True, exist_ok=True)
+    pre = res["model"] + "_" if res["stem"] else ""
     y, vis = D["y"][te], D["vis"][te]
     src = D["source"][te].astype(str)
     norm = y == 0
@@ -257,14 +281,14 @@ def figures(res, S, D, te):
     ax.set_xticklabels(["0%", "25%", "50%", "75%", "100%"])
     ax.set_xlabel("이 위반보다 점수가 낮은 정상 호출의 비율 (test 정상 호출 전체 대비)")
     ax.grid(axis="y", visible=False)
-    ax.legend(handles=[PP.Line2D([0], [0], marker="o", ls="", markersize=9, color=VIOL, label="반복 3번 평균 (오른쪽 숫자)"),
-                       PP.Line2D([0], [0], marker="o", ls="", markersize=6, markerfacecolor=PP.SURFACE, markeredgecolor=VIOL, markeredgewidth=1.3, label="반복 하나")],
+    ax.legend(handles=[PP.Line2D([0], [0], marker="o", ls="", markersize=9, color=VIOL, label="반복 3번 평균 (오른쪽 숫자)" if len(S) > 1 else "이 위반의 위치 (오른쪽 숫자)"),
+                       PP.Line2D([0], [0], marker="o", ls="", markersize=6, markerfacecolor=PP.SURFACE, markeredgecolor=VIOL, markeredgewidth=1.3, label="반복 하나")][: 2 if len(S) > 1 else 1],
               loc="upper center", bbox_to_anchor=(0.36, -0.42 / (0.46 * n) * 1.0), ncol=2, fontsize=9.3, columnspacing=1.8)
     v = res["visible_violations_vs_normal_calls"]
-    PP.title(fig, f"test의 근거가 보인 위반 {n}개 하나하나 — {res['model_ko']}",
+    PP.title(fig, f"test의 근거가 보인 위반 {n}개 하나하나 — {res['model_ko'].split(' (')[0]}",
              f"{res['epoch']} epoch. 오른쪽에 있을수록 정상 호출보다 높은 점수를 받은 것. 정상 호출 {int(norm.sum()):,}개와 비교")
     PP.note(fig, f"도구·시기 구분 없이 전부 비교한 AUROC {v['mixed']['auroc']:.2f} · \"10월 기록이면 높게\"만 해도 {v['mixed']['period_only_rule']:.2f} · 같은 시기끼리 비교하면 {v['inside_period']['auroc']:.2f}")
-    PP.save(fig, out, f"{res['model']}_01_위반별_위치.png")
+    PP.save(fig, out, f"{pre}01_위반별_위치.png")
     # 02: ROC, mixed and inside October (the period that holds most visible violations)
     fig, axes = plt.subplots(1, 2, figsize=(PP.FIG_W, 4.9), sharey=True)
     fig.subplots_adjust(top=0.74, left=0.085, right=0.965, bottom=0.21, wspace=0.10)
@@ -287,9 +311,10 @@ def figures(res, S, D, te):
         ax.set_xlabel("오경보율 (정상 호출 중 경보 비율)")
         ax.set_title(f"{name}\nAUROC {a:.2f}", fontsize=10.2, color=PP.INK, pad=8, loc="left")
     axes[0].set_ylabel("탐지율 (근거가 보인 위반 중 경보 비율)")
-    PP.title(fig, f"ROC 곡선: test의 근거가 보인 위반 {int(vis.sum())}개 전부 — {res['model_ko']}", f"{res['epoch']} epoch. 선 하나가 반복 하나(3개). 점선은 우연")
+    PP.title(fig, f"ROC 곡선: test의 근거가 보인 위반 {int(vis.sum())}개 전부 — {res['model_ko'].split(' (')[0]}",
+             f"{res['epoch']} epoch. " + ("선 하나가 반복 하나(3개). " if len(S) > 1 else "") + "점선은 우연")
     PP.note(fig, "왼쪽 값은 위반이 10월 기록에 몰려 있어 높게 나온다. 같은 시기 안에서만 잰 값이 오른쪽이다")
-    PP.save(fig, out, f"{res['model']}_02_ROC.png")
+    PP.save(fig, out, f"{pre}02_ROC.png")
 
 
 if __name__ == "__main__":
