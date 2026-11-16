@@ -1,19 +1,23 @@
 """Every model of the new split (resplit-1117 / run01) and Argus-V-emp side by side, scored the same way.
 Reads saved scores and results.json; trains nothing.
 
-For each model, on validation and test, for all violations and for the visible ones:
+For each model, on validation and test, for all violations and for the visible ones (all of these are AUROC):
   mixed   all calls compared, tools and collection periods mixed
   period  calls of the same collection period compared (weighted by violations)
   tool    calls of the same tool compared, every tool with at least one such violation and one normal call
   tool3   the same, only tools with at least three visible violations and three normal calls (the reading fixed before run01)
-and, on test, at the threshold at which 5% of the validation normal calls alarm: violations caught, false alarms and the
-share of the false alarms that are October records; and how strongly the score ranks October normal calls above
-November normal calls (0.5 = not at all).
+and, on test, at the threshold at which 5% of the validation normal calls alarm: violations caught, false alarms, recall,
+precision, F1, and the share of the false alarms that are October records; and how strongly the score ranks October
+normal calls above November normal calls (0.5 = not at all).
 Argus-V-em values are the mean of the three repeats at epoch 67; the range over the repeats is stored beside it.
 
-Usage: PYTHONUTF8=1 py -3.11 experiments/risk_loop/argus_loop/argus_v_overview_table.py
+Every table header says where the number was measured (new train re-scored / new validation / new test) and which
+measure it is (AUROC, F1, a count), as the user asked on 2026-11-17.
+
+Usage: PYTHONUTF8=1 py -3.11 experiments/risk_loop/argus_loop/argus_v_overview_table.py [table names to print]
 Output: reports/risk-loop/argus-v-emp/overview_table.json   every number
-        reports/risk-loop/argus-v-emp/overview_tables.md    the same numbers as tables (the tables of ../model_history.md)
+        reports/risk-loop/argus-v-emp/overview_tables.md    the same numbers as tables
+        reports/risk-loop/model_history.md                  its '<!-- table: name -->' blocks are refreshed
 """
 from __future__ import annotations
 
@@ -43,6 +47,7 @@ KO_P = {"P1": "P1 최고 모델 그대로", "P2": "P2 같은 도구 안 학습",
         "P5": "P5 최고 모델 + 랜덤 포레스트", "P6": "P6 같은 도구 안 학습 + 규제 완화 + 랜덤 포레스트"}
 KO_ARCH = {"EM32": "32차원", "EM64": "64차원", "EM128": "128차원", "LINEAR": "선형 대조"}
 KO_W = {"w15": "약 15배", "w60": "약 60배", "w300": "300배"}
+KO_SPLIT = {"train": "새 train 재채점", "validation": "새 validation", "test": "새 test"}
 HISTORY = ROOT / "reports" / "risk-loop" / "model_history.md"
 # the 16 label-free ways compared on 2026-11-17 (resplit_run01_levers.py), in the order of auroc_levers.json: (prefix of the saved name, kind, name shown)
 LEVERS = (("0.", "기준", "Argus-V-em 64차원·약 60배 하나"), ("1.", "같은 설정의 반복 평균", "64차원·약 60배의 반복 3번 점수를 평균"),
@@ -62,7 +67,7 @@ def auc(s, y):
 
 
 def views(s, split, which):
-    """The three ways of grading one score vector, and how many violations the same-tool way can compare."""
+    """The three ways of grading one score vector (all AUROC), and how many violations the same-tool way can compare."""
     rows = D["idx"][split]
     y, vis = D["y"][rows], D["vis"][rows]
     src, tool = D["source"][rows].astype(str), D["tool"][rows].astype(str)
@@ -95,16 +100,22 @@ def period_lean(s, split):
 
 
 def caught(sv, st):
-    """Test violations above the threshold at which 5% of the validation normal calls alarm."""
+    """The yes/no judgement of the test calls at the threshold at which 5% of the validation normal calls alarm."""
     va, te = D["idx"]["validation"], D["idx"]["test"]
     thr = float(np.quantile(sv[D["y"][va] == 0], 0.95))
     alarm = st > thr
     yt, vt = D["y"][te], D["vis"][te]
     oct_ = D["source"][te].astype(str) == "oct"
     fa = alarm & (yt == 0)
-    return {"all": int((alarm & (yt == 1)).sum()), "visible": int((alarm & vt).sum()), "false_alarms": int(fa.sum()),
+    tp = int((alarm & (yt == 1)).sum())
+    precision = tp / max(1, int(alarm.sum()))
+    recall = tp / int((yt == 1).sum())
+    return {"all": tp, "visible": int((alarm & vt).sum()), "false_alarms": int(fa.sum()),
             "false_alarms_october_share": float((fa & oct_).sum() / max(1, fa.sum())),
-            "october": int((alarm & (yt == 1) & oct_).sum()), "november": int((alarm & (yt == 1) & ~oct_).sum())}
+            "october": int((alarm & (yt == 1) & oct_).sum()), "november": int((alarm & (yt == 1) & ~oct_).sum()),
+            "recall": float(recall), "precision": float(precision),
+            "f1": float(2 * precision * recall / (precision + recall)) if tp else 0.0,
+            "accuracy": float((alarm == (yt == 1)).mean())}
 
 
 def entry(runs):
@@ -158,10 +169,11 @@ def build():
                   "normal_calls": int((D["y"][D["idx"][s]] == 0).sum()),
                   "october_share_of_normal_calls": float(((D["source"][D["idx"][s]].astype(str) == "oct") & (D["y"][D["idx"][s]] == 0)).sum()
                                                          / (D["y"][D["idx"][s]] == 0).sum())} for s in ("train", "validation", "test")}
-    return {"note": "new split resplit-1117; Argus-V-em = mean of three repeats at epoch 67; mixed = all calls compared, period = same collection "
-                    "period, tool = same tool (every tool with a violation and a normal call), tool3 = same tool, only tools with three or more "
-                    "visible violations and normal calls; caught = test violations above the threshold at which 5% of the validation normal "
-                    "calls alarm; period lean = October normal calls ranked above November normal calls (0.5 = not at all)",
+    return {"note": "new split resplit-1117; Argus-V-em = mean of three repeats at epoch 67; mixed / period / tool / tool3 are AUROC: mixed = all calls "
+                    "compared, period = same collection period, tool = same tool (every tool with a violation and a normal call), tool3 = same tool, "
+                    "only tools with three or more visible violations and normal calls; caught / recall / precision / f1 / accuracy = the yes/no "
+                    "judgement of the test calls at the threshold at which 5% of the validation normal calls alarm; period lean = October normal "
+                    "calls ranked above November normal calls (0.5 = not at all)",
             "splits": counts, "period_only_rule": rule, "argus_v_em_part_of_the_mix": em_part,
             "same_tool_three_or_more": {s: EV[s].describe()["st_vis3"] for s in ("validation", "test")},
             "argus_v_em_fit": {w: {"fit_rows": int(len(z["y_fit"])), "visible_violations": int(z["y_fit"].sum()), "pos_weight": float(z["pos_weight"])}
@@ -203,6 +215,7 @@ def grid(header, rows, bold=()):
 
 
 def tables(out):
+    """Every header names where the number was measured and which measure it is."""
     M = out["models"]
     S = out["splits"]
     nv, nt = S["validation"], S["test"]
@@ -210,18 +223,20 @@ def tables(out):
     tv = {(s, w): any_m[f"{s}_{w}_tool_violations"] for s in ("validation", "test") for w in ("all", "visible")}
     rule = out["period_only_rule"]
     st3 = out["same_tool_three_or_more"]
+    V, B = nt["violations"], nt["visible_violations"]
+    TE, VA, TR = KO_SPLIT["test"], KO_SPLIT["validation"], KO_SPLIT["train"]
+    tool3 = f"{TE} · AUROC · 같은 도구끼리, 위반 3개 이상인 도구만 (근거가 보인 {st3['test']['violations']}개 · {st3['test']['pairs']}쌍)"
     sec = {}
-
-    def caught_cells(m):
-        c = m["test_caught_at_validation_5pct"]
-        return [cnt(c["all"]), cnt(c["visible"]), cnt(c["false_alarms"]), f"{c['false_alarms_october_share']:.0%}"]
 
     def six(m, split):
         return [m[f"{split}_all"][k] for k in VIEWS] + [m[f"{split}_visible"][k] for k in VIEWS]
 
     def head6(s, n):
-        return [f"위반 {n['violations']}개 · 전부 비교", "같은 시기끼리", f"같은 도구끼리 ({tv[(s, 'all')]}개)",
-                f"근거가 보인 {n['visible_violations']}개 · 전부 비교", "같은 시기끼리", f"같은 도구끼리 ({tv[(s, 'visible')]}개)"]
+        k = KO_SPLIT[s]
+        return [f"{k} · AUROC · 위반 {n['violations']}개 전부 비교", f"{k} · AUROC · 위반 {n['violations']}개 같은 시기끼리",
+                f"{k} · AUROC · 위반 {tv[(s, 'all')]}개 같은 도구끼리",
+                f"{k} · AUROC · 근거가 보인 {n['visible_violations']}개 전부 비교", f"{k} · AUROC · 근거가 보인 {n['visible_violations']}개 같은 시기끼리",
+                f"{k} · AUROC · 근거가 보인 {tv[(s, 'visible')]}개 같은 도구끼리"]
 
     def rule_row(s):
         return ["참고", "모델 없이 \"10월 기록이면 높게\"만 하는 규칙"] + [f3(v) for v in six(rule, s)]
@@ -229,11 +244,17 @@ def tables(out):
     def family(m):
         return m["family"] if m["family"] != "Argus-V-emp" else "**Argus-V-emp**"
 
+    def c5(m):
+        return m["test_caught_at_validation_5pct"]
+
+    both = f"{TE} · 잡은 위반 수 ({V}개 중 · 근거가 보인 {B}개 중)"
     # ---- every model, test
-    rows = [[family(m), label(m)] + six(m, "test") + caught_cells(m) for m in M.values()]
-    L = grid(["계열", "모델"] + head6("test", nt) + [f"잡은 위반 ({nt['violations']}개 중)", f"잡은 근거가 보인 위반 ({nt['visible_violations']}개 중)",
-                                                  f"오경보 (정상 {nt['normal_calls']:,}개 중)", "오경보 중 10월 기록"], rows, bold=range(2, 8))
-    L.append("| " + " | ".join(rule_row("test") + ["—", "—", "—", "—"]) + " |")
+    rows = [[family(m), label(m)] + six(m, "test") + [cnt(c5(m)["all"]), cnt(c5(m)["visible"]), cnt(c5(m)["false_alarms"]), c5(m)["f1"],
+                                                      f"{c5(m)['false_alarms_october_share']:.0%}"] for m in M.values()]
+    L = grid(["계열", "모델"] + head6("test", nt) + [f"{TE} · 잡은 위반 수 ({V}개 중)", f"{TE} · 잡은 근거가 보인 위반 수 ({B}개 중)",
+                                                  f"{TE} · 오경보 수 (정상 {nt['normal_calls']:,}개 중)", f"{TE} · F1", f"{TE} · 오경보 중 10월 기록 (비율)"],
+             rows, bold=(2, 3, 4, 5, 6, 7, 11))
+    L.append("| " + " | ".join(rule_row("test") + ["—", "—", "—", "—", "—"]) + " |")
     sec["all_test"] = L
     # ---- every model, validation
     rows = [[family(m), label(m)] + six(m, "validation") for m in M.values()]
@@ -243,50 +264,46 @@ def tables(out):
     # ---- Argus-V-p on the new split
     rows = []
     for m in (x for x in M.values() if x["family"] == "Argus-V-p"):
-        c = m["test_caught_at_validation_5pct"]
         rows.append([label(m), m["train_all_mixed"], m["validation_all"]["mixed"], m["validation_all"]["period"], m["test_all"]["mixed"], m["test_all"]["period"],
-                     m["test_all"]["tool"], m["test_visible"]["mixed"], m["test_visible"]["period"], f"{cnt(c['all'])} · {cnt(c['visible'])}"])
-    sec["p_new_split"] = grid(["설정", f"train 재채점 (위반 {S['train']['violations']}개, 전부 비교)", f"validation 위반 {nv['violations']}개 · 전부 비교", "같은 시기끼리",
-                               f"test 위반 {nt['violations']}개 · 전부 비교", "같은 시기끼리", f"같은 도구끼리 ({tv[('test', 'all')]}개)",
-                               f"test 근거가 보인 {nt['visible_violations']}개 · 전부 비교", "같은 시기끼리",
-                               f"5% 문턱에서 잡은 수 ({nt['violations']}개 중 · {nt['visible_violations']}개 중)"], rows, bold=range(2, 9))
+                     m["test_all"]["tool"], m["test_visible"]["mixed"], m["test_visible"]["period"], f"{cnt(c5(m)['all'])} · {cnt(c5(m)['visible'])}", c5(m)["f1"]])
+    sec["p_new_split"] = grid(["설정", f"{TR} · AUROC · 위반 {S['train']['violations']}개 전부 비교", f"{VA} · AUROC · 위반 {nv['violations']}개 전부 비교",
+                               f"{VA} · AUROC · 위반 {nv['violations']}개 같은 시기끼리", f"{TE} · AUROC · 위반 {V}개 전부 비교", f"{TE} · AUROC · 위반 {V}개 같은 시기끼리",
+                               f"{TE} · AUROC · 위반 {tv[('test', 'all')]}개 같은 도구끼리", f"{TE} · AUROC · 근거가 보인 {B}개 전부 비교",
+                               f"{TE} · AUROC · 근거가 보인 {B}개 같은 시기끼리", both, f"{TE} · F1"], rows, bold=(2, 3, 4, 5, 6, 7, 8, 10))
     # ---- Argus-V-em on the new split
     rows = []
     for m in (x for x in M.values() if x["family"] == "Argus-V-em"):
-        c = m["test_caught_at_validation_5pct"]
         lo, hi = m["test_all_range"]["mixed"]
         rows.append([KO_ARCH[m["arch"]], KO_W[m["weight"]], m["train_visible_mixed"], m["train_all_mixed"], m["test_all"]["mixed"], f"{lo:.2f}~{hi:.2f}", m["test_all"]["period"],
-                     m["test_visible"]["mixed"], m["test_visible"]["period"], m["test_visible_tool3"], f"{cnt(c['all'])} · {cnt(c['visible'])}",
-                     f"{c['false_alarms_october_share']:.0%}"])
-    sec["em_new_split"] = grid(["모델", "위반 가중치", f"train 재채점: 근거가 보인 {S['train']['visible_violations']}개", f"train 재채점: 위반 {S['train']['violations']}개",
-                                f"test 위반 {nt['violations']}개 · 전부 비교", "반복 3번의 범위", "같은 시기끼리",
-                                f"test 근거가 보인 {nt['visible_violations']}개 · 전부 비교", "같은 시기끼리",
-                                f"같은 도구끼리, 위반 3개 이상인 도구만 ({st3['test']['violations']}개 · {st3['test']['pairs']}쌍)",
-                                f"5% 문턱에서 잡은 수 ({nt['violations']}개 중 · {nt['visible_violations']}개 중)", "오경보 중 10월 기록"], rows, bold=(4, 6, 7, 8, 9))
+                     m["test_visible"]["mixed"], m["test_visible"]["period"], m["test_visible_tool3"], f"{cnt(c5(m)['all'])} · {cnt(c5(m)['visible'])}", c5(m)["f1"],
+                     f"{c5(m)['false_alarms_october_share']:.0%}"])
+    sec["em_new_split"] = grid(["모델", "위반 가중치", f"{TR} · AUROC · 근거가 보인 {S['train']['visible_violations']}개 전부 비교",
+                                f"{TR} · AUROC · 위반 {S['train']['violations']}개 전부 비교", f"{TE} · AUROC · 위반 {V}개 전부 비교", "왼쪽 값의 반복 3번 범위",
+                                f"{TE} · AUROC · 위반 {V}개 같은 시기끼리", f"{TE} · AUROC · 근거가 보인 {B}개 전부 비교", f"{TE} · AUROC · 근거가 보인 {B}개 같은 시기끼리",
+                                tool3, both, f"{TE} · F1", f"{TE} · 오경보 중 10월 기록 (비율)"], rows, bold=(4, 6, 7, 8, 9, 11))
     # ---- Argus-V-em: the range over the four models, per weight
     rows = []
     for w in R.WEIGHT_RULES:
         ms = [x for x in M.values() if x["family"] == "Argus-V-em" and x["weight"] == w]
 
-        def rng(g):
-            return f"{min(g(x) for x in ms):.2f}~{max(g(x) for x in ms):.2f}"
+        def rng(g, d=2):
+            return f"{min(g(x) for x in ms):.{d}f}~{max(g(x) for x in ms):.{d}f}"
 
-        share = [x["test_caught_at_validation_5pct"]["false_alarms_october_share"] for x in ms]
+        share = [c5(x)["false_alarms_october_share"] for x in ms]
         rows.append([KO_W[w], f"{out['argus_v_em_fit'][w]['pos_weight']:.1f}", rng(lambda x: x["test_all"]["mixed"]), rng(lambda x: x["test_all"]["period"]),
-                     rng(lambda x: x["test_visible"]["period"]), rng(lambda x: x["test_visible_tool3"]), f"{min(share):.0%}~{max(share):.0%}",
-                     rng(lambda x: x["test_period_lean_normal_calls"])])
-    sec["em_weight_summary"] = grid(["위반 가중치", "실제 값", f"test 위반 {nt['violations']}개 · 전부 비교", "같은 시기끼리",
-                                     f"근거가 보인 {nt['visible_violations']}개 · 같은 시기끼리",
-                                     f"같은 도구끼리, 위반 3개 이상인 도구만 ({st3['test']['violations']}개 · {st3['test']['pairs']}쌍)", "오경보 중 10월 기록",
-                                     "정상 호출끼리 10월을 11월보다 높게 치는 정도"], rows)
+                     rng(lambda x: x["test_visible"]["period"]), rng(lambda x: x["test_visible_tool3"]), rng(lambda x: c5(x)["f1"], 3),
+                     f"{min(share):.0%}~{max(share):.0%}", rng(lambda x: x["test_period_lean_normal_calls"])])
+    sec["em_weight_summary"] = grid(["위반 가중치", "실제 값", f"{TE} · AUROC · 위반 {V}개 전부 비교", f"{TE} · AUROC · 위반 {V}개 같은 시기끼리",
+                                     f"{TE} · AUROC · 근거가 보인 {B}개 같은 시기끼리", tool3, f"{TE} · F1", f"{TE} · 오경보 중 10월 기록 (비율)",
+                                     f"{TE} · 정상 호출끼리 10월을 11월보다 높게 치는 정도 (AUROC와 같은 계산, 0.5면 시기를 보지 않음)"], rows)
+
     # ---- the parts of the mix and the mix
     def part_row(name, m):
-        c = m["test_caught_at_validation_5pct"]
-        return [name] + six(m, "test") + [f"{cnt(c['all'])} · {cnt(c['visible'])}", cnt(c["false_alarms"])]
+        return [name] + six(m, "test") + [f"{cnt(c5(m)['all'])} · {cnt(c5(m)['visible'])}", cnt(c5(m)["false_alarms"]), c5(m)["f1"]]
 
     rows = [part_row("Argus-V-em 64차원·약 60배 하나 (비교용)", M["Argus-V-em EM64 w60"]), part_row("① Argus-V-em 12개 설정 평균", out["argus_v_em_part_of_the_mix"]),
             part_row("② Argus-V-p P3", M["Argus-V-p P3"]), part_row("③ Argus-V-p P5", M["Argus-V-p P5"]), part_row("**Argus-V-emp = ①②③의 평균**", M["Argus-V-emp"])]
-    sec["emp_parts"] = grid(["무엇"] + head6("test", nt) + [f"5% 문턱에서 잡은 수 ({nt['violations']}개 중 · {nt['visible_violations']}개 중)", "오경보"], rows, bold=range(1, 7))
+    sec["emp_parts"] = grid(["무엇"] + head6("test", nt) + [both, f"{TE} · 오경보 수", f"{TE} · F1"], rows, bold=(1, 2, 3, 4, 5, 6, 9))
     # ---- the 16 ways compared before the mix was fixed
     lev = json.loads((R.REPORT / "auroc_levers.json").read_text(encoding="utf-8"))["results"]
     names = list(lev["validation"])
@@ -295,25 +312,28 @@ def tables(out):
     for n, (_, kind, shown) in zip(names, LEVERS):
         v, t = lev["validation"][n], lev["test"][n]
         rows.append([kind, shown, v["all"]["mixed"], v["all"]["period"], v["visible"]["period"], t["all"]["mixed"], t["all"]["period"], t["visible"]["mixed"], t["visible"]["period"]])
-    sec["levers"] = grid(["종류", "방법", f"validation 위반 {nv['violations']}개 · 전부 비교", "같은 시기끼리", f"validation 근거가 보인 {nv['visible_violations']}개 · 같은 시기끼리",
-                          f"test 위반 {nt['violations']}개 · 전부 비교", "같은 시기끼리", f"test 근거가 보인 {nt['visible_violations']}개 · 전부 비교", "같은 시기끼리"],
-                         rows, bold=range(2, 9))
+    sec["levers"] = grid(["종류", "방법", f"{VA} · AUROC · 위반 {nv['violations']}개 전부 비교", f"{VA} · AUROC · 위반 {nv['violations']}개 같은 시기끼리",
+                          f"{VA} · AUROC · 근거가 보인 {nv['visible_violations']}개 같은 시기끼리", f"{TE} · AUROC · 위반 {V}개 전부 비교", f"{TE} · AUROC · 위반 {V}개 같은 시기끼리",
+                          f"{TE} · AUROC · 근거가 보인 {B}개 전부 비교", f"{TE} · AUROC · 근거가 보인 {B}개 같은 시기끼리"], rows, bold=range(2, 9))
     # ---- the mix beside the single model that has the same all-calls value on test
     a, b = M["Argus-V-em EM128 w300"], M["Argus-V-emp"]
-    ca, cb = a["test_caught_at_validation_5pct"], b["test_caught_at_validation_5pct"]
-    pairs = [(f"test 위반 {nt['violations']}개 · 전부 비교", f3(a["test_all"]["mixed"]), f3(b["test_all"]["mixed"])),
-             (f"test 위반 {nt['violations']}개 · 같은 시기끼리", f3(a["test_all"]["period"]), f3(b["test_all"]["period"])),
-             (f"test 근거가 보인 {nt['visible_violations']}개 · 전부 비교", f3(a["test_visible"]["mixed"]), f3(b["test_visible"]["mixed"])),
-             (f"test 근거가 보인 {nt['visible_violations']}개 · 같은 시기끼리", f3(a["test_visible"]["period"]), f3(b["test_visible"]["period"])),
-             (f"test 같은 도구끼리, 위반 3개 이상인 도구만 ({st3['test']['violations']}개 · {st3['test']['pairs']}쌍)", f3(a["test_visible_tool3"]), f3(b["test_visible_tool3"])),
-             (f"5% 문턱에서 잡은 위반 ({nt['violations']}개 중)", cnt(ca["all"]), cnt(cb["all"])),
-             (f"5% 문턱에서 잡은 근거가 보인 위반 ({nt['visible_violations']}개 중)", cnt(ca["visible"]), cnt(cb["visible"])),
-             (f"오경보 (정상 {nt['normal_calls']:,}개 중)", cnt(ca["false_alarms"]), cnt(cb["false_alarms"])),
-             (f"오경보 중 10월 기록 (정상 호출 중 10월 기록은 {nt['october_share_of_normal_calls']:.1%})", f"{ca['false_alarms_october_share']:.0%}", f"{cb['false_alarms_october_share']:.0%}"),
-             ("정상 호출끼리 10월을 11월보다 높게 치는 정도 (0.5면 시기를 보지 않음)", f3(a["test_period_lean_normal_calls"]), f3(b["test_period_lean_normal_calls"])),
-             (f"validation 위반 {nv['violations']}개 · 전부 비교", f3(a["validation_all"]["mixed"]), f3(b["validation_all"]["mixed"])),
-             (f"validation 위반 {nv['violations']}개 · 같은 시기끼리", f3(a["validation_all"]["period"]), f3(b["validation_all"]["period"]))]
-    sec["emp_vs_single"] = ["| 채점 | Argus-V-em 128차원·300배 하나 | **Argus-V-emp** |", "|---|---|---|"] + [f"| {x} | {y} | {z} |" for x, y, z in pairs]
+    ca, cb = c5(a), c5(b)
+    pairs = [(f"{TE} · AUROC · 위반 {V}개 전부 비교", f3(a["test_all"]["mixed"]), f3(b["test_all"]["mixed"])),
+             (f"{TE} · AUROC · 위반 {V}개 같은 시기끼리", f3(a["test_all"]["period"]), f3(b["test_all"]["period"])),
+             (f"{TE} · AUROC · 근거가 보인 {B}개 전부 비교", f3(a["test_visible"]["mixed"]), f3(b["test_visible"]["mixed"])),
+             (f"{TE} · AUROC · 근거가 보인 {B}개 같은 시기끼리", f3(a["test_visible"]["period"]), f3(b["test_visible"]["period"])),
+             (tool3, f3(a["test_visible_tool3"]), f3(b["test_visible_tool3"])),
+             (f"{TE} · 잡은 위반 수 ({V}개 중)", cnt(ca["all"]), cnt(cb["all"])),
+             (f"{TE} · 잡은 근거가 보인 위반 수 ({B}개 중)", cnt(ca["visible"]), cnt(cb["visible"])),
+             (f"{TE} · 오경보 수 (정상 {nt['normal_calls']:,}개 중)", cnt(ca["false_alarms"]), cnt(cb["false_alarms"])),
+             (f"{TE} · 재현율 (위반 중 잡은 비율)", f3(ca["recall"]), f3(cb["recall"])),
+             (f"{TE} · 정밀도 (경보 중 진짜 위반의 비율)", f3(ca["precision"]), f3(cb["precision"])),
+             (f"{TE} · F1", f3(ca["f1"]), f3(cb["f1"])),
+             (f"{TE} · 오경보 중 10월 기록의 비율 (정상 호출 중 10월 기록은 {nt['october_share_of_normal_calls']:.1%})", f"{ca['false_alarms_october_share']:.0%}", f"{cb['false_alarms_october_share']:.0%}"),
+             (f"{TE} · 정상 호출끼리 10월을 11월보다 높게 치는 정도 (AUROC와 같은 계산, 0.5면 시기를 보지 않음)", f3(a["test_period_lean_normal_calls"]), f3(b["test_period_lean_normal_calls"])),
+             (f"{VA} · AUROC · 위반 {nv['violations']}개 전부 비교", f3(a["validation_all"]["mixed"]), f3(b["validation_all"]["mixed"])),
+             (f"{VA} · AUROC · 위반 {nv['violations']}개 같은 시기끼리", f3(a["validation_all"]["period"]), f3(b["validation_all"]["period"]))]
+    sec["emp_vs_single"] = ["| 어디서 잰 값 · 지표 | Argus-V-em 128차원·300배 하나 | **Argus-V-emp** |", "|---|---|---|"] + [f"| {x} | {y} | {z} |" for x, y, z in pairs]
     return sec
 
 
@@ -344,7 +364,10 @@ def main():
     sec = tables(out)
     L = ["# 전체 모델 비교표 (자동 생성)", "",
          "`experiments/risk_loop/argus_loop/argus_v_overview_table.py`가 저장된 점수로 만든 표다. 새 분할(resplit-1117), Argus-V-em은 67 epoch·반복 3번의 평균. "
-         "설명은 `../model_history.md`, 숫자 전체는 `overview_table.json`. 굵은 글씨는 그 열에서 가장 높은 값.", ""]
+         "설명은 `../model_history.md`, 숫자 전체는 `overview_table.json`.", "",
+         "- 열 이름은 \"어디서 잰 값 · 어떤 지표 · 무엇끼리 비교\" 순서다. 어디서: 새 train 재채점(학습에 쓴 데이터를 다시 채점) / 새 validation / 새 test.",
+         "- 잡은 위반 수, 오경보 수, 재현율, 정밀도, F1은 validation 정상 호출의 5%가 경보가 되는 문턱을 test에 적용한 값이다.",
+         "- 굵은 글씨는 그 열에서 가장 높은 값.", ""]
     for name, lines in sec.items():
         L += [f"<!-- table: {name} -->"] + lines + ["<!-- end -->", ""]
     (AE.REPORT / "overview_tables.md").write_text("\n".join(L), encoding="utf-8")
