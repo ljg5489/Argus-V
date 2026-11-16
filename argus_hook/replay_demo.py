@@ -15,6 +15,11 @@
 
 주의: 점수를 내는 Argus-V-p 모델은 이 기록들로 학습했다. 여기서 보이는 판정은 "학습에 쓴 기록을 다시 채점한
 결과"이며, 새 상황에서의 성능이 아니다(reports/risk-loop/argus-v-p/results.md).
+
+점수 읽는 법: 점수는 같은 도구의 호출끼리만 비교한다. 모델은 "같은 도구 안에서 위반이 정상보다 높게"만 맞추도록
+학습했고 도구마다 평소 점수대가 다르다(예: 파일 읽기는 정상 호출도 0.9까지 나온다). 그래서 다른 도구의 정상 호출이
+위반 호출보다 점수가 높을 수 있다. 판정(경보/통과)은 위반 사례를 학습한 도구에서만, 그 도구의 기준으로 한다.
+나머지 도구는 "판정 안 함"으로 표시하고 점수는 참고값으로만 보여 준다.
 학습 분할(train)의 실행만 재생한다. 그 밖의 실행은 거절한다.
 
 옵션(묻지 않고 바로 실행):
@@ -105,6 +110,17 @@ def step_scores(unit: dict, model: str, table: dict) -> dict[int, dict]:
         out[int(row[0])] = {"tool": row[1], "label": int(row[2]), "score": float(row[col]),
                             "threshold": th["threshold"] if th else None, "threshold_kind": th["kind"] if th else None}
     return out
+
+
+def tool_levels(table: dict, model: str) -> dict[str, dict]:
+    """Stored training scores of every tool (key ``tool|source``): sorted arrays of its normal calls and violations.
+    The score level differs from tool to tool, so a score is only read against the same tool's calls."""
+    col = table["step_columns"].index(model)
+    cells: dict[str, dict] = {}
+    for u in table["units"].values():
+        for row in u["steps"]:
+            cells.setdefault(f"{row[1]}|{u['source']}", {0: [], 1: []})[int(row[2])].append(float(row[col]))
+    return {k: {"normals": np.sort(np.asarray(v[0])), "violations": np.sort(np.asarray(v[1]))} for k, v in cells.items()}
 
 
 # ------------------------------------------------------------------------------------------ records
@@ -267,12 +283,17 @@ def show_header(unit_id: str, unit: dict, rec: Records, model: str, mode_text: s
     print(f" 점수 모델: {MODEL_NAMES[model]}")
     print(f" 기록 출처: {rec.origin}")
     print(c(" 이 모델은 이 기록들로 학습했다. 아래 판정은 학습에 쓴 기록을 다시 채점한 것이다.", "yellow"))
+    print(c(" 점수 읽는 법: 점수는 같은 도구의 호출끼리만 비교한다(도구마다 평소 점수대가 다르다).", "yellow"))
+    print(c("               판정은 위반 사례를 학습한 도구에서만, 그 도구의 기준으로 한다.", "yellow"))
     print(c("═" * 92, "bold"))
 
 
-def show_step(i: int, step: dict, info: dict | None, score: float | None, extra: str | None, show_reasoning: int) -> str | None:
-    """Print one step; returns 'hit' / 'miss' / None (no verdict possible)."""
+def show_step(i: int, step: dict, info: dict | None, score: float | None, extra: str | None, show_reasoning: int,
+              levels: dict | None = None) -> str | None:
+    """Print one step. Returns 'hit' / 'miss' (judged against the tool's threshold), 'unjudged' (a score but no
+    threshold for this tool) or None (no score). ``levels`` = this tool's stored training scores (tool_levels)."""
     tool, args = describe_action(step)
+    name = info["tool"] if info else tool
     print()
     print(c(f"── step {i} " + "─" * 80, "bold"))
     reasoning = (step.get("output") or {}).get("reasoning") if isinstance(step.get("output"), dict) else None
@@ -280,30 +301,35 @@ def show_step(i: int, step: dict, info: dict | None, score: float | None, extra:
         print(f" 모델의 추론(끝부분): {c(clip_text(reasoning, show_reasoning, tail=True), 'dim')}")
     print(f" 행동: {c(tool, 'bold')} {clip_text(args, 200)}")
     verdict = None
+    normals = levels["normals"] if levels is not None else np.zeros(0)
+    violations = levels["violations"] if levels is not None else np.zeros(0)
     if score is None:
         print(c(" 위험 점수: 없음 (학습에 쓰지 않은 호출이라 저장된 점수가 없음 — 결과 보고용 도구이거나 검수 대상에서 빠진 호출)", "dim"))
     else:
         th = info.get("threshold") if info else None
-        line = f" 위험 점수: {score:.3f}  {bar(score, th)}"
-        if info is None:
-            print(line + c("  (학습에 쓰지 않은 호출 — 판정 기준 없음, 참고용)", "dim"))
-        elif th is None:
-            print(line + c("  (이 도구는 학습 기록에 위반 사례가 없어 판정 기준이 없음)", "dim"))
-        else:
+        if th is not None:
             alarm = score > th
-            line += f"  기준 {th:.3f} → " + (c("경보", "red") if alarm else c("통과", "green"))
-            print(line)
-            if info is not None:
-                label = info["label"]
-                ok = (alarm and label == 1) or (not alarm and label == 0)
-                verdict = "hit" if ok else "miss"
+            print(f" 위험 점수: {score:.3f}  {bar(score, th)}  이 도구의 기준 {th:.3f} → "
+                  + (c("경보", "red") if alarm else c("통과", "green")))
+            if len(normals) and len(violations):
+                print(c(f" ({name}의 학습 기록: 정상 {len(normals)}개는 {normals[0]:.3f}~{normals[-1]:.3f},"
+                        f" 위반 {len(violations)}개는 {violations[0]:.3f}~{violations[-1]:.3f})", "dim"))
+            verdict = "hit" if alarm == (info["label"] == 1) else "miss"
+        else:
+            why = "이 도구는 학습 기록에 위반 사례가 없어 기준이 없음" if info is not None else "학습에 쓰지 않은 호출"
+            print(f" 위험 점수: {c('판정 안 함', 'bold')} — {why}")
+            detail = f"참고값 {score:.3f}"
+            if len(normals):
+                detail += f" · {name} 정상 호출 {len(normals)}개 중 {int((normals > score).sum())}개가 이보다 높음"
+            print(c(f" ({detail} · 도구가 다르면 점수를 비교할 수 없음)", "dim"))
+            verdict = "unjudged"
         if extra:
             print(c(f" {extra}", "dim"))
     print(f" 실제 결과(기록): {result_text(step)}")
     if info is not None:
         label_text = c("위반", "red") if info["label"] == 1 else c("정상", "green")
         tail = ""
-        if verdict:
+        if verdict in ("hit", "miss"):
             tail = "  → 판정 " + (c("맞음", "green") if verdict == "hit" else c("틀림", "red"))
         print(f" 기록된 라벨: {label_text}{tail}")
     elif step.get("policy_label") is not None:
@@ -314,11 +340,13 @@ def show_step(i: int, step: dict, info: dict | None, score: float | None, extra:
 def show_summary(verdicts: list[str], parity: list[float]) -> None:
     print()
     print(c("═" * 92, "bold"))
-    judged = len(verdicts)
+    judged = verdicts.count("hit") + verdicts.count("miss")
     if judged:
-        print(f" 판정 기준이 있는 호출 {judged}개 중 {verdicts.count('hit')}개 맞음, {verdicts.count('miss')}개 틀림")
+        print(f" 판정한 호출 {judged}개 중 {verdicts.count('hit')}개 맞음, {verdicts.count('miss')}개 틀림")
     else:
         print(" 이 실행에는 판정 기준이 있는 호출이 없습니다.")
+    if verdicts.count("unjudged"):
+        print(f" 판정하지 않은 호출 {verdicts.count('unjudged')}개 (위반 사례를 학습하지 않은 도구 — 점수는 참고값)")
     if parity:
         print(f" 저장된 점수와 지금 계산한 점수의 차이: 최대 {max(parity):.4f} (step {len(parity)}개)")
     print(c(" 학습에 쓴 기록을 다시 채점한 결과입니다. 같은 시나리오를 새로 실행하면 이렇게 나오지 않을 수 있습니다.", "yellow"))
@@ -329,13 +357,16 @@ def show_summary(verdicts: list[str], parity: list[float]) -> None:
 
 def replay_recorded(unit_id: str, unit: dict, table: dict, model: str, rec: Records, pause: bool, show_reasoning: int) -> None:
     scores = step_scores(unit, model, table)
+    levels = tool_levels(table, model)
     show_header(unit_id, unit, rec, model, "1) 저장 기록 재생 — 모델을 돌리지 않고, 미리 계산해 둔 점수를 보여 준다")
     verdicts = []
     for i in rec.step_indexes():
         if pause:
             ask(c("\n [Enter] 다음 step ", "dim"))
         info = scores.get(i)
-        v = show_step(i, rec.step(i), info, info["score"] if info else None, None, show_reasoning)
+        step = rec.step(i)
+        v = show_step(i, step, info, info["score"] if info else None, None, show_reasoning,
+                      levels.get(f"{info['tool'] if info else describe_action(step)[0]}|{unit['source']}"))
         if v:
             verdicts.append(v)
     show_summary(verdicts, [])
@@ -403,6 +434,7 @@ def replay_live(unit_id: str, unit: dict, table: dict, model: str, rec: Records,
     bundle_path = ASSETS / f"argus_v_p_{model}.bundle"
     bundle = RS.load_bundle(bundle_path)
     scores = step_scores(unit, model, table)
+    levels = tool_levels(table, model)
     use_gpu = hidden is not None
     mode_text = ("2) 토큰 고정 재생 — GPU에서 모델을 돌려 저장된 토큰의 hidden state를 다시 계산하고 그 자리에서 채점"
                  if use_gpu else "2) (GPU 없음) 저장된 hidden state를 받아 그 자리에서 다시 채점 — 모델은 돌리지 않음")
@@ -449,7 +481,8 @@ def replay_live(unit_id: str, unit: dict, table: dict, model: str, rec: Records,
         shown = live if live is not None else (info["score"] if info else None)
         if live is None and info is not None and extra:
             extra += " → 저장된 점수를 표시"
-        v = show_step(i, step, info, shown, extra, show_reasoning)
+        v = show_step(i, step, info, shown, extra, show_reasoning,
+                      levels.get(f"{info['tool'] if info else describe_action(step)[0]}|{unit['source']}"))
         if v:
             verdicts.append(v)
     show_summary(verdicts, parity)
