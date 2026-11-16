@@ -1,5 +1,14 @@
 # HANDOFF — Argus-V1 성능 향상 루프
 
+## 인수인계 기록 추가 — 2026-11-16 19:55 KST (Claude) — test 채점의 주 모델을 "가장 좋았던 epoch"으로 (사용자 지시), test 특징 준비 완료
+
+- **사용자 지시(19:49쯤, test 점수를 계산하기 전)**: "test를 이용한 성능평가뽑는 채점은 제일 성능이 좋았던 epoch을 이용해". 규칙을 `reports/risk-loop/argus-v-em300/test-eval-prereg-addendum-1.md`에 고정하고 커밋(`2893f38`): **train 안 교차검증만으로** 32·64·128차원 × epoch 1~300 중 주 지표가 가장 높은 (폭, epoch)을 고르고, 그 폭을 전체 train target 행에 같은 seed로 그 epoch까지만 학습한 모델을 주 모델로 쓴다. test로 epoch을 고르지 않는다. 300 epoch 모델·60 epoch 모델·중간 저장본·Argus-V-p P5는 참고로 함께 채점.
+- **지금까지의 교차검증(근거가 보인 위반 기준)**: 32차원 60 epoch 0.960 → 300 epoch 0.898(정점 56 epoch 0.963, 그 뒤 과적합). 64차원 60 epoch 0.948 → 300 epoch 0.954(정점 67 epoch 0.968, 80~300 epoch은 0.95 근처에서 평평). 128차원은 학습 중(20:06쯤 끝). 두 모델 모두 60 epoch 시점 점수가 Argus-V-em과 차이 0.
+- **test 특징 준비 끝(19:48)**: `artifacts/risk-loop/argus-v1-loop-test/`(git 제외). 실행 509개, 호출 3,385개, 층 16·23, 빠진 행 0. 4.68 GB를 받아 pooling만 저장(원본 텐서는 남기지 않음). test 점수는 아직 계산하지 않았다.
+- **test 평가 코드는 train 행으로 미리 시험함**: `argus_v_em300_test_eval.py`의 표시 → 채점 → 지표 → 기록 흐름을 train 실행 40개로 끝까지 돌려 확인(표시 34개가 저장된 train 표시와 전부 일치).
+- **학습이 끝난 뒤 순서**: ① `PYTHONUTF8=1 py -3.11 -u experiments/risk_loop/argus_loop/argus_v_em300_best.py --approved`(가장 좋은 epoch 고르기 + 그 모델 저장, 전체 행 학습 1번) ② 고른 결과와 SHA-256을 `test-eval-prereg-addendum-1.md` 맨 아래에 적고 커밋 ③ `py -3.11 experiments/risk_loop/argus_loop/argus_v_em300_test_eval.py all --user-approved-test`(표시 → 채점 → 지표; 한 번만) ④ `argus_v_em300_test_plots.py`(test 그림 8장·표) ⑤ `argus_v_em_plots.py --track em300`(em300 학습 그림 14장·표) ⑥ 결과 문서, 커밋, 사용자 보고.
+- 그래프 스크립트 `argus_v_em_plots.py`는 `--track em300`을 받게 고쳤고, 기본(Argus-V-em) 출력은 고치기 전과 바이트 단위로 같음을 확인했다.
+
 ## 인수인계 기록 추가 — 2026-11-16 19:20 KST (Claude) — Argus-V-em300 학습 시작, 끝나면 test 평가 (사용자 지시)
 
 - **사용자 지시 세 가지(2026-11-16)**: ① "새 시나리오를 돌릴 시간은 없어 … 300 epoch까지 학습을 시켜보자. Argus-V-em300이라는 이름으로 기존 Argus-V-em이랑 똑같은데 에폭만 300으로" ② "에폭을 돌며 성능지표에 필요한 epoch 정보, 다른 보고에 필요한 학습에 대한 데이터도 저장해" ③ "모든 학습이 끝나면 이번에는 정말 TEST 데이터를 가지고 성능평가를 시작해. 이때도 모든 성능평가 데이터를 기록하고".
