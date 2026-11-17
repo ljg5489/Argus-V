@@ -14,8 +14,9 @@ How the mix was found: an exploratory comparison of 16 label-free variants on va
 (resplit_run01_levers.py, variant 4b); this one was the highest on validation. In that comparison the shares were
 ranks inside the scored split; here they are taken against the validation calls, so that a single new call can be scored.
 
-To score a new call outside the saved splits the components must exist as model files. The Argus-V-em ones do
-(artifacts/risk-loop/resplit-1117/run01/em/checkpoints/*_e067.pt); P3 and P5 were only scored, not exported.
+To score a new call outside the saved splits the components must exist as model files. Since 2026-11-17 04:08 all
+of them do: artifacts/risk-loop/resplit-1117/argus_v_emp/ (36 Argus-V-em .pt files, P3.pkl, P5.pkl; written by
+argus_v_emp_export.py, read by argus_v_emp_model.EmpModel). Before that, P3 and P5 were only scored, not exported.
 """
 from __future__ import annotations
 
