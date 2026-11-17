@@ -1,5 +1,5 @@
 const state = { scenarios: [], selected: null, job: null, apiOnline: false, busy: false, inferences: {}, health: null };
-const detection = { cases: [], selected: null, revealed: false, loaded: false };
+const detection = { cases: [], selected: null, loaded: false, position: 0, timer: null, playing: false };
 const $ = (selector) => document.querySelector(selector);
 const apiInput = $('#api-base');
 
@@ -184,6 +184,7 @@ function renderRun(run) {
 }
 
 function switchView(name) {
+  if (name !== 'detection') pauseDetection();
   document.querySelectorAll('.nav-item').forEach((button) => button.classList.toggle('active', button.dataset.view === name));
   document.querySelectorAll('.view').forEach((section) => {
     const active = section.id === `view-${name}`;
@@ -223,19 +224,59 @@ function renderDetectionList() {
 }
 
 function selectDetection(index) {
-  detection.selected = index; detection.revealed = false; renderDetectionList();
+  pauseDetection(); detection.selected = index; detection.position = 0; renderDetectionList();
   const item = detection.cases[index];
   $('#detection-detail').innerHTML = `<div class="detail-content">
     <div class="detail-topline"><span class="detail-id">${escapeHtml(item.scenario)}</span><span class="category-pill">${escapeHtml(item.condition)}</span><span class="category-pill">${item.period === 'oct' ? '10월' : '11월'} 기록</span></div>
     <h3>${escapeHtml(item.title)}</h3>
     <p><span class="detail-label">과제</span>${escapeHtml(item.task)}</p><p><span class="detail-label">상황</span>${escapeHtml(item.situation)}</p>
     <p><span class="detail-label">조건</span>${escapeHtml(item.condition_description || '상세 조건 미기록')}</p><p><span class="detail-label">금지</span>${escapeHtml(item.forbidden)}</p>
-    <div class="detection-sequence"><strong>저장된 도구 호출 순서</strong>${item.steps.length ? `<ol>${item.steps.map((step) => `<li class="${step.index === item.step ? 'focus-step' : ''}"><span>${step.index + 1}</span><code>${escapeHtml(step.tool)}</code>${step.index === item.step ? '<b>평가 대상</b>' : ''}</li>`).join('')}</ol>` : '<p>이 실행의 전체 호출 순서는 제공되지 않았습니다.</p>'}
-    <small>도구 이름만 표시합니다. 호출 인자와 전체 대화 내용은 이 자료에 없습니다.</small></div>
-    <div class="detection-actions"><button class="button primary" id="show-detection">emp 평가 결과 보기 <span>↗</span></button><span>저장된 결과를 확인합니다.</span></div>
+    <div class="detection-actions"><button class="button primary" id="demo-play">▶ 시연 시작</button><button class="button secondary" id="demo-step">한 단계씩</button><button class="button secondary" id="demo-reset">처음으로</button></div>
+    <p class="demo-note">저장된 실행 기록을 순서대로 보여줍니다. 재생 속도는 시연용이며, 새 추론을 실행하지 않습니다.</p>
+    <div class="demo-stage" aria-live="polite"><div class="demo-stage-heading"><div><span class="kicker">RECORDED RUN</span><h4>에이전트 행동 기록</h4></div><span id="demo-progress">시연 대기</span></div><div class="demo-timeline" id="demo-timeline"></div></div>
   </div>`;
-  $('#detection-result').innerHTML = '<div class="panel-head"><div><span class="kicker">RECORDED EMP RESULT</span><h3>탐지 결과</h3></div></div><div class="chart-empty">결과 보기를 누르면 이 호출의 기록된 평가 결과가 나타납니다.</div>';
-  $('#show-detection').addEventListener('click', revealDetection);
+  $('#demo-play').addEventListener('click', toggleDetection);
+  $('#demo-step').addEventListener('click', () => { pauseDetection(); advanceDetection(); });
+  $('#demo-reset').addEventListener('click', () => selectDetection(index));
+  renderDetectionProgress();
+}
+
+function demoSteps(item) {
+  // The report identifies one evaluated call. Never infer scores for other calls.
+  return item.steps.length ? item.steps.filter((step) => step.index <= item.step) : [{ index: item.step, tool: item.tool }];
+}
+
+function pauseDetection() {
+  if (detection.timer) clearTimeout(detection.timer);
+  detection.timer = null; detection.playing = false;
+  const button = $('#demo-play'); if (button) button.textContent = '▶ 이어서 재생';
+}
+
+function toggleDetection() {
+  if (detection.playing) { pauseDetection(); return; }
+  const item = detection.cases[detection.selected];
+  if (!item || detection.position >= demoSteps(item).length) return;
+  detection.playing = true; $('#demo-play').textContent = 'Ⅱ 일시정지';
+  advanceDetection();
+}
+
+function advanceDetection() {
+  const item = detection.cases[detection.selected];
+  if (!item) return;
+  const steps = demoSteps(item);
+  if (detection.position >= steps.length) return;
+  detection.position += 1;
+  renderDetectionProgress();
+  if (detection.position === steps.length) { pauseDetection(); revealDetection(); $('#demo-play').disabled = true; $('#demo-step').disabled = true; }
+  else if (detection.playing) detection.timer = setTimeout(advanceDetection, 1100);
+}
+
+function renderDetectionProgress() {
+  const item = detection.cases[detection.selected];
+  const steps = demoSteps(item), visible = steps.slice(0, detection.position);
+  $('#demo-progress').textContent = detection.position ? `${detection.position} / ${steps.length} 호출 표시` : '시연 대기';
+  $('#demo-timeline').innerHTML = `${!item.steps.length ? '<p class="demo-missing">전체 실행 순서가 없어 평가 대상 호출만 표시합니다.</p>' : ''}${visible.length ? visible.map((step, i) => `<div class="demo-event ${i === visible.length - 1 ? 'current' : ''}"><span class="demo-step-number">${String(step.index + 1).padStart(2, '0')}</span><div><small>기록된 도구 호출</small><strong>${escapeHtml(step.tool)}</strong><span>${step.index === item.step ? '저장된 emp 평가 결과가 있는 호출' : '이 호출의 emp 점수는 제공되지 않음'}</span></div></div>`).join('') : '<div class="demo-placeholder">시연을 시작하면 저장된 행동이 여기에 나타납니다.</div>'}`;
+  if (detection.position < steps.length) $('#detection-result').innerHTML = `<div class="panel-head"><div><span class="kicker">ARGUS-V-EMP</span><h3>기록된 탐지 결과</h3></div><span class="category-pill">대기</span></div><div class="chart-empty">평가 대상 호출에 도달하면 저장된 emp 결과를 표시합니다.<br>다른 호출의 점수와 판정은 제공되지 않습니다.</div>`;
 }
 
 function revealDetection() {
