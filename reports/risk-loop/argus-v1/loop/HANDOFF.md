@@ -1,5 +1,16 @@
 # HANDOFF — Argus-V1 성능 향상 루프
 
+## 인수인계 기록 추가 — 2026-11-18 03:10 KST (Claude) — 모델 구조 그림·문서까지 합쳐 커밋하고 origin에 푸시
+
+- **사용자 지시**: "현재 모델 구조에 대해 그린 것과 문서화 한 것도 있어서 그것까지 합쳐서 커밋 후 푸시해".
+- **모델 구조 그림·문서**는 이미 로컬 커밋 `70b83f5`(2026-11-18 02:38, 다른 세션)에 들어 있었다: `reports/risk-loop/argus-v-emp/ARGUS_V_EMP.md`, `reports/risk-loop/argus-v-emp/architecture/argus_v_emp_architecture.png`·`.svg`, 그리는 스크립트 `experiments/risk_loop/argus_loop/argus_v_emp_architecture.py`. 그대로 푸시에 포함했다.
+- **이번 커밋에 합친 것**(다른 세션이 2026-11-17 04:25에 만들고 커밋하지 않은 그림 작업): `resplit_run01_figures.py`의 손실 그림 개선(10 epoch마다 점, 고른 epoch ◆, validation 손실 최솟값 ★), 그 결과인 run01 그림 02·03, 같은 그림의 사본 `model_history_figures/23_Argus-V-em_epoch별_loss_새_분할.png`, 그림 목록 README의 23번 줄.
+  - 커밋 전에 고친 것: 범례·설명·README에 내부 지표 이름 `st_vis2`가 그대로 있어 쉬운 말로 바꿨다("validation에서 같은 도구끼리 비교한 AUROC(근거가 보인 위반 2개 이상인 도구)가 가장 높은 epoch"). 저장된 결과로 다시 그렸다(학습 없음, 그림 01은 바이트까지 같음).
+  - `model_history.md`의 그림 절을 23장으로 고쳤다.
+- **넣지 않은 것**: `local-sites/argus-v-demo-dashboard/`(그 안에 별도 git 저장소와 외부 호스팅 설정이 있는 대시보드, 모델 구조가 아님), 저장소 맨 위 `ArgusV_review_progress copy.json`(열지도 커밋하지도 않는다는 규칙).
+- **푸시 전 점검**: `origin/feat/m1-aligned-text-detector`보다 커밋 141개 앞서고 뒤처진 것은 없다(병합 불필요). 그 범위에서 토큰·키 모양의 문자열 0개. 범위 안의 `ArgusV_review_progress.json`(팀원 커밋 `b38f64c`, 2026-10-21)과 큰 `tensor_data/` 파일들은 이미 `origin/main`에 있는 커밋이라 새로 올라가지 않는다. 실제로 새로 올라가는 파일은 40여 개, 약 8 MB.
+- **푸시 대상**: 이 브랜치의 upstream인 `origin`(github.com/ljg5489/Argus-V)의 `feat/m1-aligned-text-detector`. `fork`(사용자 개인 저장소)에는 푸시하지 않았다.
+
 ## 인수인계 기록 추가 — 2026-11-18 (Claude) — Argus-V-emp 아키텍처 그림(PNG·SVG)과 전체 설명서
 
 - **지금 돌고 있는 것 없음.** 새 학습·새 채점 없음(코드, 저장된 모델 파일, 저장된 점수만 읽음).
@@ -511,6 +522,7 @@
 | 2026-11-17 02:55 | **돌고 있는 것 없음.** 사용자 지시로 정리 문서와 표의 모든 숫자에 "어디서 잰 값 · 어떤 지표"를 붙임 | `model_history.md` 표 33개, 생성 스크립트의 열 이름, `argus-v-emp/README.md`. 새 test · 5% 문턱의 F1을 모델마다 계산: Argus-V-emp 0.131(가장 높음), Argus-V-p 0.010 ~ 0.099, Argus-V-em 0.074 ~ 0.111 | 사용자 결정(시연에 Argus-V-emp를 쓸지, P3·P5 저장 학습 승인) |
 | 2026-11-17 03:57 | **돌고 있는 것 없음.** 사용자 지시로 발표용 그림 22장 작성(모든 모델의 성능지표, ROC 곡선은 그릴 수 있는 모델 전부) | `reports/risk-loop/model_history_figures/`(PNG 22장, README.md, numbers.json), 스크립트 `argus_v_history_figures.py`. 새 학습 없음. 기존 분할 값은 저장된 점수로 다시 계산해 기록과 일치 확인. 그 사이 사용자 질문(무엇을 섞었나, 점수만 있다는 뜻, 0~1 변환, 커트라인)에 답함 | 사용자 결정(P3·P5 모델 파일 저장 학습 승인) |
 | 2026-11-17 04:09 | **돌고 있는 것 없음.** 사용자 승인으로 Argus-V-p P3·P5를 다시 학습(04:07~04:08)해 모델 파일로 저장, Argus-V-emp 모델 폴더 완성 | `artifacts/risk-loop/resplit-1117/argus_v_emp/`(Argus-V-em 36개 + P3.pkl + P5.pkl + 기준표 + manifest, 58 MB). 다시 학습한 점수와 저장된 점수의 차이 0, 모델 폴더만으로 다시 채점해도 차이 0(새 test AUROC 0.913). 호출 하나에 56ms. 코드: `argus_v_emp_export.py`, `argus_v_emp_model.py` | 재생 도구·hook 연결은 사용자 지시 대기 |
+| 2026-11-18 03:10 | **돌고 있는 것 없음.** 사용자 지시로 모델 구조 그림·문서(커밋 `70b83f5`)와 남아 있던 손실 그림 작업을 합쳐 커밋하고 `origin/feat/m1-aligned-text-detector`에 푸시 | 손실 그림의 내부 지표 이름 `st_vis2`를 쉬운 말로 고쳐 다시 그림. `local-sites/`와 `ArgusV_review_progress copy.json`은 넣지 않음. 푸시 전 점검: 뒤처진 커밋 없음, 토큰 모양 문자열 없음, 새로 올라가는 파일 약 8 MB | 발표 |
 
 # 지금 상태 — 2026-11-15 (가장 최신. 아래 3단계 대시보드는 2026-11-11까지의 기록)
 

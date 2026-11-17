@@ -521,7 +521,7 @@ AUROC는 0.913인데 F1은 0.131인 까닭: AUROC는 위반과 정상의 순서�
 | test를 쓴 기록 | `argus-v-em300/test-use-log.md` (기존 분할), `resplit-1117/test-use-log.md` (새 분할) |
 | 인수인계 | `argus-v1/loop/HANDOFF.md` |
 
-## 10. 그림 (matplotlib, 22장)
+## 10. 그림 (matplotlib, 23장)
 
 `model_history_figures/`에 있다. 목록과 색의 뜻, 그림 전체는 `model_history_figures/README.md`. 저장된 점수만으로 그렸고 새 학습은 없다. ROC 곡선은 호출별 점수가 저장된 모델 전부에 대해 그렸다.
 
@@ -530,7 +530,7 @@ AUROC는 0.913인데 F1은 0.131인 까닭: AUROC는 위반과 정상의 순서�
 | 전체 모델 비교 (새 분할) | 01 ~ 03 | 19개 모델의 새 validation · 새 test AUROC(세 가지 채점 방법), 새 test의 재현율 · 정밀도 · F1 |
 | 전체 모델의 ROC 곡선 (새 분할) | 04 ~ 07 | 계열별로 겹쳐 그린 새 test ROC 곡선, 모델 하나에 칸 하나씩 그린 train 재채점 · validation · test ROC 곡선 |
 | Argus-V-p | 08 ~ 10 | 기존 분할의 k-fold 교차검증 · train 재채점 · 기존 test AUROC와 ROC 곡선, 새 분할의 AUROC |
-| Argus-V-em | 11 ~ 16 | 기존 분할의 k-fold 교차검증 대 기존 test(AUROC와 ROC 곡선), 위반 가중치 15 ~ 1000배(AUROC와 ROC 곡선), 새 분할의 모델 크기 × 가중치, epoch 곡선 |
+| Argus-V-em | 11 ~ 16, 23 | 기존 분할의 k-fold 교차검증 대 기존 test(AUROC와 ROC 곡선), 위반 가중치 15 ~ 1000배(AUROC와 ROC 곡선), 새 분할의 모델 크기 × 가중치, epoch 곡선, epoch별 손실과 고른 epoch(23번, `resplit_run01_figures.py`가 그림) |
 | Argus-V-emp | 17 ~ 22 | 구성 부분과 섞은 결과, ROC와 정밀도-재현율 곡선, 채점 방법별 ROC 곡선, 점수 분포와 커트라인, 커트라인별 재현율 · 정밀도 · F1, 혼동 행렬 |
 
 다시 그리기: `PYTHONUTF8=1 py -3.11 experiments/risk_loop/argus_loop/argus_v_history_figures.py`

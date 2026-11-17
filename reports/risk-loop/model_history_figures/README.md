@@ -3,6 +3,7 @@
 `../model_history.md`에 정리한 모든 모델(Argus-V-p 6개 설정, Argus-V-em 모델 4종 × 위반 가중치, Argus-V-emp)의 성능지표를 matplotlib으로 그린 것이다. 사용자 지시: "발표에 필요한 수집된 모든 모델에 대해 성능지표를 matplotlib으로 생성해", "ROC 곡선 그릴 수 있는 것은 무조건 그리고!"
 
 - **새 학습은 없다.** 저장된 점수와 기록만 읽었다. 다시 그리기: `PYTHONUTF8=1 py -3.11 experiments/risk_loop/argus_loop/argus_v_history_figures.py` (일부만: `--only 4,19`).
+- **23번은 새 분할 run01의 epoch별 손실 곡선이다.** 재생성 스크립트: `experiments/risk_loop/argus_loop/resplit_run01_figures.py`. ◆는 미리 정한 기준(validation에서 같은 도구끼리 비교한 AUROC가 가장 높은 epoch, 근거가 보인 위반 2개 이상인 도구)으로 고른 epoch, ★는 validation loss가 가장 낮은 epoch, 회색 점선은 고정 레시피의 67 epoch이다.
 - **모든 그림에 "어디서 잰 값 · 어떤 지표"를 적었다.** 어디서: k-fold 교차검증(기존 train만으로 한 5-fold) / train 재채점 / 새 validation / 기존 test / 새 test. 지표: AUROC / 재현율 / 정밀도 / F1 / 개수.
 - **ROC 곡선은 호출별 점수가 저장된 모델 전부에 대해 그렸다**: 새 분할의 19개 모델(4~7번), 기존 분할의 Argus-V-p 6개 설정(9번), Argus-V-em 4개 모델(12번), 위반 가중치 5가지(14번), Argus-V-emp(18·19번).
 - 기존 분할의 값은 저장된 점수로 다시 계산했고 기록의 값과 0.002 안에서 일치한다(스크립트가 확인한다). 그림에 쓴 숫자 일부는 `numbers.json`.
@@ -45,6 +46,7 @@
 | 20 | `20_Argus-V-emp_점수_분포와_커트라인.png` | 정상 호출과 위반이 받은 점수, 커트라인 0.864와 0.932 | 새 test · 호출 수 · 재현율 · 정밀도 · F1 |
 | 21 | `21_Argus-V-emp_커트라인별_재현율_정밀도_F1.png` | 커트라인을 옮길 때의 변화 | 새 validation · 새 test · 재현율 · 정밀도 · F1 |
 | 22 | `22_Argus-V-emp_혼동_행렬.png` | 커트라인 0.864로 판정한 결과 | 새 validation · 새 test · 개수 · 재현율 · 정밀도 · F1 · 맞힌 비율 |
+| 23 | `23_Argus-V-em_epoch별_loss_새_분할.png` | Argus-V-em 4종 × 위반 가중치 3종의 epoch별 loss 꺾은선. 10 epoch마다 점 표시 | 새 분할 · 3회 평균 · ◆ 선택 checkpoint · ★ validation loss 최솟값 · 67 epoch 기준선 |
 
 ## 그림에서 읽히는 것
 
@@ -78,3 +80,4 @@
 ![20](20_Argus-V-emp_점수_분포와_커트라인.png)
 ![21](21_Argus-V-emp_커트라인별_재현율_정밀도_F1.png)
 ![22](22_Argus-V-emp_혼동_행렬.png)
+![23](23_Argus-V-em_epoch별_loss_새_분할.png)
