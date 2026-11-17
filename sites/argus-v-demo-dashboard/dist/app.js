@@ -1,4 +1,5 @@
 const state = { scenarios: [], selected: null, job: null, apiOnline: false, busy: false, inferences: {}, health: null };
+const detection = { cases: [], selected: null, revealed: false, loaded: false };
 const $ = (selector) => document.querySelector(selector);
 const apiInput = $('#api-base');
 
@@ -188,11 +189,74 @@ function switchView(name) {
     const active = section.id === `view-${name}`;
     section.classList.toggle('active', active); section.hidden = !active;
   });
-  $('#hero-title').innerHTML = name === 'agent' ? '한 번 맡기고,<br><em>진행을 지켜보세요.</em>' : '기록된 판단을<br><em>다시 따라가 보세요.</em>';
-  $('#hero-copy').textContent = name === 'agent'
-    ? '로컬 GPT-OSS agent에게 작업을 맡기고 격리 샌드박스의 실행 로그를 확인합니다.'
-    : '학습 분할의 실행 기록을 순서대로 재생하고, 각 행동에서 P5 위험 점수가 어떻게 움직였는지 살펴봅니다.';
+  const hero = {
+    replay: ['기록된 판단을<br><em>다시 따라가 보세요.</em>', '학습 분할의 실행 기록을 순서대로 재생하고, 각 행동에서 P5 위험 점수가 어떻게 움직였는지 살펴봅니다.', 'TRAIN REPLAY', '저장 기록 · 읽기 전용 재생'],
+    detection: ['위반의 순간을<br><em>다시 살펴보세요.</em>', '기록된 업무 시나리오와 Argus-V-emp의 평가 결과를 함께 확인합니다.', 'TEST REPLAY', '저장된 평가 결과 · 새 추론 없음'],
+    agent: ['한 번 맡기고,<br><em>진행을 지켜보세요.</em>', '로컬 GPT-OSS agent에게 작업을 맡기고 격리 샌드박스의 실행 로그를 확인합니다.', 'LOCAL AGENT', '로컬 실행 · 샌드박스'],
+  }[name];
+  $('#hero-title').innerHTML = hero[0]; $('#hero-copy').textContent = hero[1];
+  $('.intro-meta').innerHTML = `<span class="status-chip"><span class="dot"></span> ${hero[2]}</span><span>${hero[3]}</span>`;
+  if (name === 'detection' && !detection.loaded) loadDetection();
   window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function loadDetection() {
+  try {
+    const response = await fetch('./emp-cases.json', { cache: 'no-store' });
+    if (!response.ok) throw new Error('사례 파일을 읽지 못했습니다.');
+    const data = await response.json();
+    detection.cases = data.cases || []; detection.loaded = true;
+    $('#detection-count').textContent = detection.cases.length;
+    renderDetectionList();
+  } catch (_) {
+    $('#detection-list').innerHTML = '<div class="loading-block">사례를 불러오지 못했습니다. 페이지를 다시 열어주세요.</div>';
+  }
+}
+
+function renderDetectionList() {
+  const query = $('#detection-search').value.trim().toLowerCase();
+  const rows = detection.cases.map((item, index) => ({ item, index })).filter(({ item }) =>
+    `${item.scenario} ${item.title} ${item.tool} ${item.unit}`.toLowerCase().includes(query));
+  $('#detection-list').innerHTML = rows.map(({ item, index }) => `<button class="scenario-item ${detection.selected === index ? 'selected' : ''}" data-case="${index}">
+    <span class="scenario-number">${escapeHtml(item.scenario.replace('AV-S', 'S'))}</span><span class="scenario-copy"><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.tool)} · ${item.step + 1}번째 호출</small></span></button>`).join('') || '<div class="loading-block">검색 결과가 없습니다.</div>';
+  $('#detection-list').querySelectorAll('[data-case]').forEach((button) => button.addEventListener('click', () => selectDetection(Number(button.dataset.case))));
+}
+
+function selectDetection(index) {
+  detection.selected = index; detection.revealed = false; renderDetectionList();
+  const item = detection.cases[index];
+  $('#detection-detail').innerHTML = `<div class="detail-content">
+    <div class="detail-topline"><span class="detail-id">${escapeHtml(item.scenario)}</span><span class="category-pill">${escapeHtml(item.condition)}</span><span class="category-pill">${item.period === 'oct' ? '10월' : '11월'} 기록</span></div>
+    <h3>${escapeHtml(item.title)}</h3>
+    <p><span class="detail-label">과제</span>${escapeHtml(item.task)}</p><p><span class="detail-label">상황</span>${escapeHtml(item.situation)}</p>
+    <p><span class="detail-label">조건</span>${escapeHtml(item.condition_description || '상세 조건 미기록')}</p><p><span class="detail-label">금지</span>${escapeHtml(item.forbidden)}</p>
+    <div class="detection-sequence"><strong>저장된 도구 호출 순서</strong>${item.steps.length ? `<ol>${item.steps.map((step) => `<li class="${step.index === item.step ? 'focus-step' : ''}"><span>${step.index + 1}</span><code>${escapeHtml(step.tool)}</code>${step.index === item.step ? '<b>평가 대상</b>' : ''}</li>`).join('')}</ol>` : '<p>이 실행의 전체 호출 순서는 제공되지 않았습니다.</p>'}
+    <small>도구 이름만 표시합니다. 호출 인자와 전체 대화 내용은 이 자료에 없습니다.</small></div>
+    <div class="detection-actions"><button class="button primary" id="show-detection">emp 평가 결과 보기 <span>↗</span></button><span>저장된 결과를 확인합니다.</span></div>
+  </div>`;
+  $('#detection-result').innerHTML = '<div class="panel-head"><div><span class="kicker">RECORDED EMP RESULT</span><h3>탐지 결과</h3></div></div><div class="chart-empty">결과 보기를 누르면 이 호출의 기록된 평가 결과가 나타납니다.</div>';
+  $('#show-detection').addEventListener('click', revealDetection);
+}
+
+function revealDetection() {
+  const item = detection.cases[detection.selected];
+  const caught = item.caught_at_5pct_false_alarms_in_repeats === 1;
+  const percent = (value) => `${(value * 100).toFixed(1)}%`;
+  const bar = (label, value, threshold = false) => {
+    const position = Math.max(0, Math.min(100, value * 100));
+    return `<div class="risk-row"><div class="risk-row-heading"><span>${escapeHtml(label)}</span><strong>${percent(value)}</strong></div><div class="risk-track" role="img" aria-label="${escapeAttr(label)} ${percent(value)}보다 높은 점수${threshold ? ', 상위 5% 사후 비교 기준' : ''}"><div class="risk-fill" style="width:${position}%"></div>${threshold ? '<span class="risk-threshold" aria-hidden="true"></span>' : ''}</div></div>`;
+  };
+  $('#detection-result').innerHTML = `<div class="panel-head"><div><span class="kicker">RECORDED EMP RESULT</span><h3>Argus-V-emp 평가 결과</h3></div><span class="category-pill">저장 결과</span></div>
+    <div class="detection-output"><div class="detection-verdict ${caught ? 'caught' : 'missed'}"><span>${caught ? '기준 초과 · 탐지' : '기준 이하 · 미탐'}</span><strong>${escapeHtml(item.tool)}</strong><small>${item.step + 1}번째 호출 · 기록 라벨: 위반</small></div>
+    <p>이 호출의 emp 점수는 평가에 사용된 <strong>test 정상 호출의 ${percent(item.above_share_of_all_normal_calls)}보다 높았습니다.</strong></p>
+    <section class="risk-chart" aria-label="정상 호출과의 점수 비교 그래프"><div class="risk-chart-title"><div><span class="kicker">RISK SCORE COMPARISON</span><h4>정상 호출 대비 점수 위치</h4></div><span>저장된 평가 결과</span></div>
+    <p>막대가 길수록 이 사례보다 점수가 낮았던 정상 호출의 비율이 높습니다.</p>
+    ${bar('전체 정상 호출', item.above_share_of_all_normal_calls, true)}
+    ${bar('같은 시기 정상 호출', item.above_share_of_same_period_normal_calls)}
+    ${bar(`같은 도구 정상 호출 ${item.same_tool_normal_calls}건`, item.above_share_of_same_tool_normal_calls)}
+    <div class="risk-axis"><span>0%</span><span>50%</span><span>100%</span></div><div class="risk-chart-legend"><span class="risk-legend-line"></span> 상위 5% 사후 비교 기준 (전체 정상 기준)</div></section>
+    <p class="detection-caveat">탐지 여부는 test 정상 호출의 95백분위수를 사후 기준으로 사용한 보고서 결과입니다. 이 비율은 위반 확률이나 emp 원점수가 아닙니다. 전체 위반 26건 중 일부를 선별한 재생이며, 새로운 입력에 대한 추론이 아닙니다.</p>
+    <a class="detection-source" href="https://github.com/ljg5489/Argus-V/blob/main/reports/risk-loop/argus-v-emp/full_test.md" target="_blank" rel="noopener noreferrer">평가 보고서 보기 ↗</a></div>`;
 }
 
 async function beginReplay() {
@@ -270,6 +334,7 @@ function escapeAttr(value) { return escapeHtml(value); }
 
 document.querySelectorAll('.nav-item').forEach((button) => button.addEventListener('click', () => switchView(button.dataset.view)));
 $('#scenario-search').addEventListener('input', renderCatalog);
+$('#detection-search').addEventListener('input', renderDetectionList);
 $('#run-select').addEventListener('change', () => renderRun(state.selected?.runs.find((run) => run.id === $('#run-select').value)));
 $('#model-select').addEventListener('change', () => renderRun(state.selected?.runs.find((run) => run.id === $('#run-select').value)));
 $('#mode-select').addEventListener('change', updateReplayAvailability);

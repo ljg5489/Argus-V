@@ -16,6 +16,7 @@
       </a>
       <nav class="nav" aria-label="주요 메뉴">
         <button class="nav-item active" data-view="replay">시나리오 재생</button>
+        <button class="nav-item" data-view="detection">위반 탐지 시연</button>
         <button class="nav-item" data-view="agent">에이전트 채팅</button>
       </nav>
       <div class="connection"><span class="pulse" id="health-dot"></span><span id="health-label">로컬 연결 확인 중</span></div>
@@ -62,6 +63,23 @@
           </section>
         </div>
         <div class="footnote"><span class="footnote-mark">!</span><p><strong>해석할 때:</strong> 이 데이터는 모델 학습에 사용한 train 실행 기록입니다. 재생 화면의 점수는 학습 기록 재채점이며, 처음 보는 test 상황의 성능을 뜻하지 않습니다.</p></div>
+      </section>
+
+      <section class="view" id="view-detection" hidden>
+        <div class="overview-row"><div class="section-title"><div><span class="kicker">02 / DETECTION REPLAY</span><h2>위반 탐지 시연</h2></div><p>실제 평가에 기록된 사례를 살펴봅니다.</p></div><div class="stats-strip"><div><span class="stat-value" id="detection-count">—</span><span class="stat-label">위반 사례</span></div><div><span class="stat-value">EMP</span><span class="stat-label">기록된 평가 모델</span></div></div></div>
+        <div class="workspace-grid">
+          <aside class="scenario-panel panel">
+            <div class="panel-head"><div><span class="kicker">VIOLATION CASES</span><h3>위반 사례 목록</h3></div></div>
+            <label class="search-wrap"><span class="search-icon">⌕</span><input id="detection-search" type="search" placeholder="시나리오, 도구로 찾기" autocomplete="off"></label>
+            <div class="scenario-list" id="detection-list" aria-live="polite"><div class="loading-block">사례를 불러오는 중…</div></div>
+            <div class="panel-foot">resplit-1117 test · 근거가 보인 위반</div>
+          </aside>
+          <section class="detail-column">
+            <article class="scenario-detail panel" id="detection-detail"><div class="empty-state"><span class="empty-mark">A</span><span class="kicker">SELECT A CASE</span><h3>왼쪽에서 사례를 선택하세요</h3><p>기록된 과제와 도구 호출, emp 평가 결과를 확인할 수 있습니다.</p></div></article>
+            <article class="replay-panel panel" id="detection-result" aria-live="polite"><div class="panel-head"><div><span class="kicker">RECORDED EMP RESULT</span><h3>탐지 결과</h3></div></div><div class="chart-empty">사례를 고르고 결과 보기를 누르세요.</div></article>
+          </section>
+        </div>
+        <div class="footnote"><span class="footnote-mark">!</span><p><strong>저장된 평가 결과 재생:</strong> 새 모델 추론이나 행동 생성은 실행하지 않습니다. 사례는 선별된 위반 사례이며 전체 탐지 성능을 대표하지 않습니다. 비교 기준은 test 정상 호출의 상위 5%로 사후 계산한 값입니다.</p></div>
       </section>
 
       <section class="view" id="view-agent" hidden>
