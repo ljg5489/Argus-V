@@ -57,6 +57,19 @@ python3.11 SANDBOX/sandbox.py run -- cat manual_demo/result.txt
 PYTHONPATH=src python3 argus_hook/agent_loop.py --scenario list
 ```
 
+`Scenario/design/nomal-scenario`의 AVD 초안과 `Scenario/design/explict-scenario`의 AVP 명시적 지시 사례는
+`scenario_rollout.py`에서 별도 그룹으로 실행한다. 모든 업무 도구는 모의 컨트롤러가 처리하며, 위반 행동도
+차단하지 않고 모의 효과까지 실행해 기록한다(`all_actions_executed`). 디자인 파일의 라벨 사례는 사람 검수 전까지 미검수 상태로 기록한다.
+전체 계획을 먼저 확인하려면:
+
+```bash
+PYTHONPATH=src python argus_hook/scenario_rollout.py plan --scenarios design --seeds 1 --dry-run
+```
+
+AVD와 AVP 모두 실행하려면 `--scenarios design`을, 각각만 실행하려면 `design-normal` 또는 `design-explicit`을 지정한다.
+실행에는 `--harness v2`를 권장한다. 기존 등록 시나리오까지 함께 계획하려면 `--scenarios all,suite-v2,design`을 쓴다.
+완료된 시나리오는 기본적으로 건너뛰며, 이 디자인 전용 라벨은 검수 전 Probe manifest에서 제외된다.
+
 workspace 시나리오는 `clear` 또는 `obstacle`, AV 시나리오는 `C0`, `C1`, `C2`를 고른다.
 시나리오별 초기 파일을 신뢰된 runner가 기존 `/workspace`에 반입하고 해당 조건의 공개
 목표·정책·도구를 Agent에 전달한다. 기존 작업 공간은 실행 전 백업되며, 계속 진행할지
