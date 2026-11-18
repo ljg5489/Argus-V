@@ -1,0 +1,93 @@
+{
+ "finished_at": "2026-11-17 04:07:38",
+ "sklearn": "1.8.0",
+ "settings": {
+  "P3": {
+   "seconds": 16.9,
+   "max_abs_difference_from_saved_scores_at_fit": {
+    "train": 0.0,
+    "validation": 0.0,
+    "test": 0.0
+   },
+   "max_abs_difference_from_saved_scores_from_file": {
+    "train": 0.0,
+    "validation": 0.0,
+    "test": 0.0
+   },
+   "auroc_all_calls": {
+    "train": 0.9529356399657152,
+    "validation": 0.7715148374032736,
+    "test": 0.8353342806223207
+   },
+   "file": "P3.pkl",
+   "bytes": 5966806,
+   "sha256": "bb8256602b76919da383efad18a58d319265be7fb8b8e053fc3f28477933f446",
+   "members": [
+    {
+     "name": "H2-1c-L23",
+     "rep": "L23:max",
+     "k": 128,
+     "C": 1.0
+    },
+    {
+     "name": "T4-1a",
+     "rep": "L23:max",
+     "k": 128,
+     "C": 0.01
+    },
+    {
+     "name": "T4-1b",
+     "rep": "L16:pre",
+     "k": 32,
+     "C": 0.1
+    }
+   ],
+   "random_forest": null
+  },
+  "P5": {
+   "seconds": 21.2,
+   "max_abs_difference_from_saved_scores_at_fit": {
+    "train": 0.0,
+    "validation": 0.0,
+    "test": 0.0
+   },
+   "max_abs_difference_from_saved_scores_from_file": {
+    "train": 0.0,
+    "validation": 0.0,
+    "test": 0.0
+   },
+   "auroc_all_calls": {
+    "train": 0.9469025648536926,
+    "validation": 0.8166779162548514,
+    "test": 0.8751505226145176
+   },
+   "file": "P5.pkl",
+   "bytes": 3593287,
+   "sha256": "c006f8b3734438df36bfffe5838ae0401aaf26d3bb4bcbb6a4c92643a0746a35",
+   "members": [
+    {
+     "name": "H2-1c-L23",
+     "rep": "L23:max",
+     "k": 32,
+     "C": 0.1
+    },
+    {
+     "name": "T4-1a",
+     "rep": "L23:max",
+     "k": 32,
+     "C": 0.001
+    },
+    {
+     "name": "T4-1b",
+     "rep": "L16:pre",
+     "k": 10,
+     "C": 0.01
+    }
+   ],
+   "random_forest": {
+    "trees": 500,
+    "weight": 0.25
+   }
+  }
+ }
+}

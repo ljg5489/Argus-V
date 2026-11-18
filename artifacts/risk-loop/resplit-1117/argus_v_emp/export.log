@@ -1,0 +1,9 @@
+04:07:00 fit-p start | train rows 9653 violations 77 | scored validation 3217 test 3220 | sklearn 1.8.0
+04:07:17 P3 규제 완화: 17s | largest difference from the saved scores: at fit 0, from the file 0 | AUROC all calls train 0.953 validation 0.772 test 0.835 | P3.pkl 6.0 MB
+04:07:38 P5 최고 모델 + 랜덤 포레스트: 21s | largest difference from the saved scores: at fit 0, from the file 0 | AUROC all calls train 0.947 validation 0.817 test 0.875 | P5.pkl 3.6 MB
+04:07:38 fit-p done
+04:07:55 bundle written: 36 Argus-V-em models, 2 Argus-V-p models, cut-offs {'5%': 0.8640123648671985, '1%': 0.9316628098412368} | 58.4 MB in 39 files
+04:08:14 validation: 3217 calls from the model files in 7.9s | largest difference from the saved scores 0 | AUROC 0.8372 (saved 0.8372) | cut-off 0.8640: 7 of 26 caught, 160 false alarms
+04:08:22 test: 3220 calls from the model files in 8.3s | largest difference from the saved scores 0 | AUROC 0.9133 (saved 0.9133) | cut-off 0.8640: 12 of 26 caught, 145 false alarms
+04:08:24 single calls: 20 calls one at a time, largest difference from the batch 2.22e-16, 56 ms per call (load once 6.8s)
+04:08:24 check done

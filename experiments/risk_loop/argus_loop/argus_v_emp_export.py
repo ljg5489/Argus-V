@@ -19,7 +19,7 @@ Stages
 Usage: PYTHONUTF8=1 py -3.11 experiments/risk_loop/argus_loop/argus_v_emp_export.py fit-p --approved
        PYTHONUTF8=1 py -3.11 experiments/risk_loop/argus_loop/argus_v_emp_export.py bundle
        PYTHONUTF8=1 py -3.11 experiments/risk_loop/argus_loop/argus_v_emp_export.py check
-Output: artifacts/risk-loop/resplit-1117/argus_v_emp/ (not in git)
+Output: artifacts/risk-loop/resplit-1117/argus_v_emp/ (committed to git on 2026-11-18 by user instruction; artifacts/ is otherwise ignored)
 """
 from __future__ import annotations
 

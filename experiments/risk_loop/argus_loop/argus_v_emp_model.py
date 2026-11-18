@@ -1,6 +1,7 @@
 """Argus-V-emp as model files: load once, then score any call from its two pooled hidden-state vectors. Fits nothing.
 
-The model folder (artifacts/risk-loop/resplit-1117/argus_v_emp/, not in git) is written by argus_v_emp_export.py:
+The model folder (artifacts/risk-loop/resplit-1117/argus_v_emp/; committed to git on 2026-11-18 although artifacts/ is
+ignored, by user instruction) is written by argus_v_emp_export.py:
   em/<model>_<weight>_r<k>_e067.pt   the 36 Argus-V-em models (copies of run01/em/checkpoints)
   P3.pkl, P5.pkl                     the two Argus-V-p models: scaling, PCA, linear members, random forest, training-score tables
   reference_validation.npz           for each of the 38 models: its scores of the 3,217 validation calls, sorted

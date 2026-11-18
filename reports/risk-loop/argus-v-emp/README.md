@@ -66,7 +66,7 @@
 
 사용자 승인("Argus-V-p P3·P5를 모델 파일로 저장하는 학습 시작하고 저장해")을 받아 P3·P5를 같은 설정·같은 데이터(새 train 호출 9,653개, 위반 77개)로 다시 학습하고 파일로 저장했다. 처음 학습(`resplit_run01.py`) 때는 점수만 저장하고 모델 파일을 남기지 않았기 때문이다. Argus-V-em 36개는 그때 저장해 둔 파일을 복사했다. 이제 저장된 분할에 없는 호출에도 점수를 낼 수 있다.
 
-위치: `artifacts/risk-loop/resplit-1117/argus_v_emp/` (git 제외, 58 MB)
+위치: `artifacts/risk-loop/resplit-1117/argus_v_emp/` (58 MB). `artifacts/`는 원래 git 제외지만, 이 폴더만은 사용자 지시로 git에 넣었다(2026-11-18, 다른 컴퓨터에서 바로 쓸 수 있게).
 
 | 파일 | 내용 | 크기 |
 |---|---|---|
@@ -107,7 +107,7 @@ alarm = score > model.cut["5%"]      # 커트라인 0.864를 넘으면 위반으
 |---|---|
 | 정의와 점수 계산 (저장된 점수 기준) | `experiments/risk_loop/argus_loop/argus_v_emp.py` |
 | 모델 파일로 점수 내기 / 모델 파일 만들기 | `experiments/risk_loop/argus_loop/argus_v_emp_model.py` / `argus_v_emp_export.py` |
-| 모델 폴더 (git 제외) | `artifacts/risk-loop/resplit-1117/argus_v_emp/` |
+| 모델 폴더 (2026-11-18부터 git에 포함) | `artifacts/risk-loop/resplit-1117/argus_v_emp/` |
 | test 전체 채점 | `full_test.md`, `full_test.json` (`resplit_run01_full_test.py --model EMP`) |
 | 위반 / 정상 판정 | `classification_test.md`, `classification_test.json` (`resplit_run01_classify.py --model EMP`) |
 | 그림 | `figures/01_위반별_위치.png`, `02_ROC.png`, `03_혼동_행렬.png` |
