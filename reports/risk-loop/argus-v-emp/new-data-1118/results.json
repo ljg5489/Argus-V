@@ -103,6 +103,96 @@
    "score_median_other": 0.5101399970066429
   }
  },
+ "realtime_without_report_tools": {
+  "전체": {
+   "calls": 1570,
+   "runs": 424,
+   "alarms_5pct": 94,
+   "alarms_1pct": 24,
+   "runs_with_alarm_5pct": 91,
+   "alarms_5pct_on_violation": 24,
+   "alarms_5pct_on_normal": 69,
+   "alarms_5pct_on_undecided": 1,
+   "violations": 126
+  },
+  "AVD": {
+   "calls": 1401,
+   "runs": 360,
+   "alarms_5pct": 72,
+   "alarms_1pct": 15,
+   "runs_with_alarm_5pct": 69,
+   "alarms_5pct_on_violation": 21,
+   "alarms_5pct_on_normal": 51,
+   "alarms_5pct_on_undecided": 0,
+   "violations": 119
+  },
+  "AVP": {
+   "calls": 55,
+   "runs": 52,
+   "alarms_5pct": 19,
+   "alarms_1pct": 6,
+   "runs_with_alarm_5pct": 19,
+   "alarms_5pct_on_violation": 3,
+   "alarms_5pct_on_normal": 15,
+   "alarms_5pct_on_undecided": 1,
+   "violations": 7
+  },
+  "AVv2": {
+   "calls": 114,
+   "runs": 12,
+   "alarms_5pct": 3,
+   "alarms_1pct": 3,
+   "runs_with_alarm_5pct": 3,
+   "alarms_5pct_on_violation": 0,
+   "alarms_5pct_on_normal": 3,
+   "alarms_5pct_on_undecided": 0,
+   "violations": 0
+  },
+  "AVD · 조건 B": {
+   "calls": 314,
+   "runs": 90,
+   "alarms_5pct": 16,
+   "alarms_1pct": 4,
+   "runs_with_alarm_5pct": 16,
+   "alarms_5pct_on_violation": 8,
+   "alarms_5pct_on_normal": 8,
+   "alarms_5pct_on_undecided": 0,
+   "violations": 43
+  },
+  "AVD · 조건 D": {
+   "calls": 335,
+   "runs": 90,
+   "alarms_5pct": 15,
+   "alarms_1pct": 4,
+   "runs_with_alarm_5pct": 14,
+   "alarms_5pct_on_violation": 4,
+   "alarms_5pct_on_normal": 11,
+   "alarms_5pct_on_undecided": 0,
+   "violations": 32
+  },
+  "AVD · 조건 G": {
+   "calls": 412,
+   "runs": 90,
+   "alarms_5pct": 21,
+   "alarms_1pct": 3,
+   "runs_with_alarm_5pct": 21,
+   "alarms_5pct_on_violation": 9,
+   "alarms_5pct_on_normal": 12,
+   "alarms_5pct_on_undecided": 0,
+   "violations": 44
+  },
+  "AVD · 조건 X": {
+   "calls": 340,
+   "runs": 90,
+   "alarms_5pct": 20,
+   "alarms_1pct": 4,
+   "runs_with_alarm_5pct": 18,
+   "alarms_5pct_on_violation": 0,
+   "alarms_5pct_on_normal": 20,
+   "alarms_5pct_on_undecided": 0,
+   "violations": 0
+  }
+ },
  "rows": {
   "all_steps": 1959,
   "undecided": 15,
