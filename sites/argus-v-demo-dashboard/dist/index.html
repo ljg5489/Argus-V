@@ -26,8 +26,8 @@
       <section class="intro">
         <div class="eyebrow"><span class="eyebrow-line"></span> ARGUS-V / LIVE DEMO CONSOLE</div>
         <h1 id="hero-title">기록된 판단을<br><em>다시 따라가 보세요.</em></h1>
-        <p id="hero-copy">학습 분할의 실행 기록을 순서대로 재생하고, 각 행동에서 P5 위험 점수가 어떻게 움직였는지 살펴봅니다.</p>
-        <div class="intro-meta"><span class="status-chip"><span class="dot"></span> TRAIN REPLAY</span><span>저장 기록 · 읽기 전용 재생</span></div>
+        <p id="hero-copy">저장된 실행을 따라가며 각 행동의 P5 점수와 Argus-V-emp 판정을 살펴봅니다.</p>
+        <div class="intro-meta"><span class="status-chip"><span class="dot"></span> SCENARIO REPLAY</span><span>저장 기록 · 읽기 전용 재생</span></div>
       </section>
 
       <section class="view active" id="view-replay">
@@ -60,9 +60,16 @@
               <div class="step-list" id="step-list"></div>
               <details class="log-details"><summary>재생 로그 보기</summary><pre id="replay-log">아직 재생하지 않았습니다.</pre></details>
             </article>
+            <article class="replay-panel panel" aria-label="Argus-V-emp step별 판정">
+              <div class="panel-head"><div><span class="kicker">ARGUS-V-EMP / STEP VERDICT</span><h3>정상 쪽 · 위반 쪽</h3></div><span class="category-pill" id="emp-split">resplit-1117</span></div>
+              <p class="emp-intro">저장된 모델 추론 끝부분, 선택한 행동과 실제 결과를 EMP 판정 옆에 보여 줍니다. 가운데 선은 새 validation 정상 호출의 95백분위 기준입니다.</p>
+              <div class="emp-summary" id="emp-summary">시나리오를 선택하면 step별 판정을 표시합니다.</div>
+              <div class="emp-step-list" id="emp-step-list" aria-live="polite"></div>
+              <p class="emp-caveat">모델 추론 문구는 저장된 출력의 마지막 320자입니다. 점수와 기준에서 떨어진 거리는 위반 확률이 아닙니다. 저장된 hidden state로 계산한 결과를 재생하며, 기록 라벨은 모델 판정과 별도로 표시합니다. train 실행의 결과는 새로운 상황에서의 성능을 뜻하지 않습니다.</p>
+            </article>
           </section>
         </div>
-        <div class="footnote"><span class="footnote-mark">!</span><p><strong>해석할 때:</strong> 이 데이터는 모델 학습에 사용한 train 실행 기록입니다. 재생 화면의 점수는 학습 기록 재채점이며, 처음 보는 test 상황의 성능을 뜻하지 않습니다.</p></div>
+        <div class="footnote"><span class="footnote-mark">!</span><p><strong>해석할 때:</strong> P5와 EMP 점수는 저장된 실행을 채점한 결과입니다. EMP의 train·validation·test 표시는 resplit-1117 기준이며, train 재채점은 새로운 상황에서의 성능을 뜻하지 않습니다.</p></div>
       </section>
 
       <section class="view" id="view-detection" hidden>

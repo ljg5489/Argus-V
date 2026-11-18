@@ -5,6 +5,10 @@ venv/
 *.egg-info/
 build/
 dist/
+!sites/argus-v-demo-dashboard/dist/
+sites/argus-v-demo-dashboard/dist/*
+!sites/argus-v-demo-dashboard/dist/emp-steps.json.gz.b64
+!sites/argus-v-demo-dashboard/dist/step-traces.json.gz.b64
 .pytest_cache/
 .ruff_cache/
 .coverage

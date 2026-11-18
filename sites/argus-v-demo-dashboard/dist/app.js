@@ -1,4 +1,4 @@
-const state = { scenarios: [], selected: null, job: null, apiOnline: false, busy: false, inferences: {}, health: null };
+const state = { scenarios: [], selected: null, job: null, apiOnline: false, busy: false, inferences: {}, health: null, emp: null, empError: null, traces: null, traceError: null };
 const detection = { cases: [], selected: null, loaded: false, position: 0, timer: null, playing: false };
 const $ = (selector) => document.querySelector(selector);
 const apiInput = $('#api-base');
@@ -55,6 +55,32 @@ async function loadCatalog() {
   } catch (error) {
     $('#scenario-list').innerHTML = `<div class="loading-block">${escapeHtml(error.message)}</div>`;
   }
+}
+
+async function loadEmpSteps() {
+  try {
+    const response = await fetch('./emp-steps.json', { cache: 'no-store' });
+    if (!response.ok) throw new Error('EMP step 점수 파일을 읽지 못했습니다.');
+    const data = await response.json();
+    if (!Number.isFinite(data.cutoff) || !data.runs) throw new Error('EMP step 점수 형식이 올바르지 않습니다.');
+    state.emp = data;
+  } catch (error) {
+    state.empError = error.message;
+  }
+  renderEmpSteps(state.selected?.runs.find((run) => run.id === $('#run-select').value));
+}
+
+async function loadStepTraces() {
+  try {
+    const response = await fetch('./step-traces.json', { cache: 'no-store' });
+    if (!response.ok) throw new Error('단계별 실행 기록 파일을 읽지 못했습니다.');
+    const data = await response.json();
+    if (!data.runs) throw new Error('단계별 실행 기록 형식이 올바르지 않습니다.');
+    state.traces = data;
+  } catch (error) {
+    state.traceError = error.message;
+  }
+  renderEmpSteps(state.selected?.runs.find((run) => run.id === $('#run-select').value));
 }
 
 async function refreshConnection() {
@@ -127,7 +153,7 @@ function selectScenario(id) {
     ${scenario.task ? `<p><span class="detail-label">과제</span>${escapeHtml(scenario.task)}</p>` : ''}
     ${scenario.situation ? `<p><span class="detail-label">상황</span>${escapeHtml(scenario.situation)}</p>` : ''}
     ${scenario.forbidden ? `<p><span class="detail-label">금지</span>${escapeHtml(scenario.forbidden)}</p>` : ''}
-    <div class="detail-stats"><span><strong>${runs.length}</strong> 저장된 실행</span><span><strong>${scenario.violations}</strong> 위반 호출</span><span><strong>${scenario.recommended}</strong> 추천 실행</span><span>출처 <strong>train</strong></span></div>
+    <div class="detail-stats"><span><strong>${runs.length}</strong> 저장된 실행</span><span><strong>${scenario.violations}</strong> 위반 호출</span><span><strong>${scenario.recommended}</strong> 추천 실행</span><span>EMP 재분할 <strong>실행별 표시</strong></span></div>
   </div>`;
   $('#run-select').innerHTML = runs.map((run, i) => `<option value="${escapeAttr(run.id)}">${run.recommended ? '★ 추천 · ' : ''}${escapeHtml(run.condition)} · seed ${escapeHtml(String(run.seed))} · 위반 ${run.violation_count}</option>`).join('');
   $('#run-select').disabled = !runs.length;
@@ -137,6 +163,7 @@ function selectScenario(id) {
 
 function renderRun(run) {
   if (!run) return;
+  renderEmpSteps(run);
   const model = $('#model-select').value;
   const inferred = state.inferences[run.id]?.[model] || null;
   const steps = (run.steps || []).map((step) => {
@@ -183,6 +210,55 @@ function renderRun(run) {
   updateReplayAvailability();
 }
 
+function renderEmpSteps(run) {
+  if (!run) return;
+  const data = state.emp;
+  if (!data) {
+    $('#emp-step-list').innerHTML = `<div class="emp-empty">${escapeHtml(state.empError || 'EMP 점수를 불러오는 중…')}</div>`;
+    return;
+  }
+  const records = data.runs[run.id] || [];
+  const byStep = new Map(records.map((record) => [record.index, record]));
+  const catalogSteps = new Map((run.steps || []).map((step) => [step.index, step]));
+  const traceSteps = state.traces?.runs[run.id] || [];
+  const tracesByStep = new Map(traceSteps.map((step) => [step.index, step]));
+  const indexes = [...new Set([...catalogSteps.keys(), ...tracesByStep.keys()])].sort((a, b) => a - b);
+  const split = records[0]?.split || '기록 없음';
+  const splitName = { train: '새 train', validation: '새 validation', test: '새 test' }[split] || split;
+  $('#emp-split').textContent = `resplit-1117 · ${splitName}`;
+  const alertCount = records.filter((record) => record.score > data.cutoff).length;
+  $('#emp-summary').innerHTML = `<strong>${indexes.length}개 행동 · ${records.length}개 EMP 채점</strong><span>경보 ${alertCount}건</span><span>기록된 위반 ${run.violation_count}건</span><span>판정 기준 ${Number(data.cutoff).toFixed(3)}</span>`;
+  $('#emp-step-list').innerHTML = indexes.map((index) => {
+    const step = catalogSteps.get(index);
+    const trace = tracesByStep.get(index);
+    const tool = step?.tool || trace?.tool || '알 수 없는 행동';
+    const record = byStep.get(index);
+    const scored = Boolean(record && record.tool === tool);
+    const margin = scored ? record.score - data.cutoff : null;
+    const alarm = margin !== null && margin > 0;
+    const width = margin === null ? 0 : Math.max(1, Math.min(50, Math.abs(margin) / 0.3 * 50));
+    const left = alarm ? 50 : 50 - width;
+    const explanation = margin === null ? 'EMP 점수 없음' : margin === 0 ? '기준과 같음' : `기준보다 ${Math.abs(margin).toFixed(3)} ${alarm ? '높음' : '낮음'}`;
+    const decision = margin === null ? '판정 안 함' : alarm ? '경보' : '경보 없음';
+    const label = step?.label ?? trace?.policy_label;
+    const match = margin !== null && step && (alarm ? 1 : 0) === Number(step.label);
+    const labelText = label == null ? '기록 라벨 없음' : step ? `기록 ${Number(label) ? '위반' : '정상'} · ${match ? '일치' : '불일치'}` : `규칙 초안 ${Number(label) ? '위반' : '정상'}`;
+    const traceText = trace ? `<div class="emp-trace">
+        <div class="emp-trace-cell"><span>모델의 추론 · 끝부분</span><p>${escapeHtml(trace.reasoning || '기록된 추론 문장 없음')}</p></div>
+        <div class="emp-trace-cell"><span>행동 · 호출 인자</span><code>${escapeHtml(trace.tool)} ${escapeHtml(trace.arguments)}</code></div>
+        <div class="emp-trace-cell"><span>실제 결과 · 기록</span><p>${escapeHtml(trace.result)}</p></div>
+      </div>` : `<div class="emp-trace emp-trace-missing">${escapeHtml(state.traceError || (state.traces ? '이 실행의 상세 기록이 없습니다.' : '단계별 실행 기록을 불러오는 중…'))}</div>`;
+    return `<div class="emp-row ${margin === null ? 'emp-unjudged' : alarm ? 'emp-alert' : 'emp-clear'}">
+      <span class="emp-step">STEP ${String(index + 1).padStart(2, '0')}</span>
+      <div class="emp-action"><strong>${escapeHtml(tool)}</strong><small>${scored ? `EMP ${Number(record.score).toFixed(3)} · ${explanation}` : 'EMP 채점 대상 아님'}</small></div>
+      <div class="emp-position"><div class="emp-axis-labels"><span>정상 쪽</span><span>위반 쪽</span></div><div class="emp-axis" role="img" aria-label="${escapeAttr(explanation)} · ${decision}">${width ? `<span class="emp-axis-fill" style="left:${left}%;width:${width}%"></span>` : ''}<span class="emp-axis-center"></span></div></div>
+      <span class="emp-decision ${margin === null ? 'unjudged' : alarm ? 'alarm' : 'clear'}">${decision}</span>
+      <span class="emp-label">${labelText}</span>
+      ${traceText}
+    </div>`;
+  }).join('') || '<div class="emp-empty">표시할 step이 없습니다.</div>';
+}
+
 function switchView(name) {
   if (name !== 'detection') pauseDetection();
   document.querySelectorAll('.nav-item').forEach((button) => button.classList.toggle('active', button.dataset.view === name));
@@ -191,7 +267,7 @@ function switchView(name) {
     section.classList.toggle('active', active); section.hidden = !active;
   });
   const hero = {
-    replay: ['기록된 판단을<br><em>다시 따라가 보세요.</em>', '학습 분할의 실행 기록을 순서대로 재생하고, 각 행동에서 P5 위험 점수가 어떻게 움직였는지 살펴봅니다.', 'TRAIN REPLAY', '저장 기록 · 읽기 전용 재생'],
+    replay: ['기록된 판단을<br><em>다시 따라가 보세요.</em>', '저장된 실행을 따라가며 각 행동의 P5 점수와 Argus-V-emp 판정을 살펴봅니다.', 'SCENARIO REPLAY', '저장 기록 · 읽기 전용 재생'],
     detection: ['위반의 순간을<br><em>다시 살펴보세요.</em>', '기록된 업무 시나리오와 Argus-V-emp의 평가 결과를 함께 확인합니다.', 'TEST REPLAY', '저장된 평가 결과 · 새 추론 없음'],
     agent: ['한 번 맡기고,<br><em>진행을 지켜보세요.</em>', '로컬 GPT-OSS agent에게 작업을 맡기고 격리 샌드박스의 실행 로그를 확인합니다.', 'LOCAL AGENT', '로컬 실행 · 샌드박스'],
   }[name];
@@ -388,5 +464,7 @@ document.querySelectorAll('.suggestion').forEach((button) => button.addEventList
 document.addEventListener('keydown', (event) => { if (event.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) { event.preventDefault(); $('#scenario-search').focus(); } });
 
 loadCatalog().then(refreshConnection);
+loadEmpSteps();
+loadStepTraces();
 window.setInterval(() => { if (state.apiOnline && !state.busy) refreshConnection(); }, 15_000);
 
