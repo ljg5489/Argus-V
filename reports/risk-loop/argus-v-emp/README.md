@@ -62,15 +62,52 @@
 - 구성 모델의 epoch에는 둔감하다. 67 대신 1~100 어느 epoch을 써도 근거가 보인 위반의 "전부 비교" 값이 0.95~0.97, 같은 시기끼리 0.81~0.88이다.
 - 위반 / 정상 판정기로는 아직 부족하다. 정상의 5%에 경보를 내는 기준에서 경보 157개 중 진짜 위반이 12개(7.6%)다.
 
-## 쓰는 데 필요한 것
+## 모델 파일 (2026-11-17 04:08 저장)
 
-지금은 저장된 점수로 평가만 했다. 새 호출에 점수를 내려면 구성 모델이 파일로 있어야 한다. Argus-V-em 구성 모델은 있다(`artifacts/risk-loop/resplit-1117/run01/em/checkpoints/*_e067.pt`). Argus-V-p P3·P5는 점수만 저장했으므로 한 번 다시 맞춰 저장해야 한다(학습이라 사용자 승인 필요).
+사용자 승인("Argus-V-p P3·P5를 모델 파일로 저장하는 학습 시작하고 저장해")을 받아 P3·P5를 같은 설정·같은 데이터(새 train 호출 9,653개, 위반 77개)로 다시 학습하고 파일로 저장했다. 처음 학습(`resplit_run01.py`) 때는 점수만 저장하고 모델 파일을 남기지 않았기 때문이다. Argus-V-em 36개는 그때 저장해 둔 파일을 복사했다. 이제 저장된 분할에 없는 호출에도 점수를 낼 수 있다.
+
+위치: `artifacts/risk-loop/resplit-1117/argus_v_emp/` (58 MB). `artifacts/`는 원래 git 제외지만, 이 폴더만은 사용자 지시로 git에 넣었다(2026-11-18, 다른 컴퓨터에서 바로 쓸 수 있게).
+
+| 파일 | 내용 | 크기 |
+|---|---|---|
+| `em/*_e067.pt` (36개) | Argus-V-em 모델 36개 (모델 4종 × 위반 가중치 3가지 × 반복 3번, 67 epoch) | 48.5 MB |
+| `P3.pkl` | Argus-V-p P3: 척도 맞춤, PCA 128·128·32차원, 선형 모델 3개, 학습 점수 기준표 | 6.0 MB · sha256 `bb8256602b76919d…` |
+| `P5.pkl` | Argus-V-p P5: 척도 맞춤, PCA 32·32·10차원, 선형 모델 3개, 랜덤 포레스트(나무 500개), 학습 점수 기준표 | 3.6 MB · sha256 `c006f8b3734438df…` |
+| `reference_validation.npz` | 모델 38개 각각이 validation 호출 3,217개에 준 점수(0 ~ 1로 바꿀 때 쓰는 기준표) | 0.4 MB |
+| `manifest.json` | 정의, 커트라인(0.864, 0.932), 파일별 sha256, 라이브러리 버전, 아래 확인 결과 | |
+
+확인(저장한 파일만으로 다시 채점):
+
+| 확인한 것 | 결과 |
+|---|---|
+| 다시 학습한 P3·P5의 점수 대 처음 학습 때 저장한 점수 (새 train 9,653 · validation 3,217 · test 3,220 호출 전부) | 가장 큰 차이 0 |
+| 모델 폴더만으로 낸 Argus-V-emp 점수 대 저장돼 있던 Argus-V-emp 점수 (validation · test 호출 전부) | 가장 큰 차이 0 |
+| 새 validation · AUROC (위반 26개 전부 비교), 파일로 다시 계산 | 0.837 (그대로) |
+| 새 test · AUROC (위반 26개 전부 비교), 파일로 다시 계산 | 0.913 (그대로) |
+| 새 test · 커트라인 0.864로 판정 | 위반 26개 중 12개, 오경보 145개 (그대로) |
+| 호출을 하나씩 넣었을 때 대 한꺼번에 넣었을 때 (20개) | 차이 0.0000000000000002 |
+| 속도 (이 노트북 CPU) | 불러오기 6.8초(한 번), 호출 하나에 56ms |
+
+쓰는 법:
+
+```python
+from experiments.risk_loop.argus_loop import argus_v_emp_model as EMPM
+model = EMPM.EmpModel()              # 모델 파일을 한 번 불러온다
+score = model.score(x23, x16)        # x23: 층 23의 관측 지점별 최댓값 [n, 2880], x16: 층 16의 행동 직전 값 [n, 2880]
+alarm = score > model.cut["5%"]      # 커트라인 0.864를 넘으면 위반으로 판정
+```
+
+- 다시 만들기: `argus_v_emp_export.py fit-p --approved`(P3·P5 학습, 승인 필요) → `bundle` → `check`.
+- 라이브러리: python 3.11.5, numpy 1.26.4, scikit-learn 1.8.0, torch 2.11.0+cpu. `P3.pkl`·`P5.pkl`은 scikit-learn 객체(PCA, 랜덤 포레스트)를 담고 있어 같은 버전에서 읽는 것이 안전하다.
+- 아직 하지 않은 것: 재생 도구·hook에 연결하는 일(gpt-oss-20b에서 은닉층 값을 뽑아 `EmpModel.score`에 넣는 부분).
 
 ## 파일
 
 | 무엇 | 어디 |
 |---|---|
-| 정의와 점수 계산 | `experiments/risk_loop/argus_loop/argus_v_emp.py` |
+| 정의와 점수 계산 (저장된 점수 기준) | `experiments/risk_loop/argus_loop/argus_v_emp.py` |
+| 모델 파일로 점수 내기 / 모델 파일 만들기 | `experiments/risk_loop/argus_loop/argus_v_emp_model.py` / `argus_v_emp_export.py` |
+| 모델 폴더 (2026-11-18부터 git에 포함) | `artifacts/risk-loop/resplit-1117/argus_v_emp/` |
 | test 전체 채점 | `full_test.md`, `full_test.json` (`resplit_run01_full_test.py --model EMP`) |
 | 위반 / 정상 판정 | `classification_test.md`, `classification_test.json` (`resplit_run01_classify.py --model EMP`) |
 | 그림 | `figures/01_위반별_위치.png`, `02_ROC.png`, `03_혼동_행렬.png` |

@@ -1,0 +1,153 @@
+{
+ "old_argus_v_p_recomputed": {
+  "P1": {
+   "kfold_same_tool": 0.7138380758807589,
+   "train_same_tool": 0.815404810298103,
+   "violations": 48,
+   "cells": 9
+  },
+  "P2": {
+   "kfold_same_tool": 0.6566974367660343,
+   "train_same_tool": 0.8261686991869919,
+   "violations": 48,
+   "cells": 9
+  },
+  "P3": {
+   "kfold_same_tool": 0.4679299345076784,
+   "train_same_tool": 0.8473153794037941,
+   "violations": 48,
+   "cells": 9
+  },
+  "P4": {
+   "kfold_same_tool": 0.5648529245709124,
+   "train_same_tool": 0.9637533875338753,
+   "violations": 48,
+   "cells": 9
+  },
+  "P5": {
+   "kfold_same_tool": 0.7012802055103885,
+   "train_same_tool": 0.8689490176151762,
+   "violations": 48,
+   "cells": 9
+  },
+  "P6": {
+   "kfold_same_tool": 0.5712751242095755,
+   "train_same_tool": 0.9791666666666666,
+   "violations": 48,
+   "cells": 9
+  }
+ },
+ "old_argus_v_em_recomputed": {
+  "32차원 · 60 epoch": {
+   "kfold_same_tool_visible": 0.959518970189702,
+   "kfold_all_calls": 0.7201459350942016,
+   "violations": 16,
+   "cells": 4
+  },
+  "64차원 · 67 epoch": {
+   "kfold_same_tool_visible": 0.9679878048780489,
+   "kfold_all_calls": 0.7192084005384031,
+   "violations": 16,
+   "cells": 4
+  },
+  "128차원 · 300 epoch": {
+   "kfold_same_tool_visible": 0.961890243902439,
+   "kfold_all_calls": 0.7067916680965617,
+   "violations": 16,
+   "cells": 4
+  },
+  "선형 대조 · 60 epoch": {
+   "kfold_same_tool_visible": 0.8993055555555557,
+   "kfold_all_calls": 0.7309888296594562,
+   "violations": 16,
+   "cells": 4
+  }
+ },
+ "old_weights_recomputed": {
+  "위반 가중치 약 15배": {
+   "kfold_same_tool_visible": 0.9679878048780489,
+   "kfold_all_calls": 0.7192084005384031,
+   "violations": 16,
+   "cells": 4
+  },
+  "약 60배": {
+   "kfold_same_tool_visible": 0.9363990514905148,
+   "kfold_all_calls": 0.7025053192097829,
+   "violations": 16,
+   "cells": 4
+  },
+  "약 230배": {
+   "kfold_same_tool_visible": 0.8254573170731708,
+   "kfold_all_calls": 0.8160833171278554,
+   "violations": 16,
+   "cells": 4
+  },
+  "300배": {
+   "kfold_same_tool_visible": 0.7758299457994579,
+   "kfold_all_calls": 0.8472740956390106,
+   "violations": 16,
+   "cells": 4
+  },
+  "1000배": {
+   "kfold_same_tool_visible": 0.7094342818428183,
+   "kfold_all_calls": 0.893339596273884,
+   "violations": 16,
+   "cells": 4
+  }
+ },
+ "epochs": {
+  "emp_test_auroc_by_epoch_min": 0.907609219209094,
+  "emp_test_auroc_by_epoch_max": 0.9362566832040846,
+  "emp_test_auroc_at_fixed_epoch": 0.9133411203699244
+ },
+ "distribution": {
+  "cut_5pct": 0.8640123648671985,
+  "cut_1pct": 0.9316628098412368,
+  "test_at_5pct": {
+   "tp": 12,
+   "fp": 145,
+   "fn": 14,
+   "tn": 3049,
+   "recall": 0.46153846153846156,
+   "precision": 0.07643312101910828,
+   "f1": 0.13114754098360656,
+   "accuracy": 0.9506211180124223
+  },
+  "test_at_1pct": {
+   "tp": 2,
+   "fp": 35,
+   "fn": 24,
+   "tn": 3159,
+   "recall": 0.07692307692307693,
+   "precision": 0.05405405405405406,
+   "f1": 0.06349206349206349,
+   "accuracy": 0.9816770186335404
+  }
+ },
+ "confusion_at_5pct_cut": {
+  "validation": {
+   "tp": 7,
+   "fp": 160,
+   "fn": 19,
+   "tn": 3031,
+   "recall": 0.2692307692307692,
+   "precision": 0.041916167664670656,
+   "f1": 0.07253886010362694,
+   "accuracy": 0.9443580976064656
+  },
+  "test": {
+   "tp": 12,
+   "fp": 145,
+   "fn": 14,
+   "tn": 3049,
+   "recall": 0.46153846153846156,
+   "precision": 0.07643312101910828,
+   "f1": 0.13114754098360656,
+   "accuracy": 0.9506211180124223
+  }
+ },
+ "auroc": {
+  "validation": 0.8371863172865993,
+  "test": 0.9133411203699244
+ }
+}
