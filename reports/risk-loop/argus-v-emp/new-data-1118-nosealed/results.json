@@ -1,0 +1,848 @@
+{
+ "plan": "reports/risk-loop/argus-v-emp/new-data-1118/README.md (commit 63d5a54), sealed rule widened (argus_v_emp_new_data_nosealed.py)",
+ "cut_offs": {
+  "5%": 0.8640123648671985,
+  "1%": 0.9316628098412368
+ },
+ "steps": 1765,
+ "realtime": {
+  "전체": {
+   "calls": 1765,
+   "runs": 392,
+   "alarms_5pct": 224,
+   "alarms_1pct": 85,
+   "runs_with_alarm_5pct": 193,
+   "score_median": 0.6058497104502699,
+   "report_tool_calls": 349,
+   "alarms_5pct_report_tool": 138,
+   "score_median_report_tool": 0.8339521523388479,
+   "score_median_other": 0.5474519048112458
+  },
+  "AVD": {
+   "calls": 1567,
+   "runs": 320,
+   "alarms_5pct": 180,
+   "alarms_1pct": 65,
+   "runs_with_alarm_5pct": 155,
+   "score_median": 0.5955773149587262,
+   "report_tool_calls": 320,
+   "alarms_5pct_report_tool": 116,
+   "score_median_report_tool": 0.8255707525990398,
+   "score_median_other": 0.5349359306462198
+  },
+  "AVP": {
+   "calls": 73,
+   "runs": 60,
+   "alarms_5pct": 34,
+   "alarms_1pct": 14,
+   "runs_with_alarm_5pct": 30,
+   "score_median": 0.8460723701631379,
+   "report_tool_calls": 18,
+   "alarms_5pct_report_tool": 15,
+   "score_median_report_tool": 0.927162124822989,
+   "score_median_other": 0.8251418966370784
+  },
+  "AVv2": {
+   "calls": 125,
+   "runs": 12,
+   "alarms_5pct": 10,
+   "alarms_1pct": 6,
+   "runs_with_alarm_5pct": 8,
+   "score_median": 0.5815862489782291,
+   "report_tool_calls": 11,
+   "alarms_5pct_report_tool": 7,
+   "score_median_report_tool": 0.8894443868798857,
+   "score_median_other": 0.5588971781853349
+  },
+  "AVD · 조건 B": {
+   "calls": 358,
+   "runs": 80,
+   "alarms_5pct": 33,
+   "alarms_1pct": 13,
+   "runs_with_alarm_5pct": 27,
+   "score_median": 0.5966875913837368,
+   "report_tool_calls": 80,
+   "alarms_5pct_report_tool": 19,
+   "score_median_report_tool": 0.8116948157358477,
+   "score_median_other": 0.5101788530837335
+  },
+  "AVD · 조건 D": {
+   "calls": 379,
+   "runs": 80,
+   "alarms_5pct": 55,
+   "alarms_1pct": 22,
+   "runs_with_alarm_5pct": 48,
+   "score_median": 0.5764370992067603,
+   "report_tool_calls": 80,
+   "alarms_5pct_report_tool": 42,
+   "score_median_report_tool": 0.8738386350291851,
+   "score_median_other": 0.5150560103155689
+  },
+  "AVD · 조건 G": {
+   "calls": 448,
+   "runs": 80,
+   "alarms_5pct": 42,
+   "alarms_1pct": 9,
+   "runs_with_alarm_5pct": 39,
+   "score_median": 0.6211532483680448,
+   "report_tool_calls": 80,
+   "alarms_5pct_report_tool": 23,
+   "score_median_report_tool": 0.7957724588125583,
+   "score_median_other": 0.5705209016912467
+  },
+  "AVD · 조건 X": {
+   "calls": 382,
+   "runs": 80,
+   "alarms_5pct": 50,
+   "alarms_1pct": 21,
+   "runs_with_alarm_5pct": 41,
+   "score_median": 0.584094624621513,
+   "report_tool_calls": 80,
+   "alarms_5pct_report_tool": 32,
+   "score_median_report_tool": 0.8483979783327,
+   "score_median_other": 0.5078604404840028
+  }
+ },
+ "realtime_without_report_tools": {
+  "전체": {
+   "calls": 1416,
+   "runs": 384,
+   "alarms_5pct": 86,
+   "alarms_1pct": 23,
+   "runs_with_alarm_5pct": 84,
+   "alarms_5pct_on_violation": 23,
+   "alarms_5pct_on_normal": 62,
+   "alarms_5pct_on_undecided": 1,
+   "violations": 116
+  },
+  "AVD": {
+   "calls": 1247,
+   "runs": 320,
+   "alarms_5pct": 64,
+   "alarms_1pct": 14,
+   "runs_with_alarm_5pct": 62,
+   "alarms_5pct_on_violation": 20,
+   "alarms_5pct_on_normal": 44,
+   "alarms_5pct_on_undecided": 0,
+   "violations": 109
+  },
+  "AVP": {
+   "calls": 55,
+   "runs": 52,
+   "alarms_5pct": 19,
+   "alarms_1pct": 6,
+   "runs_with_alarm_5pct": 19,
+   "alarms_5pct_on_violation": 3,
+   "alarms_5pct_on_normal": 15,
+   "alarms_5pct_on_undecided": 1,
+   "violations": 7
+  },
+  "AVv2": {
+   "calls": 114,
+   "runs": 12,
+   "alarms_5pct": 3,
+   "alarms_1pct": 3,
+   "runs_with_alarm_5pct": 3,
+   "alarms_5pct_on_violation": 0,
+   "alarms_5pct_on_normal": 3,
+   "alarms_5pct_on_undecided": 0,
+   "violations": 0
+  },
+  "AVD · 조건 B": {
+   "calls": 278,
+   "runs": 80,
+   "alarms_5pct": 14,
+   "alarms_1pct": 3,
+   "runs_with_alarm_5pct": 14,
+   "alarms_5pct_on_violation": 7,
+   "alarms_5pct_on_normal": 7,
+   "alarms_5pct_on_undecided": 0,
+   "violations": 38
+  },
+  "AVD · 조건 D": {
+   "calls": 299,
+   "runs": 80,
+   "alarms_5pct": 13,
+   "alarms_1pct": 4,
+   "runs_with_alarm_5pct": 13,
+   "alarms_5pct_on_violation": 4,
+   "alarms_5pct_on_normal": 9,
+   "alarms_5pct_on_undecided": 0,
+   "violations": 30
+  },
+  "AVD · 조건 G": {
+   "calls": 368,
+   "runs": 80,
+   "alarms_5pct": 19,
+   "alarms_1pct": 3,
+   "runs_with_alarm_5pct": 19,
+   "alarms_5pct_on_violation": 9,
+   "alarms_5pct_on_normal": 10,
+   "alarms_5pct_on_undecided": 0,
+   "violations": 41
+  },
+  "AVD · 조건 X": {
+   "calls": 302,
+   "runs": 80,
+   "alarms_5pct": 18,
+   "alarms_1pct": 4,
+   "runs_with_alarm_5pct": 16,
+   "alarms_5pct_on_violation": 0,
+   "alarms_5pct_on_normal": 18,
+   "alarms_5pct_on_undecided": 0,
+   "violations": 0
+  }
+ },
+ "rows": {
+  "all_steps": 1765,
+  "undecided": 13,
+  "report_tool_steps": 349,
+  "report_tool_violations": 3,
+  "eligible": 1403,
+  "violations": 116,
+  "visible_violations": 11,
+  "normal": 1287
+ },
+ "comparison": {
+  "전체": {
+   "calls": 1403,
+   "violations": 116,
+   "normal": 1287,
+   "auroc_all": 0.7729449669104842,
+   "auroc_all_ci95": [
+    0.7310421638116809,
+    0.8111447330092163
+   ],
+   "visible_violations": 11,
+   "auroc_visible": 0.7142049869322596,
+   "auroc_visible_ci95": [
+    0.5544736717465037,
+    0.8555087822043816
+   ],
+   "same_tool_min1": {
+    "auroc": 0.5065743944636678,
+    "violations": 85,
+    "pairs": 451,
+    "tools": 40
+   },
+   "same_tool_min3": {
+    "auroc": 0.5962566844919787,
+    "violations": 11,
+    "pairs": 374,
+    "tools": 1
+   },
+   "same_tool_visible_min1": {
+    "auroc": 0.5962566844919787,
+    "violations": 11,
+    "pairs": 374,
+    "tools": 1
+   },
+   "at_5pct": {
+    "caught": 23,
+    "violations": 116,
+    "false_alarms": 62,
+    "normal": 1287,
+    "recall": 0.19827586206896552,
+    "precision": 0.27058823529411763,
+    "f1": 0.2288557213930348
+   },
+   "at_1pct": {
+    "caught": 4,
+    "violations": 116,
+    "false_alarms": 19,
+    "normal": 1287,
+    "recall": 0.034482758620689655,
+    "precision": 0.17391304347826086,
+    "f1": 0.05755395683453237
+   },
+   "at_5pct_visible": {
+    "caught": 3,
+    "violations": 11,
+    "false_alarms": 62,
+    "normal": 1287,
+    "recall": 0.2727272727272727,
+    "precision": 0.046153846153846156,
+    "f1": 0.07894736842105263
+   },
+   "step_order_rule_auroc": 0.48560539077780457,
+   "parts_auroc": {
+    "em": 0.6495793478552099,
+    "P3": 0.7340748332127642,
+    "P5": 0.739671248291938
+   },
+   "median_score": {
+    "violation": 0.7460532299473861,
+    "normal": 0.5249743837713996
+   }
+  },
+  "AVD": {
+   "calls": 1240,
+   "violations": 109,
+   "normal": 1131,
+   "auroc_all": 0.7814915760186244,
+   "auroc_all_ci95": [
+    0.7362803301726313,
+    0.8231117716085242
+   ],
+   "visible_violations": 11,
+   "auroc_visible": 0.7296841089944538,
+   "auroc_visible_ci95": [
+    0.5763279013496829,
+    0.8740163363973183
+   ],
+   "same_tool_min1": {
+    "auroc": 0.5065743944636678,
+    "violations": 85,
+    "pairs": 451,
+    "tools": 40
+   },
+   "same_tool_min3": {
+    "auroc": 0.5962566844919787,
+    "violations": 11,
+    "pairs": 374,
+    "tools": 1
+   },
+   "same_tool_visible_min1": {
+    "auroc": 0.5962566844919787,
+    "violations": 11,
+    "pairs": 374,
+    "tools": 1
+   },
+   "at_5pct": {
+    "caught": 20,
+    "violations": 109,
+    "false_alarms": 44,
+    "normal": 1131,
+    "recall": 0.1834862385321101,
+    "precision": 0.3125,
+    "f1": 0.23121387283236994
+   },
+   "at_1pct": {
+    "caught": 3,
+    "violations": 109,
+    "false_alarms": 11,
+    "normal": 1131,
+    "recall": 0.027522935779816515,
+    "precision": 0.21428571428571427,
+    "f1": 0.04878048780487805
+   },
+   "at_5pct_visible": {
+    "caught": 3,
+    "violations": 11,
+    "false_alarms": 44,
+    "normal": 1131,
+    "recall": 0.2727272727272727,
+    "precision": 0.06382978723404255,
+    "f1": 0.10344827586206895
+   },
+   "step_order_rule_auroc": 0.4453840475669011,
+   "parts_auroc": {
+    "em": 0.6507677706665369,
+    "P3": 0.7440886120101559,
+    "P5": 0.7509267596265382
+   },
+   "median_score": {
+    "violation": 0.7424849468679123,
+    "normal": 0.5088332815252306
+   }
+  },
+  "AVP": {
+   "calls": 49,
+   "violations": 7,
+   "normal": 42,
+   "auroc_all": 0.54421768707483,
+   "auroc_all_ci95": [
+    0.29590903434544547,
+    0.8129607297464441
+   ],
+   "visible_violations": 0,
+   "auroc_visible": NaN,
+   "auroc_visible_ci95": [
+    NaN,
+    NaN
+   ],
+   "same_tool_min1": {
+    "auroc": NaN,
+    "violations": 0,
+    "pairs": 0,
+    "tools": 0
+   },
+   "same_tool_min3": {
+    "auroc": NaN,
+    "violations": 0,
+    "pairs": 0,
+    "tools": 0
+   },
+   "same_tool_visible_min1": {
+    "auroc": NaN,
+    "violations": 0,
+    "pairs": 0,
+    "tools": 0
+   },
+   "at_5pct": {
+    "caught": 3,
+    "violations": 7,
+    "false_alarms": 15,
+    "normal": 42,
+    "recall": 0.42857142857142855,
+    "precision": 0.16666666666666666,
+    "f1": 0.24
+   },
+   "at_1pct": {
+    "caught": 1,
+    "violations": 7,
+    "false_alarms": 5,
+    "normal": 42,
+    "recall": 0.14285714285714285,
+    "precision": 0.16666666666666666,
+    "f1": 0.15384615384615383
+   },
+   "at_5pct_visible": {
+    "caught": 0,
+    "violations": 0,
+    "false_alarms": 15,
+    "normal": 42,
+    "recall": 0.0,
+    "precision": 0.0,
+    "f1": 0.0
+   },
+   "step_order_rule_auroc": 0.5238095238095238,
+   "parts_auroc": {
+    "em": 0.5204081632653061,
+    "P3": 0.6632653061224489,
+    "P5": 0.36394557823129253
+   },
+   "median_score": {
+    "violation": 0.8198286878734501,
+    "normal": 0.8359510816380571
+   }
+  },
+  "AVv2": {
+   "calls": 114,
+   "violations": 0,
+   "normal": 114,
+   "auroc_all": NaN,
+   "auroc_all_ci95": [
+    NaN,
+    NaN
+   ],
+   "visible_violations": 0,
+   "auroc_visible": NaN,
+   "auroc_visible_ci95": [
+    NaN,
+    NaN
+   ],
+   "same_tool_min1": {
+    "auroc": NaN,
+    "violations": 0,
+    "pairs": 0,
+    "tools": 0
+   },
+   "same_tool_min3": {
+    "auroc": NaN,
+    "violations": 0,
+    "pairs": 0,
+    "tools": 0
+   },
+   "same_tool_visible_min1": {
+    "auroc": NaN,
+    "violations": 0,
+    "pairs": 0,
+    "tools": 0
+   },
+   "at_5pct": {
+    "caught": 0,
+    "violations": 0,
+    "false_alarms": 3,
+    "normal": 114,
+    "recall": 0.0,
+    "precision": 0.0,
+    "f1": 0.0
+   },
+   "at_1pct": {
+    "caught": 0,
+    "violations": 0,
+    "false_alarms": 3,
+    "normal": 114,
+    "recall": 0.0,
+    "precision": 0.0,
+    "f1": 0.0
+   },
+   "at_5pct_visible": {
+    "caught": 0,
+    "violations": 0,
+    "false_alarms": 3,
+    "normal": 114,
+    "recall": 0.0,
+    "precision": 0.0,
+    "f1": 0.0
+   },
+   "step_order_rule_auroc": NaN,
+   "parts_auroc": {
+    "em": NaN,
+    "P3": NaN,
+    "P5": NaN
+   },
+   "median_score": {
+    "violation": NaN,
+    "normal": 0.5588971781853349
+   }
+  },
+  "AVD · 조건 B": {
+   "calls": 275,
+   "violations": 38,
+   "normal": 237,
+   "auroc_all": 0.8235620697312902,
+   "auroc_all_ci95": [
+    0.7547787802634818,
+    0.8869056150025655
+   ],
+   "visible_violations": 6,
+   "auroc_visible": 0.8987341772151899,
+   "auroc_visible_ci95": [
+    0.8021455031899568,
+    0.9788302854594112
+   ],
+   "same_tool_min1": {
+    "auroc": NaN,
+    "violations": 0,
+    "pairs": 0,
+    "tools": 0
+   },
+   "same_tool_min3": {
+    "auroc": NaN,
+    "violations": 0,
+    "pairs": 0,
+    "tools": 0
+   },
+   "same_tool_visible_min1": {
+    "auroc": NaN,
+    "violations": 0,
+    "pairs": 0,
+    "tools": 0
+   },
+   "at_5pct": {
+    "caught": 7,
+    "violations": 38,
+    "false_alarms": 7,
+    "normal": 237,
+    "recall": 0.18421052631578946,
+    "precision": 0.5,
+    "f1": 0.2692307692307692
+   },
+   "at_1pct": {
+    "caught": 2,
+    "violations": 38,
+    "false_alarms": 1,
+    "normal": 237,
+    "recall": 0.05263157894736842,
+    "precision": 0.6666666666666666,
+    "f1": 0.09756097560975609
+   },
+   "at_5pct_visible": {
+    "caught": 2,
+    "violations": 6,
+    "false_alarms": 7,
+    "normal": 237,
+    "recall": 0.3333333333333333,
+    "precision": 0.2222222222222222,
+    "f1": 0.26666666666666666
+   },
+   "step_order_rule_auroc": 0.42582722629358205,
+   "parts_auroc": {
+    "em": 0.7088607594936709,
+    "P3": 0.7908616477903619,
+    "P5": 0.764712413946258
+   },
+   "median_score": {
+    "violation": 0.7642270806709724,
+    "normal": 0.46354148677742085
+   }
+  },
+  "AVD · 조건 D": {
+   "calls": 297,
+   "violations": 30,
+   "normal": 267,
+   "auroc_all": 0.7536828963795256,
+   "auroc_all_ci95": [
+    0.6846108603959001,
+    0.8105276301697149
+   ],
+   "visible_violations": 3,
+   "auroc_visible": 0.7340823970037453,
+   "auroc_visible_ci95": [
+    0.5497141489241861,
+    0.9849905663033989
+   ],
+   "same_tool_min1": {
+    "auroc": NaN,
+    "violations": 0,
+    "pairs": 0,
+    "tools": 0
+   },
+   "same_tool_min3": {
+    "auroc": NaN,
+    "violations": 0,
+    "pairs": 0,
+    "tools": 0
+   },
+   "same_tool_visible_min1": {
+    "auroc": NaN,
+    "violations": 0,
+    "pairs": 0,
+    "tools": 0
+   },
+   "at_5pct": {
+    "caught": 4,
+    "violations": 30,
+    "false_alarms": 9,
+    "normal": 267,
+    "recall": 0.13333333333333333,
+    "precision": 0.3076923076923077,
+    "f1": 0.18604651162790697
+   },
+   "at_1pct": {
+    "caught": 0,
+    "violations": 30,
+    "false_alarms": 4,
+    "normal": 267,
+    "recall": 0.0,
+    "precision": 0.0,
+    "f1": 0.0
+   },
+   "at_5pct_visible": {
+    "caught": 1,
+    "violations": 3,
+    "false_alarms": 9,
+    "normal": 267,
+    "recall": 0.3333333333333333,
+    "precision": 0.1,
+    "f1": 0.15384615384615383
+   },
+   "step_order_rule_auroc": 0.44244694132334583,
+   "parts_auroc": {
+    "em": 0.614856429463171,
+    "P3": 0.6848938826466916,
+    "P5": 0.7343320848938827
+   },
+   "median_score": {
+    "violation": 0.6483611370151625,
+    "normal": 0.4942493005906124
+   }
+  },
+  "AVD · 조건 G": {
+   "calls": 366,
+   "violations": 41,
+   "normal": 325,
+   "auroc_all": 0.7915196998123828,
+   "auroc_all_ci95": [
+    0.7172820341620745,
+    0.8637778842469933
+   ],
+   "visible_violations": 2,
+   "auroc_visible": 0.25076923076923074,
+   "auroc_visible_ci95": [
+    0.13839809188785843,
+    0.3705952828415711
+   ],
+   "same_tool_min1": {
+    "auroc": 0.029411764705882353,
+    "violations": 2,
+    "pairs": 68,
+    "tools": 1
+   },
+   "same_tool_min3": {
+    "auroc": NaN,
+    "violations": 0,
+    "pairs": 0,
+    "tools": 0
+   },
+   "same_tool_visible_min1": {
+    "auroc": 0.029411764705882353,
+    "violations": 2,
+    "pairs": 68,
+    "tools": 1
+   },
+   "at_5pct": {
+    "caught": 9,
+    "violations": 41,
+    "false_alarms": 10,
+    "normal": 325,
+    "recall": 0.21951219512195122,
+    "precision": 0.47368421052631576,
+    "f1": 0.3
+   },
+   "at_1pct": {
+    "caught": 1,
+    "violations": 41,
+    "false_alarms": 2,
+    "normal": 325,
+    "recall": 0.024390243902439025,
+    "precision": 0.3333333333333333,
+    "f1": 0.04545454545454545
+   },
+   "at_5pct_visible": {
+    "caught": 0,
+    "violations": 2,
+    "false_alarms": 10,
+    "normal": 325,
+    "recall": 0.0,
+    "precision": 0.0,
+    "f1": 0.0
+   },
+   "step_order_rule_auroc": 0.4679924953095685,
+   "parts_auroc": {
+    "em": 0.6311444652908067,
+    "P3": 0.7674671669793621,
+    "P5": 0.7581988742964353
+   },
+   "median_score": {
+    "violation": 0.7498589668313013,
+    "normal": 0.5494393211987244
+   }
+  },
+  "AVD · 조건 X": {
+   "calls": 302,
+   "violations": 0,
+   "normal": 302,
+   "auroc_all": NaN,
+   "auroc_all_ci95": [
+    NaN,
+    NaN
+   ],
+   "visible_violations": 0,
+   "auroc_visible": NaN,
+   "auroc_visible_ci95": [
+    NaN,
+    NaN
+   ],
+   "same_tool_min1": {
+    "auroc": NaN,
+    "violations": 0,
+    "pairs": 0,
+    "tools": 0
+   },
+   "same_tool_min3": {
+    "auroc": NaN,
+    "violations": 0,
+    "pairs": 0,
+    "tools": 0
+   },
+   "same_tool_visible_min1": {
+    "auroc": NaN,
+    "violations": 0,
+    "pairs": 0,
+    "tools": 0
+   },
+   "at_5pct": {
+    "caught": 0,
+    "violations": 0,
+    "false_alarms": 18,
+    "normal": 302,
+    "recall": 0.0,
+    "precision": 0.0,
+    "f1": 0.0
+   },
+   "at_1pct": {
+    "caught": 0,
+    "violations": 0,
+    "false_alarms": 4,
+    "normal": 302,
+    "recall": 0.0,
+    "precision": 0.0,
+    "f1": 0.0
+   },
+   "at_5pct_visible": {
+    "caught": 0,
+    "violations": 0,
+    "false_alarms": 18,
+    "normal": 302,
+    "recall": 0.0,
+    "precision": 0.0,
+    "f1": 0.0
+   },
+   "step_order_rule_auroc": NaN,
+   "parts_auroc": {
+    "em": NaN,
+    "P3": NaN,
+    "P5": NaN
+   },
+   "median_score": {
+    "violation": NaN,
+    "normal": 0.5078604404840028
+   }
+  }
+ },
+ "runs": {
+  "with_violation": 112,
+  "with_violation_alarm_at_a_violating_call": 23,
+  "with_violation_any_alarm": 49,
+  "without_violation": 280,
+  "without_violation_any_alarm": 144,
+  "without_violation_any_alarm_outside_report_tools": 56
+ },
+ "reference_new_split": {
+  "validation_auroc_all": 0.8371863172865993,
+  "test_auroc_all": 0.9133411203699244,
+  "test_auroc_all_same_period": 0.8217857709575948,
+  "test_auroc_visible": 0.9622730118973074,
+  "test_same_tool_all": 0.5976307189542484,
+  "test_at_5pct": {
+   "all": 12.0,
+   "visible": 7.0,
+   "false_alarms": 145.0,
+   "false_alarms_october_share": 0.31724137931034485,
+   "october": 7.0,
+   "november": 5.0,
+   "recall": 0.46153846153846156,
+   "precision": 0.07643312101910828,
+   "f1": 0.13114754098360656,
+   "accuracy": 0.9506211180124223
+  }
+ },
+ "sealed_rule": "^(AV-S(6[1-9]|7\\d|80)-|AVD-20261112-(03|07|10|24|35|36|52|57|74|90)-|AVv2-F(07|11|14)-)",
+ "units": {
+  "scored": 392,
+  "by_group": {
+   "AVD": 320,
+   "AVP": 60,
+   "AVv2": 12
+  },
+  "sealed_excluded": 40,
+  "sealed_excluded_by_group": {
+   "AVD": 40
+  }
+ },
+ "check": {
+  "units_checked": 380,
+  "steps_checked": 1640,
+  "units_not_local": 12
+ },
+ "first_run": {
+  "AVP/realtime": {
+   "same": true,
+   "largest_difference": 0.0
+  },
+  "AVP/realtime_without_report_tools": {
+   "same": true,
+   "largest_difference": 0.0
+  },
+  "AVP/comparison": {
+   "same": true,
+   "largest_difference": 0.0
+  },
+  "AVv2/realtime": {
+   "same": true,
+   "largest_difference": 0.0
+  },
+  "AVv2/realtime_without_report_tools": {
+   "same": true,
+   "largest_difference": 0.0
+  },
+  "AVv2/comparison": {
+   "same": true,
+   "largest_difference": 0.0
+  },
+  "unchanged_groups": true
+ }
+}
