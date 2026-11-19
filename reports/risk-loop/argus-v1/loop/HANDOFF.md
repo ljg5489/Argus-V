@@ -29,6 +29,7 @@
   - 문서: `reports/risk-loop/hf-inventory-1119/README.md`
   - 코드: `experiments/risk_loop/argus_loop/hf_inventory_1119.py`
   - 산출물: `artifacts/risk-loop/hf-inventory-1119/` (git 제외)
+- **푸시**: 2026-11-20 00:07 KST, 사용자 지시("커밋한 거 푸시해")로 `origin/feat/m1-aligned-text-detector`에 푸시했다. main에는 아직 병합하지 않았다.
 
 ## 인수인계 기록 추가 — 2026-11-18 20:19 KST (Claude) — feat/m1-aligned-text-detector를 PR로 main에 병합
 
