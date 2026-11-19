@@ -14,7 +14,9 @@ No model, no score, nothing written to the Hub, no hidden-state value read.
         same revision (artifacts/risk-loop/hf-new-1118/steps.csv), or read here for the few runs with no other record
   * Tool name of a call (report tool or not): the rollout records the earlier builds read from the Hub for the same
     runs (their step lists equal the Hub's), else the step.json itself. Most November label records carry no command.
-  * Sealed units AV-S61~S80 are dropped on sight and never counted.
+  * Sealed units are dropped on their names and never counted: AV-S61~S80, the ten sealed AVD scenarios (40 runs) and
+    the four sealed v3 test scenarios (see SEALED). The first version of this count (commit c6eebf1) knew only
+    AV-S61~S80 and counted the 40 sealed AVD runs.
   * Report-tool calls (submit_result, stop, write_report) are counted apart and do not make a run a violation run
     (the convention of every evaluation since 2026-11-08).
 A run is a violation run when one of its other calls is a violation; a safe run when it has judged calls and none is
@@ -49,7 +51,14 @@ LOCAL_ROLLOUTS = [ROOT / "artifacts/risk-loop/argus-v1-loop/meta/rollouts.jsonl"
                   ROOT / "artifacts/risk-loop/argus-v1-loop-test/meta/rollouts.jsonl",  # from the Hub by earlier builds
                   ROOT / "artifacts/risk-loop/resplit-1117/meta/rollouts.jsonl"]
 MAX_FETCH = 400 * 2**20                     # read the step.json of the few remaining runs only below this transfer
-SEALED = re.compile(r"^AV-S(6[1-9]|7\d|80)-")
+# Sealed units, matched on the run name before anything of theirs is read:
+#   AV-S61~S80; the ten sealed AVD scenarios x conditions B/D/G/X = 40 runs (argus_v_emp_new_data_nosealed.py, user
+#   instruction 2026-11-19 "봉인 40개 빼고"); the four sealed v3 test scenarios (Scenario/scenario-splits.v3.json; none
+#   is on the Hub). The older AVv2-F07/F11/F14 scenarios are not sealed: resplit-1117 train / validation hold them.
+SEALED_AVD = ("03", "07", "10", "24", "35", "36", "52", "57", "74", "90")
+SEALED_V3 = ("AVv2-F07-PRC-02", "AVv2-F11-HRI-02", "AVv2-F11-PUB-02", "AVv2-F14-OPS-02")
+SEALED = re.compile(r"^(AV-S(6[1-9]|7\d|80)-|AVD-20261112-(" + "|".join(SEALED_AVD) + r")-|("
+                    + "|".join(re.escape(s) for s in SEALED_V3) + r")-)")
 REPORT_TOOLS = frozenset(B.REPORT_TOOLS)
 STEP_JSON = re.compile(r"^rollout/steps/step_(\d+)/step\.json$")
 UNIT = re.compile(r"^(.*?)-(C\d+|cell\d+|pilot[A-Z]+|prompt|clear|obstacle|[A-Z])-s(\d+)-[0-9a-f]{8}$")
@@ -136,7 +145,7 @@ def main():
     env = {}
     with open(NEW_STEPS, newline="", encoding="utf-8") as h:
         for r in csv.DictReader(h):
-            if r["step_index"] == "":
+            if SEALED.match(r["unit_id"]) or r["step_index"] == "":   # sealed runs dropped on the name first
                 continue
             env[(r["unit_id"], int(r["step_index"]))] = {"label": None if r["policy_label"] == "" else int(r["policy_label"]),
                                                          "status": "env_verdict", "tool": r["tool"] or r["kind"]}
