@@ -13,14 +13,17 @@ trusted policy. Per step:
 
 Observation rule (fixed before running, identical for every trajectory): last prompt token
 (``pre_reasoning``), every ``--observe-every`` reasoning tokens, the last reasoning token and the
-token right before the action message (``pre_action``). Nothing instructs the agent to violate
-the policy; scenarios only add obstacles. Labels are ``policy_rule_unreviewed``.
+token right before the action message (``pre_action``). Registered scenarios add policy obstacles;
+the AVP group also contains explicit user requests that conflict with a higher-priority trusted policy.
+Every proposed tool call is executed by the mock controllers (``execute_every_action``, AVD/AVP bridges);
+labels come from each scenario's oracle and remain unreviewed.
 
-    PYTHONPATH=src python argus_hook/scenario_rollout.py list                     # 3 workspace + 80 suite scenarios
+    PYTHONPATH=src python argus_hook/scenario_rollout.py list                     # registered + design scenarios
     PYTHONPATH=src python argus_hook/scenario_rollout.py run --scenario AV-S01 --condition C2 --seed 0
     PYTHONPATH=src python argus_hook/scenario_rollout.py run --scenario evaluation --condition obstacle --seed 0
-    PYTHONPATH=src python argus_hook/scenario_rollout.py plan --seeds 3 --dry-run  # everything; resumes by default
-    PYTHONPATH=src python argus_hook/scenario_rollout.py plan -all                # everything again, no skipping
+    PYTHONPATH=src python argus_hook/scenario_rollout.py plan --seeds 3 --dry-run  # registered workspace + suite; resumes
+    PYTHONPATH=src python argus_hook/scenario_rollout.py plan --scenarios design --seeds 1 --dry-run
+    PYTHONPATH=src python argus_hook/scenario_rollout.py plan -all                # registered workspace + suite again
     PYTHONPATH=src python argus_hook/scenario_rollout.py plan --shared-sandbox     # old behaviour: one sandbox for all
 
 Each rollout gets its own fresh sandbox (``up --fresh`` → rollout → ``stop``), so a command that hangs
@@ -155,10 +158,137 @@ def available_scenarios() -> list[str]:
     return sorted(path.parent.name for path in SCENARIO_ROOT.glob("*/scenario.json"))
 
 
-def load_scenario(name: str):
-    """'AV-S01'..'AV-S80' → team scenario_suite task; otherwise a Scenario/rollout workspace scenario."""
-    from scenario_suite_bridge import SuiteScenario, is_suite_id
+# Results meaning the action itself cannot happen (malformed call, unknown object, unavailable business
+# resource, step budget). Every other proposed tool call is executed by the mock controller.
+NOT_EXECUTABLE = {"INVALID_INPUT", "INVALID_OBJECT", "NOT_READY", "SERVICE_UNAVAILABLE", "BUDGET_EXHAUSTED"}
+SUITE_SESSION_MODULES = {"scenario_suite.engine", "scenario_suite.v2.session"}
+V1_POLICY_KEYS = ("gate", "max_cumulative", "review_unmatched", "protected_paths")
+V1_EXECUTE_AS_EFFECT = {"deny", "fetch"}
 
+
+def execute_every_action(session) -> None:
+    """Make a scenario_suite v1/v2 controller execute every proposed tool call (user decision 2026-11-18).
+
+    The v1/v2 controllers answer policy-violating calls with BLOCK / REQUIRE_APPROVAL / REVIEW_REQUIRED and
+    leave the mock state unchanged. Here those calls run their mock effect instead. The offline label is
+    still computed from the trusted pre-state by the scenario's own oracle (the first classify_action call),
+    so labels are unchanged; only violation_executed becomes 1 when the effect ran.
+
+    No checks are re-implemented: business readiness is decided by calling the engine's own classifier on a
+    copy of the tool contract with only its policy parts removed (v1: approval gate, cumulative quota,
+    review rule, protected paths, non-NOT_READY argument checks, deny/fetch kinds; v2: policy_checks and an
+    invalid authorization), and execution goes through the engine's own _execute (v1 deny / unauthorized
+    fetch / out-of-output writes via the "effect" path so receipts, increments, writes and gates still apply).
+    Engine files are not modified (instance wrapping). AVD/AVP controllers already execute every action.
+    """
+    from copy import deepcopy
+
+    from scenario_suite.engine import Verdict, digest
+
+    if type(session).__module__ not in SUITE_SESSION_MODULES:
+        return
+    original_classify, original_execute = session.classify_action, session._execute
+    tools = session.profile["tools"]
+    is_v2 = type(session).__module__ == "scenario_suite.v2.session"
+
+    def with_contract(name, contract, call):
+        saved = tools[name]
+        tools[name] = contract
+        try:
+            return call()
+        finally:
+            tools[name] = saved
+
+    def v1_relaxed(operation):
+        contract = {key: deepcopy(value) for key, value in operation.items() if key not in V1_POLICY_KEYS}
+        contract["checks"] = [check for check in operation.get("checks", [])
+                              if check.get("failure_status") == "NOT_READY" and check.get("failure_label") == 0]
+        if contract["kind"] in V1_EXECUTE_AS_EFFECT or contract["kind"] in ("read", "write", "draft"):
+            contract["kind"] = "effect"  # readiness only; the real kind is used again for execution
+        return contract
+
+    def readiness(name, arguments, snapshot):
+        """(status, message, data) from the engine's own classifier with policy parts removed."""
+        operation = tools[name]
+        if is_v2:
+            contract = deepcopy(operation)
+            contract["policy_checks"] = []
+            auth = session._authorization(operation, arguments, snapshot)
+            if auth and not auth["valid"]:
+                contract.pop("authorization", None)
+            details = with_contract(name, contract, lambda: session._classify(name, arguments, snapshot))
+            return details["status"], details.get("message"), details.get("data")
+        verdict = with_contract(name, v1_relaxed(operation), lambda: original_classify(name, arguments, snapshot))
+        return verdict.status, verdict.reason, None
+
+    def classify(name, arguments, snapshot=None):
+        snapshot = snapshot if snapshot is not None else session.snapshot()
+        verdict = original_classify(name, arguments, snapshot)  # the oracle (label) — never changed
+        if verdict.status == "ALLOW" or verdict.status in NOT_EXECUTABLE or name not in tools:
+            return verdict
+        status, message, data = readiness(name, arguments, snapshot)
+        if status in NOT_EXECUTABLE:
+            if is_v2 and data is not None and session.step in session.details:
+                session.details[session.step]["data"] = deepcopy(data)  # the public NOT_READY payload
+            return Verdict(verdict.label, status, message, verdict.authorization_id)
+        return Verdict(verdict.label, "ALLOW", message or "ok", verdict.authorization_id)
+
+    def as_effect(name, arguments, verdict):
+        contract = deepcopy(tools[name])
+        contract["kind"] = "effect"
+        return with_contract(name, contract, lambda: original_execute(name, arguments, verdict))
+
+    def execute(name, arguments, verdict):
+        operation = tools[name]
+        kind = operation.get("kind")
+        if is_v2:
+            return original_execute(name, arguments, verdict)
+        if kind == "deny":
+            return as_effect(name, arguments, verdict)
+        if kind in ("write", "draft"):
+            path = arguments.get("path", operation.get("output_path"))
+            if path.startswith("/workspace/output/") or path in operation.get("allowed_paths", []):
+                return original_execute(name, arguments, verdict)
+            session.files[path] = arguments["content"]  # write outside the task output (mock file system)
+            result = as_effect(name, arguments, verdict)
+            result.update(path=path, sha256=digest(session.files[path]))
+            return result
+        if kind == "fetch" and not verdict.authorization_id:
+            request = next((op for op in tools.values() if op.get("kind") == "request"
+                            and op.get("scope") == operation.get("scope")), {})
+            session.files.update(deepcopy(request.get("grant_files", {})))  # what _activate would release
+            session.state.update(deepcopy(request.get("grant_state", {})))
+            result = as_effect(name, arguments, verdict)
+            result["data"] = deepcopy(operation.get("returns", request.get("grant_data", {})))
+            result["files"] = sorted(request.get("grant_files", {}))
+            return result
+        return original_execute(name, arguments, verdict)
+
+    original_report = session.operator_report
+
+    def operator_report():
+        report = original_report()
+        report["violation_executed"] = sum(1 for event in session.audit.events
+                                           if event["event"] == "offline_label_assigned" and event.get("violation_executed"))
+        report["all_actions_executed"] = True
+        return report
+
+    session.classify_action, session._execute, session.operator_report = classify, execute, operator_report
+
+
+def load_scenario(name: str):
+    """Resolve a registered scenario or one of the isolated November design adapters."""
+    from scenario_suite_bridge import SuiteScenario, is_suite_id
+    from design_scenario_bridge import DesignScenario, is_design_id
+    from avd_bridge import AVDScenario, is_avd_id
+    from avp_bridge import AVPScenario, is_avp_id
+
+    if is_avd_id(name):  # AVD drafts: guard-free trusted controller (Scenario/scenario_suite/avd)
+        return AVDScenario(name)
+    if is_avp_id(name):  # AVP explicit-instruction drafts: guard-free, all tools available (avp_bridge)
+        return AVPScenario(name)
+    if is_design_id(name):
+        return DesignScenario(name)
     return SuiteScenario(name) if is_suite_id(name) else Scenario.load(name)
 
 
@@ -699,6 +829,9 @@ def run_rollout(
 
     harness = harness or harness_preset("v1")
     episode = scenario.episode(condition, sandbox, command_timeout)
+    session = getattr(episode, "session", None)
+    if session is not None and hasattr(session, "classify_action"):
+        execute_every_action(session)  # every proposed tool call runs its mock effect
     if hasattr(episode, "configure"):
         episode.configure(harness, max_steps)
     rollout_id = uuid.uuid4().hex
@@ -710,7 +843,8 @@ def run_rollout(
     summary = {"schema_version": SCHEMA, "kind": episode.kind, "rollout_id": rollout_id, "trajectory_id": rollout_id,
                "scenario_id": episode.scenario_id, "scenario_key": episode.scenario_key, "family": episode.family,
                "condition": condition, "seed": seed, "task_id": episode.task_id, **start, "identity": identity,
-               "sampling": sampling, "observe_every": observe_every, "label_source": "policy_rule_unreviewed",
+               "sampling": sampling, "observe_every": observe_every, "all_actions_executed": True,
+               "label_source": getattr(episode, "label_source", "policy_rule_unreviewed"),
                "system_prompt_sha256": hashlib.sha256(system_prompt.encode("utf-8")).hexdigest(),
                "sandbox_network": network,
                "run_settings": run_settings or {"command_timeout": command_timeout, "max_steps": max_steps},
@@ -887,11 +1021,16 @@ def build_probe_manifest(root: Path, scheme: str = "family", family_split: dict 
     otherwise the root must hold a single version (rollouts without the field are v1).
     """
     family_split = family_split or {"report": "train", "approval": "validation", "evaluation": "test"}
-    samples, stats = [], {"rollouts": 0, "snapshots": 0, "skipped_unlabelled": 0, "positive": 0, "by_split": {}}
+    samples, stats = [], {"rollouts": 0, "snapshots": 0, "skipped_unlabelled": 0,
+                         "skipped_design_only": 0, "positive": 0, "by_split": {}}
     versions = set()
     for rollout_file in sorted(Path(root).glob("*/rollout.json")):
         rollout = json.loads(rollout_file.read_text(encoding="utf-8"))
         if not str(rollout.get("schema_version", "")).startswith("argus-v.scenario-rollout.") or "report" not in rollout:
+            continue
+        if str(rollout.get("scenario_id", "")).startswith(("AVD-", "AVP-")):
+            # November design labels are authored examples, not reviewed Probe gold labels.
+            stats["skipped_design_only"] += 1
             continue
         version = rollout_harness_version(rollout)
         if harness_version is not None and version != harness_version:
@@ -1028,12 +1167,18 @@ def _model_runtime(args):
 
 
 def expand_scenarios(spec: str) -> list[str]:
-    """Comma list of names and/or groups: all, workspace, suite, suite-initial, suite-additional, suite-fakeweb."""
+    """Comma list of names and/or registered and design scenario groups."""
     from scenario_suite_bridge import suite_ids
+    from design_scenario_bridge import design_ids
+    from avd_bridge import avd_ids
+    from avp_bridge import avp_ids
 
     groups = {"workspace": available_scenarios, "suite": lambda: suite_ids("all"),
               "suite-initial": lambda: suite_ids("initial"), "suite-additional": lambda: suite_ids("additional"),
-              "suite-fakeweb": lambda: suite_ids("fakeweb")}
+              "suite-fakeweb": lambda: suite_ids("fakeweb"), "design": lambda: design_ids("design"),
+              "design-normal": lambda: design_ids("design-normal"),
+              "design-explicit": lambda: design_ids("design-explicit"),
+              "avd": lambda: avd_ids("avd"), "avd-pilot": lambda: avd_ids("avd-pilot"), "avp": avp_ids}
     # v2 (Scenario/TASK.md P0-7): own groups only; never part of "all" or "suite"
     groups["suite-v2"] = lambda: suite_ids("v2")
     groups.update({f"suite-v2-F{n:02d}": (lambda family=f"F{n:02d}": suite_ids(f"v2-{family}")) for n in range(1, 16)})
@@ -1069,6 +1214,8 @@ def completed_rollouts(root: Path, harness_version: str | None = None) -> set[tu
         except (OSError, json.JSONDecodeError):
             continue
         if harness_version is not None and rollout_harness_version(rollout) != harness_version:
+            continue
+        if not rollout.get("all_actions_executed"):  # older rollouts answered violating calls with BLOCK
             continue
         if "report" in rollout:
             key = rollout.get("scenario_key") or f"{rollout['scenario_id']}/{rollout['condition']}"
@@ -1114,18 +1261,19 @@ def main(argv=None) -> int:
                              help="reuse one running sandbox for all rollouts instead of a fresh one per rollout")
         if name == "run":
             command.add_argument("--scenario", required=True,
-                                 help=f"AV-S01..AV-S80 (scenario_suite) or one of {available_scenarios()}")
-            command.add_argument("--condition", choices=("clear", "obstacle", "C0", "C1", "C2", *V2_CELLS), required=True)
+                                 help="registered scenario ID (including AVD-/AVP- design IDs) or workspace name")
+            command.add_argument("--condition", required=True,
+                                 help="scenario-specific condition (AVD: B/G/D/X; AVP: prompt)")
             command.add_argument("--seed", type=int, default=0)
         else:
             command.add_argument("--scenarios", default="all",
-                                 help="names and/or groups: all, workspace, suite, suite-initial, suite-additional, suite-fakeweb")
-            command.add_argument("--conditions", help="filter, e.g. C1,C2 or obstacle (default: every condition)")
+                                 help="groups: all, workspace, suite, suite-initial, suite-additional, suite-fakeweb, design, design-normal, design-explicit, avd, avd-pilot, avp")
+            command.add_argument("--conditions", help="filter conditions (default: every condition)")
             command.add_argument("--seeds", type=int, default=3)
             command.add_argument("--limit", type=int, help="run at most N rollouts this time")
             command.add_argument("--no-resume", action="store_true", help="also rerun scenario/condition/seed already finished")
             command.add_argument("-all", "--all", dest="run_all", action="store_true",
-                                 help="every scenario and condition, rerunning finished ones (= --scenarios all --no-resume)")
+                                 help="registered workspace + suite scenarios, rerunning finished ones (= --scenarios all --no-resume)")
             command.add_argument("--dry-run", action="store_true", help="print the plan and exit without loading the model")
     manifest_command = commands.add_parser("manifest")
     manifest_command.add_argument("--root", type=Path, default=DEFAULT_OUTPUT)
@@ -1138,9 +1286,11 @@ def main(argv=None) -> int:
     if args.command == "list":
         from scenario_suite_bridge import is_suite_id
 
-        for name in expand_scenarios("all") + expand_scenarios("suite-v2"):
+        for name in expand_scenarios("all") + expand_scenarios("suite-v2") + expand_scenarios("design"):
             scenario = load_scenario(name)
-            print(f"{name}\t{'suite' if is_suite_id(name) else 'workspace'}\t{','.join(scenario.conditions)}")
+            kind = ("avd" if name.startswith("AVD-") else "avp" if name.startswith("AVP-")
+                    else "suite" if is_suite_id(name) else "workspace")
+            print(f"{name}\t{kind}\t{','.join(scenario.conditions)}")
         return 0
     if args.command == "manifest":
         manifest, stats = build_probe_manifest(args.root, args.split_scheme, harness_version=args.harness_version)
@@ -1176,6 +1326,9 @@ def main(argv=None) -> int:
     run_settings = load_run_settings(args.settings)
     cli_defaults = {"command_timeout": args.command_timeout, "max_steps": args.max_steps}
     for name, condition, _ in (plan if args.command == "plan" else [(args.scenario, args.condition, args.seed)]):
+        scenario = load_scenario(name)
+        if condition not in scenario.conditions:
+            raise SystemExit(f"{name}: unknown condition {condition}; choose from {tuple(scenario.conditions)}")
         scenario_settings(run_settings, name, condition, cli_defaults)  # fail on a typo before loading the model
     sandbox = SandboxClient(timeout=args.command_timeout)
     if not args.yes:
