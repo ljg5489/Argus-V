@@ -71,22 +71,39 @@ def test_sandbox_run_adds_the_time_limit(monkeypatch, tmp_path):
 
 
 FAKE_WORKER = textwrap.dedent("""
-    import json, sys
+    import json, os, sys, time
+    hold = "--hold" in sys.argv            # a task runs until it is cancelled
+    stuck = "--stuck" in sys.argv          # the shutdown request is ignored
+    slow_exit = "--slow-exit" in sys.argv  # exiting takes a while, as freeing the GPU does
     def emit(**event):
         print("ARGUS_EVENT " + json.dumps(event), flush=True)
     print("loading weights", flush=True)
-    emit(type="worker", state="ready", message="ok", vram_gb=12.5, cut_offs={"5%": 0.86, "1%": 0.93})
+    if "--slow-load" in sys.argv:
+        time.sleep(30)
+    emit(type="worker", state="ready", message="ok", vram_gb=12.5, pid=os.getpid(), cut_offs={"5%": 0.86, "1%": 0.93})
+    session = None
     for line in sys.stdin:
         message = json.loads(line)
-        if message["cmd"] == "shutdown":
-            break
         if message["cmd"] == "task":
             session = message["session"]
             emit(type="task_start", session=session, task=message["task"], max_steps=message["max_steps"])
             emit(type="verdict", session=session, step=1, score=0.5)
-            emit(type="task_end", session=session, termination="stop", steps=1, alarms=0)
+            if not hold:
+                emit(type="task_end", session=session, termination="stop", steps=1, alarms=0, vram_gb=12.6)
+                session = None
+        elif message["cmd"] in ("cancel", "shutdown") and session:
+            emit(type="task_end", session=session, termination="cancelled", steps=0, alarms=0)
+            session = None
+        if message["cmd"] == "shutdown" and not stuck:
+            break
+    if slow_exit:
+        time.sleep(1.5)
     emit(type="worker", state="stopped", message="bye")
 """)
+
+
+def worker(*flags):
+    return [sys.executable, "-c", FAKE_WORKER, *flags]
 
 
 def collect(agent, after, done, timeout=20):
@@ -100,21 +117,77 @@ def collect(agent, after, done, timeout=20):
     raise AssertionError(f"events so far: {seen}")
 
 
-def test_service_runs_a_task_and_unloads(tmp_path):
-    agent = LS.LiveAgent([sys.executable, "-c", FAKE_WORKER], tmp_path)
+def exited(seen):
+    return any(event["type"] == "worker" and event["state"] == "exited" for event in seen)
+
+
+def test_service_unloads_the_model_when_the_task_ends(tmp_path):
+    agent = LS.LiveAgent(worker(), tmp_path)
     started = agent.submit("list files", 3)
     with pytest.raises(ValueError):  # one task at a time
         agent.submit("another", 3)
-    events = collect(agent, started["after"], lambda seen: any(e["type"] == "task_end" for e in seen))
+    events = collect(agent, started["after"], exited)
     kinds = [event["type"] for event in events]
     assert kinds.index("task_queued") < kinds.index("task_start") < kinds.index("task_end")
     assert {"type": "log", "text": "loading weights"}.items() <= next(e for e in events if e["type"] == "log").items()
     assert all(event["session"] == started["session"] for event in events if event["type"].startswith("task"))
+    # the task_end shuts the worker down at once: the process exits and its GPU memory with it
+    assert {"type": "worker", "state": "stopping"}.items() <= events[kinds.index("task_end") + 1].items()
+    assert [event["state"] for event in events if event["type"] == "worker"][-3:] == ["stopping", "stopped", "exited"]
+    assert events[-1]["code"] == 0 and events[-1]["unloaded"]
     status = agent.status()
-    assert status["state"] == "ready" and not status["busy"] and status["info"]["vram_gb"] == 12.5
+    assert status["state"] == "off" and not status["alive"] and not status["busy"] and not agent.running()
+    assert "vram_gb" not in status["info"] and status["info"]["cut_offs"] == {"5%": 0.86, "1%": 0.93}
     replay = agent.events_after(started["after"])["events"]  # a reloaded page rebuilds the task from here
     assert [event["type"] for event in replay][:1] == ["task_queued"]
-    assert agent.stop(timeout=10)["state"] == "off" and not agent.running()
+    assert agent.stop()["state"] == "off"  # nothing left to unload
+
+
+def test_a_task_sent_while_the_model_unloads_gets_a_new_worker(tmp_path):
+    agent = LS.LiveAgent(worker("--slow-exit"), tmp_path)
+    first = agent.submit("one", 1)
+    collect(agent, first["after"], lambda seen: any(e["type"] == "task_end" for e in seen))
+    assert agent.status()["state"] == "stopping" and agent.running()
+    second = agent.submit("two", 1)  # waits for the first worker to exit, then starts another one
+    events = collect(agent, second["after"], exited)
+    ends = [event for event in events if event["type"] == "task_end"]
+    assert [(e["session"], e["termination"]) for e in ends] == [(second["session"], "stop")]
+    ready = [e for e in agent.events_after(0)["events"] if e["type"] == "worker" and e["state"] == "ready"]
+    assert len(ready) == 2 and ready[0]["pid"] != ready[1]["pid"]
+    assert agent.status()["state"] == "off" and not agent.running()
+
+
+def test_a_worker_that_does_not_exit_is_ended(tmp_path):
+    agent = LS.LiveAgent(worker("--stuck"), tmp_path, unload_timeout=1)
+    started = agent.submit("one", 1)
+    events = collect(agent, started["after"], exited)
+    assert events[-1]["code"] != 0 and events[-1]["unloaded"]
+    status = agent.status()
+    assert status["state"] == "off" and not status["alive"] and not status["busy"]
+
+
+@pytest.mark.parametrize("end", ["cancel", "stop"])
+def test_cancel_or_unload_ends_a_running_task_and_unloads(tmp_path, end):
+    agent = LS.LiveAgent(worker("--hold"), tmp_path)
+    started = agent.submit("one", 1)
+    collect(agent, started["after"], lambda seen: any(e["type"] == "verdict" for e in seen))
+    getattr(agent, end)()
+    events = collect(agent, started["after"], exited)
+    assert [e["termination"] for e in events if e["type"] == "task_end"] == ["cancelled"]
+    status = agent.status()
+    assert status["state"] == "off" and not status["alive"] and not status["busy"] and status["exit_code"] == 0
+
+
+def test_cancel_while_loading_ends_the_worker_at_once(tmp_path):
+    agent = LS.LiveAgent(worker("--slow-load"), tmp_path)
+    started = agent.submit("one", 1)
+    begun = time.monotonic()
+    agent.cancel()
+    events = collect(agent, started["after"], lambda seen: any(e["type"] == "task_end" for e in seen), timeout=10)
+    assert time.monotonic() - begun < 10  # not after the 30-second load
+    assert [e["termination"] for e in events if e["type"] == "task_end"] == ["cancelled"]
+    status = agent.status()
+    assert status["state"] == "off" and not status["alive"] and not status["busy"]
 
 
 def test_worker_exit_ends_the_running_task(tmp_path):
@@ -124,6 +197,17 @@ def test_worker_exit_ends_the_running_task(tmp_path):
     assert events[-1]["termination"] == "worker_exited"
     status = agent.status()
     assert status["state"] == "failed" and status["exit_code"] == 3 and not status["busy"]
+
+
+def test_a_reported_failure_stays_visible(tmp_path):
+    script = ('import json, sys, time; time.sleep(0.5); print("ARGUS_EVENT " + json.dumps({"type": "worker", '
+              '"state": "failed", "message": "OutOfMemoryError: CUDA out of memory"}), flush=True); sys.exit(1)')
+    agent = LS.LiveAgent([sys.executable, "-c", script], tmp_path)
+    started = agent.submit("one", 1)
+    events = collect(agent, started["after"], exited)
+    assert [e["termination"] for e in events if e["type"] == "task_end"] == ["worker_failed"]
+    status = agent.status()
+    assert status["state"] == "failed" and "out of memory" in status["message"] and not status["alive"]
 
 
 def test_events_can_carry_a_kind_field(capsys):

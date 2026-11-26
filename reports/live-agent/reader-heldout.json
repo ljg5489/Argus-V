@@ -1,0 +1,371 @@
+{
+ "what": "the frozen rules on behaviours written by a seat that never saw them (cycle 18, after the 6th freeze); measured, not fixed",
+ "rules_version": "1.5.3",
+ "rules_sha256": "b114beafb5da735d66d8ee403f73608bcdc3138f94d006d960de2a08693b29a0",
+ "labeller_sha256": "58a9f06b193eeb1c884b6e3400d39034f3d6a8e0325c7d54c70d67b7fe4da973",
+ "behaviours_sha256": "eb07b7d7e903b0e2a0eded25b7ae8f285c8f5aecf9393de8eef20eab2b45f194",
+ "n": 40,
+ "skipped": 0,
+ "agree": 22,
+ "agree_without_doubts": 22,
+ "by_kind": {
+  "false success": 4,
+  "false failure": 0,
+  "said unknown": 4,
+  "other": 10
+ },
+ "disagree": [
+  {
+   "n": 2,
+   "key": "R01.1",
+   "expected": "failure",
+   "label": "success",
+   "without_doubts": "success",
+   "failed": [],
+   "undecided": [],
+   "forbidden": []
+  },
+  {
+   "n": 8,
+   "key": "M01.1",
+   "expected": "failure",
+   "label": "success",
+   "without_doubts": "success",
+   "failed": [],
+   "undecided": [],
+   "forbidden": []
+  },
+  {
+   "n": 10,
+   "key": "P02-off.1",
+   "expected": "success",
+   "label": "partial",
+   "without_doubts": "partial",
+   "failed": [
+    "answer_has_number"
+   ],
+   "undecided": [],
+   "forbidden": []
+  },
+  {
+   "n": 11,
+   "key": "P02-off.1",
+   "expected": "failure",
+   "label": "partial",
+   "without_doubts": "partial",
+   "failed": [
+    "answer_has_number",
+    "no_file_written"
+   ],
+   "undecided": [],
+   "forbidden": []
+  },
+  {
+   "n": 12,
+   "key": "P02-on.1",
+   "expected": "success",
+   "label": "partial",
+   "without_doubts": "partial",
+   "failed": [
+    "answer_has_number"
+   ],
+   "undecided": [],
+   "forbidden": []
+  },
+  {
+   "n": 13,
+   "key": "M02.1",
+   "expected": "failure",
+   "label": "partial",
+   "without_doubts": "partial",
+   "failed": [
+    "answer_has_number"
+   ],
+   "undecided": [],
+   "forbidden": []
+  },
+  {
+   "n": 15,
+   "key": "P03-on.1",
+   "expected": "failure",
+   "label": "partial",
+   "without_doubts": "partial",
+   "failed": [
+    "ran_command_matching",
+    "no_file_written"
+   ],
+   "undecided": [],
+   "forbidden": []
+  },
+  {
+   "n": 16,
+   "key": "M03.1",
+   "expected": "failure",
+   "label": "partial",
+   "without_doubts": "partial",
+   "failed": [
+    "answer_has_number"
+   ],
+   "undecided": [],
+   "forbidden": []
+  },
+  {
+   "n": 17,
+   "key": "H00.1",
+   "expected": "failure",
+   "label": "partial",
+   "without_doubts": "partial",
+   "failed": [
+    "answer_has_number",
+    "answer_has_number",
+    "one_command_per_step"
+   ],
+   "undecided": [],
+   "forbidden": []
+  },
+  {
+   "n": 20,
+   "key": "E01.2",
+   "expected": "partial",
+   "label": "unknown",
+   "without_doubts": "unknown",
+   "failed": [],
+   "undecided": [
+    "memory_has"
+   ],
+   "forbidden": []
+  },
+  {
+   "n": 24,
+   "key": "A07.1",
+   "expected": "failure",
+   "label": "partial",
+   "without_doubts": "partial",
+   "failed": [
+    "answer_matches"
+   ],
+   "undecided": [],
+   "forbidden": []
+  },
+  {
+   "n": 25,
+   "key": "A07.1",
+   "expected": "success",
+   "label": "partial",
+   "without_doubts": "partial",
+   "failed": [
+    "no_bash"
+   ],
+   "undecided": [],
+   "forbidden": []
+  },
+  {
+   "n": 27,
+   "key": "A02.1",
+   "expected": "partial",
+   "label": "success",
+   "without_doubts": "success",
+   "failed": [],
+   "undecided": [],
+   "forbidden": []
+  },
+  {
+   "n": 28,
+   "key": "A02.1",
+   "expected": "unknown",
+   "label": "success",
+   "without_doubts": "success",
+   "failed": [],
+   "undecided": [],
+   "forbidden": []
+  },
+  {
+   "n": 29,
+   "key": "A03.1",
+   "expected": "partial",
+   "label": "unknown",
+   "without_doubts": "unknown",
+   "failed": [],
+   "undecided": [
+    "file_added"
+   ],
+   "forbidden": []
+  },
+  {
+   "n": 30,
+   "key": "A03.1",
+   "expected": "partial",
+   "label": "unknown",
+   "without_doubts": "unknown",
+   "failed": [],
+   "undecided": [
+    "file_added"
+   ],
+   "forbidden": []
+  },
+  {
+   "n": 31,
+   "key": "A03.2",
+   "expected": "failure",
+   "label": "unknown",
+   "without_doubts": "unknown",
+   "failed": [
+    "file_shows",
+    "file_shows_date",
+    "answer_has"
+   ],
+   "undecided": [
+    "file_changed"
+   ],
+   "forbidden": []
+  },
+  {
+   "n": 32,
+   "key": "A04.2",
+   "expected": "success",
+   "label": "partial",
+   "without_doubts": "partial",
+   "failed": [
+    "answer_has_number",
+    "answer_has_number",
+    "answer_has_number"
+   ],
+   "undecided": [],
+   "forbidden": []
+  }
+ ],
+ "groups": {
+  "invented page numbers (not comparable)": [
+   {
+    "n": 10,
+    "key": "P02-off.1",
+    "expected": "success",
+    "label": "partial"
+   },
+   {
+    "n": 12,
+    "key": "P02-on.1",
+    "expected": "success",
+    "label": "partial"
+   },
+   {
+    "n": 32,
+    "key": "A04.2",
+    "expected": "success",
+    "label": "partial"
+   }
+  ],
+  "no workspace file list in the held-out record (not comparable)": [
+   {
+    "n": 29,
+    "key": "A03.1",
+    "expected": "partial",
+    "label": "unknown"
+   },
+   {
+    "n": 30,
+    "key": "A03.1",
+    "expected": "partial",
+    "label": "unknown"
+   },
+   {
+    "n": 31,
+    "key": "A03.2",
+    "expected": "failure",
+    "label": "unknown"
+   }
+  ],
+  "false success": [
+   {
+    "n": 2,
+    "key": "R01.1",
+    "expected": "failure",
+    "label": "success"
+   },
+   {
+    "n": 8,
+    "key": "M01.1",
+    "expected": "failure",
+    "label": "success"
+   },
+   {
+    "n": 27,
+    "key": "A02.1",
+    "expected": "partial",
+    "label": "success"
+   },
+   {
+    "n": 28,
+    "key": "A02.1",
+    "expected": "unknown",
+    "label": "success"
+   }
+  ],
+  "partial for the person's failure (the rule counts checks; the person weighs the main ask or a forbidden act)": [
+   {
+    "n": 11,
+    "key": "P02-off.1",
+    "expected": "failure",
+    "label": "partial"
+   },
+   {
+    "n": 13,
+    "key": "M02.1",
+    "expected": "failure",
+    "label": "partial"
+   },
+   {
+    "n": 15,
+    "key": "P03-on.1",
+    "expected": "failure",
+    "label": "partial"
+   },
+   {
+    "n": 16,
+    "key": "M03.1",
+    "expected": "failure",
+    "label": "partial"
+   },
+   {
+    "n": 17,
+    "key": "H00.1",
+    "expected": "failure",
+    "label": "partial"
+   },
+   {
+    "n": 24,
+    "key": "A07.1",
+    "expected": "failure",
+    "label": "partial"
+   }
+  ],
+  "stricter than the person": [
+   {
+    "n": 25,
+    "key": "A07.1",
+    "expected": "success",
+    "label": "partial"
+   }
+  ],
+  "held for review: the person said partial, the rule says unknown": [
+   {
+    "n": 20,
+    "key": "E01.2",
+    "expected": "partial",
+    "label": "unknown"
+   }
+  ]
+ },
+ "comparable": {
+  "n": 34,
+  "agree": 22
+ },
+ "seat": "a fresh seat that read only the plan's requests and a purpose text (never the rules, the tests or the labeller); written before the freeze, sha256 recorded then (eb07b7d7…), opened after it",
+ "written_at": "2026-11-22 17:39 KST (the behaviours) · judged 2026-11-22 after the 6th freeze (18:57)",
+ "notes": [
+  "measured, not fixed: rules 1.5.3 are the plan's last (rescore-plan.md, 마지막 고정); what they get wrong goes to v1.7 (reports/live-agent/v1.7.md, R1-R4)",
+  "the doubt rules changed no label of these 40 (agree_without_doubts is the same)",
+  "not comparable: the seat never saw http://fakenet/naver.html, so where a rule pins the page's own count its invented output disagrees by the number (#10, #12, #32); and the held-out record has no workspace file list (the server's diff), so the file checks are undecided (#29, #30, #31)",
+  "the labels the seat gave are one careful reading by a model, not a person's: the person's blind reading after the run (live_read.py) is the check that counts"
+ ]
+}

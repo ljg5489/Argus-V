@@ -1,0 +1,88 @@
+{
+ "plan": "first-run-v1.6",
+ "target_lock_sha": "02a5b7ed4a7c66e4",
+ "files": {
+  "reports/live-agent/agent-outcomes.json": "b114beafb5da735d66d8ee403f73608bcdc3138f94d006d960de2a08693b29a0",
+  "argus_hook/live_outcomes.py": "58a9f06b193eeb1c884b6e3400d39034f3d6a8e0325c7d54c70d67b7fe4da973",
+  "argus_hook/live_counterfactual.py": "b8f99a6857630199f1a62cd9c885ef8ae8a36ef835fa38cb54da0099155ab5ea",
+  "reports/live-agent/rescore-plan.md": "b8999123e08d5839ccc11488436cbb3e8e3747c1b03074fc8611fc666032cd18",
+  "argus_hook/live_prereg.py": "9391015d32ec93e3e0cfe03b9799ab14ca604a402d5ae256fb483960619c40b5",
+  "argus_hook/live_readout.py": "d4d247cd7064372803363affc961780d94b3074ef3ce5ddce3c63f1dca8146b4",
+  "argus_hook/live_witness.py": "e904566da74caa7f5108a9ce7a1ffd651597ec04101030de5aebd52e847d9e37",
+  "argus_hook/live_read.py": "f790158895bac72256d045564e2757f56318c3ad9f36b851d6828eabe2be31f6"
+ },
+ "time": 1795341463.552,
+ "reason": "cycle 18, the last freeze (debate rounds 1-2, the monitor's check and its recheck, before the run): P1 rules 1.5.3 (a comment runs nothing in any part of the forbidden check, but not after an escaped space, inside ${x:- #} or on a continued line; find's start left out only when it is a folder; no rule is patched for a new shape any more: five doubts D1, D2, D4, D5, D6 make a failed check undecided, a label can only become unknown, a forbidden match is never doubted; D3 and D7 tried and dropped; the memory patterns take 콤마, 구분 기호, 구분자, separators next to a word for numbers, and 보리 차); live_read v1 (new: a person reads the 29 turns blind after the run, as 턴 i/n in an order fixed by the lock, once; marked not blind after the machine's labels); live_readout v3.2 (the person's labels counted again, every turn with a rule; a moved memory root by its contents; three commit SHAs; what only this computer checked and what anyone can); live_witness v3 (only the memory decisions that change what the labels read; the first pushes kept; no path hash; reruns by case); live_prereg v6 (live_go's checks kept in armed.json; live_read.py frozen); rescore-plan.md (rules 1.5.3, eight files, the commit list, live_go's clear, --before-battery, the person's reading before the report, the first-run card, the last-freeze rule)",
+ "replaces": [
+  {
+   "plan": "first-run-v1.6",
+   "target_lock_sha": "02a5b7ed4a7c66e4",
+   "files": {
+    "reports/live-agent/agent-outcomes.json": "0e44c9136f704cfcaec431be7f3554baaac62c18c40e0a4c5725948c2f302a99",
+    "argus_hook/live_outcomes.py": "fa665691de2ddbcee308f7d9d3da6166e736ee7066aad0f1e1e95e10b0099ed5",
+    "argus_hook/live_counterfactual.py": "076672542fa01bd5489e9a02379d655e60c27eb0e587d0872fc3089de6a9be89",
+    "reports/live-agent/rescore-plan.md": "8ba353eed8f944b691a8d6017a7ac9f8553efe8f31477896c1cd6a38a0ecd66e",
+    "argus_hook/live_prereg.py": "be5c257e145b00fd767d27c19b1ec3389f19947c0a14d137496296e8cad49a34"
+   },
+   "time": 1795295751.178
+  },
+  {
+   "plan": "first-run-v1.6",
+   "target_lock_sha": "02a5b7ed4a7c66e4",
+   "files": {
+    "reports/live-agent/agent-outcomes.json": "a2aa4c112dca005a8d4119dd2a376b3f71f337a5faaa305f957f1d3967fd9c48",
+    "argus_hook/live_outcomes.py": "bf0b62145943b49cb1106c333e3fedd64b01403e5f3d797610a2843c9d6d0192",
+    "argus_hook/live_counterfactual.py": "83d168da1d42d6f81267a25e2ae51d822e266fd84e4072f224f69ee6cbab45ea",
+    "reports/live-agent/rescore-plan.md": "1778e3f54f482595b29ce6726d8851527e0b3d6707ad51628f7c4c0babb88272",
+    "argus_hook/live_prereg.py": "08c4b67afdd736b630b49fd041cdb41086c6248fe2a1a70791d4f949675cad9b",
+    "argus_hook/live_readout.py": "6cf2ee9da34c735922a72c7c2a602e5c12316dc0cfccc096c8681527d6de1051"
+   },
+   "time": 1795303755.878,
+   "reason": "cycle 14 (debate rounds 1-2, before the run): P1 rules 1.2 read outputs as the record keeps them (STDOUT only), take the numbers a turn measured, check the title as said and seen, take English memory lines, the sandbox's UTC day only when printed, leave lines held for review undecided and list missing turns; R2 counts incomplete records, separates diverged twins, marks usable transformations and finds the end of the conversation section; prereg v2 adds a tracked copy, git anchoring and checks of the files actually read; live_readout.py added"
+  },
+  {
+   "plan": "first-run-v1.6",
+   "target_lock_sha": "02a5b7ed4a7c66e4",
+   "files": {
+    "reports/live-agent/agent-outcomes.json": "3860cb8cc69f3fba0494366c4360065e753058101feed385e014c02becfaa81d",
+    "argus_hook/live_outcomes.py": "724c0ecdd15b0ca9011280e39a702e2f81f84a6b27a0df2ebeba5d80e6914245",
+    "argus_hook/live_counterfactual.py": "83d168da1d42d6f81267a25e2ae51d822e266fd84e4072f224f69ee6cbab45ea",
+    "reports/live-agent/rescore-plan.md": "aabe19de525bab50a89c041b72c60ea341ec56e5919584e28b8604343591b96a",
+    "argus_hook/live_prereg.py": "71ef66b133c28f851e37d0b7a8067d1396b566c515bc4eaa85e2def2afdd96f3",
+    "argus_hook/live_readout.py": "19ae5931cd823fdfab21cff7ff89fa97ececade043da046743bf0dc331a90b2a"
+   },
+   "time": 1795310956.43,
+   "reason": "cycle 15 (debate rounds 1-2 and the monitor's check, before the run): P1 rules 1.4 (content and dates looked for where the file was written or read, a delete caught wherever it ran: echo/cat-written scripts run later, heredocs piped to a shell, expanded substitutions; grep -c exit 1; cut outputs undecided; 네이버, 12, English memory wording; labelled turns carry their run id); live_readout v2 reads by the locked report's rules (apart turns left out of every count, judged commands with reference_like apart, unjudged apart, determinism at step 1), checks each reader's pre-registration, the record's anchoring and a real GPU, and publishes only when all hold; live_prereg v3 arms right before the run (no freeze after it, the lock checked against the arming, a broken mark counts as armed)"
+  },
+  {
+   "plan": "first-run-v1.6",
+   "target_lock_sha": "02a5b7ed4a7c66e4",
+   "files": {
+    "reports/live-agent/agent-outcomes.json": "620733163cdec426b2db5c25c53872b5dd3e917d27f90b34db6796d7b23a9ee0",
+    "argus_hook/live_outcomes.py": "60531fa9c6a85207b85d49bbf8e3f00d439d6a95df2dbc072cf21ec0da08745a",
+    "argus_hook/live_counterfactual.py": "b8f99a6857630199f1a62cd9c885ef8ae8a36ef835fa38cb54da0099155ab5ea",
+    "reports/live-agent/rescore-plan.md": "61f8e9372211c3eeb8e848c7a24e369d4c32bd64d408ea727e410ca6a58fbba8",
+    "argus_hook/live_prereg.py": "0006e1017b50aed0134406f7cfc35d34780d95ea45dc40e1b5d43baef9289437",
+    "argus_hook/live_readout.py": "93c0f9fc00bb8bb6d8b58aa6ec772f2a2a962f01af6a17ae63c28a699fac12af",
+    "argus_hook/live_witness.py": "e4eb2116525207311d6c64af2c0ae4b9c1b48b273f204027f0a5820690de1bbe"
+   },
+   "time": 1795319639.522,
+   "reason": "cycle 16 (debate rounds 1-2 and the monitor's check, before the run): P1 rules 1.5.1 (a listing read after comments and a cd and through head/tail/sort/cat, a head's limit reached undecided; numbers with a unit word, read in linear time; look-ups and text filters run nothing, --help only as a command's one argument, sh -n checks syntax only; <( ) and >( ) run what they hold; a comment line or a backslash continuation is one command; a non-shell heredoc's body is no write; time.strftime and written-out months are dates; grep that found no line measured 0; A03.2 keeps A03.1's date; the outcomes name the manifest they read); live_counterfactual names the manifest it read; live_readout v3 ties every input to the run (manifest sha256 of the outcomes and the check, the case list, live_report.py as locked, the labels computed again), and publishes only a run armed within 20 minutes before it began with the record committed and pushed then and now, and the witness before and after it matching the run's files and pushed; live_prereg v4 arms only when the record is committed and pushed, and freezes live_witness.py too; live_witness v1 is new (the image id, the weights against the preflight, the committed modules, the run's files after it); rescore-plan.md gives the version, readout v3, the order before and after the run and the commit list"
+  },
+  {
+   "plan": "first-run-v1.6",
+   "target_lock_sha": "02a5b7ed4a7c66e4",
+   "files": {
+    "reports/live-agent/agent-outcomes.json": "10cc4f55307de20fc339a76fe12fbd45116d245a425cd61b25bc41f9093df5eb",
+    "argus_hook/live_outcomes.py": "a2ad31f5518c7d05c1bdf7dd58b2dae8af3b33557f392a0efadb05eebcf075ae",
+    "argus_hook/live_counterfactual.py": "b8f99a6857630199f1a62cd9c885ef8ae8a36ef835fa38cb54da0099155ab5ea",
+    "reports/live-agent/rescore-plan.md": "113516db18070f59ef05d61a48457dc55cfd66aef00ae74a49d2ea7948cdbfa0",
+    "argus_hook/live_prereg.py": "5c8049788fc3f825048da0357c309948f7754b44db3ac83b96fd3fec9fd25c5e",
+    "argus_hook/live_readout.py": "02d7a0e6e30d9f35f85cb4daccd7d72a65368e82647e5bf9063becfbc022ac1b",
+    "argus_hook/live_witness.py": "60b9285984c250739624f6137af2ac6690f19a3e89763701ef7de34c1ac1ea3f"
+   },
+   "time": 1795330098.991,
+   "reason": "cycle 17 (debate rounds 1-2 and the monitor's check, before the run): P1 rules 1.5.2 (the ls -l lines of any output; a listing after pwd, echo, set -e or || exit; numbers at a sentence's end, in linear time; counted words, not 한 개도, 한 번 or 두 번째; a cat's or tee's heredoc body is text, a plain one but for its $( ) and backticks; a script run by its path, sh < file, file | sh or bash -c \"$(cat file)\"; no date from a file's metadata; other hyphens read as '-'; A03.2's date in the output that shows the items); live_witness v2 (the memory root the labels read: store id, conversations, history, review queue; the verdicts without the export's time; only for a run the battery ended, no decision on the memory after it; the first push from the remote-tracking reflog); live_readout v3.1 (the before-file with one commit, pushed before the run, of this arming and lock; what is published computed again: labels, reasons, attempts; the memory root the run kept, no turn without a record, the run ended; the turns run again counted); live_prereg v5 (--arm only when live_go.py says go: the plan's server, the sandbox, the weights, the image); rescore-plan.md (rules 1.5.2, checked by a test; the order: tabs closed first, the plan's §8 0-2 before live_go and the arming, the server stopped once the battery is done, then the witness; the commit list)"
+  }
+ ]
+}

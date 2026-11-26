@@ -1,0 +1,2 @@
+# cycle 16: byte-exact on every checkout (no CRLF), so the sha256 the pre-registration and the v1.6 lock keep hold on Windows too
+* -text

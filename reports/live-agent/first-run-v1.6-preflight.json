@@ -1,0 +1,63 @@
+{
+ "plan": "first-run-v1.6",
+ "lock_sha": "02a5b7ed4a7c66e4",
+ "made": "2026-11-22 04:34:01",
+ "why": "files the run goes through that the lock does not hash (they were committed at the lock's git HEAD, or are too large to copy): checked again before and after the run",
+ "git_head": "21f823870c4f4bf15cbff1f6c9d60d3883d94504",
+ "committed_modules": {
+  "paths": [
+   "argus_hook/agent_loop.py",
+   "argus_hook/scenario_policy.py",
+   "argus_hook/harness_config.py"
+  ],
+  "same_as_git_head": true,
+  "check": "git diff --quiet 21f823870c4f -- argus_hook/agent_loop.py argus_hook/scenario_policy.py argus_hook/harness_config.py"
+ },
+ "weights": {
+  "gpt-oss-20b/model-00000-of-00002.safetensors": {
+   "bytes": 4792272488,
+   "sha256": "16d0f997dcfc4462089d536bffe51b4bcea2f872f5c430be09ef8ed392312427"
+  },
+  "gpt-oss-20b/model-00001-of-00002.safetensors": {
+   "bytes": 4798702184,
+   "sha256": "4fbe328ab445455d6f58dc73852b85873bd626986310abd91cd4d2ce3245eaea"
+  },
+  "gpt-oss-20b/model-00002-of-00002.safetensors": {
+   "bytes": 4170342232,
+   "sha256": "a18106b209e9ab35c3406db4f6f12a927364a058b21e9d1373d682e20674b303"
+  },
+  "gpt-oss-20b/model.safetensors.index.json": {
+   "bytes": 36355,
+   "sha256": "0e085b977c4c9942f85938828e8c989ed7d5cdabf852e4da6a67c116cd502cd1"
+  }
+ },
+ "sandbox_image": "to record at the run (needs Docker, which this loop does not call)",
+ "at_the_run": {
+  "before_step_0_and_after_step_3": [
+   "docker image inspect --format '{{.Id}}' local/generic-sandbox:python   # the sandbox and fakenet gateway image (sandbox.py up uses --no-build --pull never)",
+   "git diff --quiet 21f823870c4f -- argus_hook/agent_loop.py argus_hook/scenario_policy.py argus_hook/harness_config.py   # exit 0: the committed modules are as at the lock",
+   "sha256sum gpt-oss-20b/model-0000*-of-00002.safetensors gpt-oss-20b/model.safetensors.index.json   # against \"weights\" here"
+  ],
+  "why": "the plan's §8 is locked and has no such line: these are the checks of what the lock does not hash",
+  "before_step_0": [
+   "close the everyday chat tab and the Pages copy (they would reach the plan's server; the Pages copy shows no band)",
+   "the plan's §8 0)-2): the snapshot and its size, /workspace emptied, the server started with ARGUS_LIVE_MEMORY_DIR=artifacts/live-agent/battery/first-run-v1.6/memory, the lock_sha checked",
+   "python argus_hook/live_go.py   # exit 0: the time, the record committed and pushed, the lock, the committed modules, the plan's server and sandbox, the weights and the image",
+   "python argus_hook/live_prereg.py --check --arm   # arms only when pushed and live_go says go: no freeze from now on",
+   "python argus_hook/live_witness.py --before   # then commit and push only that file at once (git add reports/live-agent/witness-first-run-v1.6-before.json && git commit -m … && git push origin main; never -a: it would take dist/ to Pages)",
+   "python argus_hook/live_go.py --before-battery   # exit 0: 3 minutes or more of the arming left, the witness before the run of this arming and lock, with no problem, committed once and pushed; then at once the battery (§8 3)"
+  ],
+  "after_the_run": [
+   "when the battery says done: stop the plan's server at once (a rename or an approval there would change what the witness writes)",
+   "python argus_hook/live_witness.py --after --memory-root artifacts/live-agent/battery/first-run-v1.6/memory   # commit and push only that file at once (git add reports/live-agent/witness-first-run-v1.6-after.json && git commit -m … && git push origin main; never -a: from the arming to the decision to publish no other tracked file changes)",
+   "python argus_hook/live_read.py --memory-root artifacts/live-agent/battery/first-run-v1.6/memory   # first, before the report and live_after.py: a person reads the 29 turns blind and labels them once",
+   "the plan's §8 4)-5), then python argus_hook/live_after.py --memory-root artifacts/live-agent/battery/first-run-v1.6/memory   # never publishes"
+  ]
+ },
+ "changed": {
+  "2026-11-22 08:49": "cycle 15: at_the_run.before_step_0 gained live_go.py and live_prereg.py --check --arm",
+  "2026-11-22 (cycle 16)": "the witness of the run before step 0 and right after the run (live_witness.py), and live_after.py after it",
+  "2026-11-22 (cycle 17)": "the order: the plan's §8 0-2 (snapshot, empty workspace, the plan's server) before live_go.py and the arming; live_go.py checks what the battery checks at its start; the witness after the run with --memory-root, once the battery is done and the server stopped",
+  "2026-11-22 (cycle 19)": "the order as rescore-plan.md has it since cycle 18: live_go.py --before-battery right before the battery, and live_read.py first after the witness after the run (before the report and live_after.py); the witness commit holds that file only"
+ }
+}

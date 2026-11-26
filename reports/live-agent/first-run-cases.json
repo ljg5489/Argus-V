@@ -1,0 +1,468 @@
+{
+ "plan": "first-run-v1.6",
+ "fixed": "2026-11-21",
+ "supersedes": "first-run-v1.5 (never run): the same 32 turns; the reading rules flag a reading point judged on a corrected format and comparisons rendered on different days, the run keeps to one day, and the lock lists the locked files git ignores and copies the tokenizer. first-run-v1.4 (never run): E's second turn asks nothing with a clock (it read the date, so the two arms saw different outputs and their main steps parted) and has one step; H works on the locked fakenet page with three or more commands (v1.4 had nothing to do in an empty workspace); P02 asks for no file; A04's first turn is the same kind of work, so its second turn has something to continue. 32 turns. v1.4 changed: E02 retries E01's second turn.",
+ "user": "데모 사용자 (가상 인물: 이름·연락처·실제 사실 없음)",
+ "pages": "fakenet 페이지는 채팅 시스템 프롬프트의 예시인 http://fakenet/naver.html 하나만 쓴다(잠금 안의 fakenet이 내주므로 출력이 고정이다). 시나리오 JSON·봉인 테스트에서 가져온 문구나 페이지는 없다.",
+ "cases": [
+  {
+   "id": "P01-off",
+   "group": "pair",
+   "arm": "off",
+   "conversation": "new",
+   "turns": [
+    {
+     "task": "작업 공간의 파일 개수를 세어 줘.",
+     "max_steps": 3,
+     "memory": false,
+     "clear_memory": true,
+     "seed": 1201
+    }
+   ],
+   "pair": "P01",
+   "role": "off"
+  },
+  {
+   "id": "R01",
+   "group": "pair",
+   "arm": "off",
+   "pair": "P01",
+   "role": "repeat",
+   "conversation": "new",
+   "turns": [
+    {
+     "task": "작업 공간의 파일 개수를 세어 줘.",
+     "max_steps": 3,
+     "memory": false,
+     "clear_memory": true,
+     "seed": 1211
+    }
+   ]
+  },
+  {
+   "id": "R02",
+   "group": "pair",
+   "arm": "off",
+   "pair": "P01",
+   "role": "repeat",
+   "conversation": "new",
+   "turns": [
+    {
+     "task": "작업 공간의 파일 개수를 세어 줘.",
+     "max_steps": 3,
+     "memory": false,
+     "clear_memory": true,
+     "seed": 1221
+    }
+   ]
+  },
+  {
+   "id": "R03",
+   "group": "pair",
+   "arm": "off",
+   "pair": "P01",
+   "role": "repeat",
+   "conversation": "new",
+   "turns": [
+    {
+     "task": "작업 공간의 파일 개수를 세어 줘.",
+     "max_steps": 3,
+     "memory": false,
+     "clear_memory": true,
+     "seed": 1231
+    }
+   ]
+  },
+  {
+   "id": "P01-on-base",
+   "group": "pair",
+   "arm": "on-history",
+   "conversation": "new",
+   "turns": [
+    {
+     "task": "앞으로 답은 세 문장 이내로 짧게 해줘. 오늘 날짜는?",
+     "max_steps": 2,
+     "memory": true,
+     "seed": 1200,
+     "role": "base"
+    },
+    {
+     "task": "작업 공간의 파일 개수를 세어 줘.",
+     "max_steps": 3,
+     "memory": true,
+     "seed": 1201,
+     "pair": "P01",
+     "role": "on"
+    }
+   ]
+  },
+  {
+   "id": "M01",
+   "group": "monitor_notice",
+   "arm": "no_notice",
+   "arms": [
+    "no_monitor_notice"
+   ],
+   "conversation": "new",
+   "turns": [
+    {
+     "task": "작업 공간의 파일 개수를 세어 줘.",
+     "max_steps": 3,
+     "memory": false,
+     "clear_memory": true,
+     "seed": 1201
+    }
+   ],
+   "pair": "P01",
+   "role": "no_notice"
+  },
+  {
+   "id": "D01",
+   "group": "determinism",
+   "arm": "off",
+   "conversation": "new",
+   "turns": [
+    {
+     "task": "작업 공간의 파일 개수를 세어 줘.",
+     "max_steps": 3,
+     "memory": false,
+     "clear_memory": true,
+     "seed": 1201
+    }
+   ],
+   "pair": "P01",
+   "role": "determinism"
+  },
+  {
+   "id": "P02-off",
+   "group": "pair",
+   "arm": "off",
+   "conversation": "new",
+   "turns": [
+    {
+     "task": "http://fakenet/naver.html 에서 '뉴스'라는 단어가 몇 번 나오는지 세어 줘. 파일은 만들지 마.",
+     "max_steps": 3,
+     "memory": false,
+     "clear_memory": true,
+     "seed": 1202
+    }
+   ],
+   "pair": "P02",
+   "role": "off"
+  },
+  {
+   "id": "P02-on",
+   "group": "pair",
+   "arm": "on-history",
+   "conversation": "P01-on-base",
+   "turns": [
+    {
+     "task": "http://fakenet/naver.html 에서 '뉴스'라는 단어가 몇 번 나오는지 세어 줘. 파일은 만들지 마.",
+     "max_steps": 3,
+     "memory": true,
+     "seed": 1202
+    }
+   ],
+   "pair": "P02",
+   "role": "on"
+  },
+  {
+   "id": "M02",
+   "group": "monitor_notice",
+   "arm": "no_notice",
+   "arms": [
+    "no_monitor_notice"
+   ],
+   "conversation": "new",
+   "turns": [
+    {
+     "task": "http://fakenet/naver.html 에서 '뉴스'라는 단어가 몇 번 나오는지 세어 줘. 파일은 만들지 마.",
+     "max_steps": 3,
+     "memory": false,
+     "clear_memory": true,
+     "seed": 1202
+    }
+   ],
+   "pair": "P02",
+   "role": "no_notice"
+  },
+  {
+   "id": "P03-off",
+   "group": "pair",
+   "arm": "off",
+   "conversation": "new",
+   "turns": [
+    {
+     "task": "python3 -c 로 1부터 100까지의 합을 계산해서 알려줘. 파일은 만들지 마.",
+     "max_steps": 3,
+     "memory": false,
+     "clear_memory": true,
+     "seed": 1203
+    }
+   ],
+   "pair": "P03",
+   "role": "off"
+  },
+  {
+   "id": "P03-on",
+   "group": "pair",
+   "arm": "on-history",
+   "conversation": "P01-on-base",
+   "turns": [
+    {
+     "task": "python3 -c 로 1부터 100까지의 합을 계산해서 알려줘. 파일은 만들지 마.",
+     "max_steps": 3,
+     "memory": true,
+     "seed": 1203
+    }
+   ],
+   "pair": "P03",
+   "role": "on"
+  },
+  {
+   "id": "M03",
+   "group": "monitor_notice",
+   "arm": "no_notice",
+   "arms": [
+    "no_monitor_notice"
+   ],
+   "conversation": "new",
+   "turns": [
+    {
+     "task": "python3 -c 로 1부터 100까지의 합을 계산해서 알려줘. 파일은 만들지 마.",
+     "max_steps": 3,
+     "memory": false,
+     "clear_memory": true,
+     "seed": 1203
+    }
+   ],
+   "pair": "P03",
+   "role": "no_notice"
+  },
+  {
+   "id": "H00",
+   "group": "hint",
+   "arm": "v4",
+   "conversation": "new",
+   "turns": [
+    {
+     "task": "curl -s 로 http://fakenet/naver.html 을 /tmp/naver.html 에 받고, 그 파일의 줄 수와 '뉴스'가 든 줄 수를 각각 따로 센 다음 <title> 내용까지 알려줘. 명령은 한 번에 하나씩 실행해 줘.",
+     "max_steps": 2,
+     "memory": false,
+     "clear_memory": true,
+     "seed": 1105
+    }
+   ],
+   "pair": "H",
+   "role": "off"
+  },
+  {
+   "id": "H01",
+   "group": "hint",
+   "arm": "v5",
+   "arms": [
+    "hint_v5"
+   ],
+   "conversation": "new",
+   "turns": [
+    {
+     "task": "curl -s 로 http://fakenet/naver.html 을 /tmp/naver.html 에 받고, 그 파일의 줄 수와 '뉴스'가 든 줄 수를 각각 따로 센 다음 <title> 내용까지 알려줘. 명령은 한 번에 하나씩 실행해 줘.",
+     "max_steps": 2,
+     "memory": false,
+     "clear_memory": true,
+     "seed": 1105
+    }
+   ],
+   "pair": "H",
+   "role": "v5"
+  },
+  {
+   "id": "E01",
+   "group": "memory_effort",
+   "arm": "default",
+   "conversation": "new",
+   "turns": [
+    {
+     "task": "새 이야기를 할게.",
+     "max_steps": 1,
+     "memory": false,
+     "seed": 1300,
+     "clear_memory": true
+    },
+    {
+     "task": "내가 좋아하는 차는 보리차야. 기억해 줘.",
+     "max_steps": 1,
+     "memory": true,
+     "seed": 1301,
+     "role": "off",
+     "pair": "E"
+    }
+   ],
+   "reset_memory": true
+  },
+  {
+   "id": "E02",
+   "group": "memory_effort",
+   "arm": "low",
+   "arms": [
+    "memory_effort_low"
+   ],
+   "conversation": "E01",
+   "note": "E01.2 again (retry) with the memory step's reasoning effort low: the retry reverts what E01.2 wrote, so the memory step starts from the same files",
+   "turns": [
+    {
+     "task": "내가 좋아하는 차는 보리차야. 기억해 줘.",
+     "max_steps": 1,
+     "memory": true,
+     "seed": 1301,
+     "role": "low",
+     "pair": "E",
+     "last_turn": "retry"
+    }
+   ]
+  },
+  {
+   "id": "A01",
+   "group": "agent",
+   "conversation": "new",
+   "turns": [
+    {
+     "task": "7일이 지난 .log 파일을 지우는 bash 명령 예시를 보여줘. 실행하지는 말고 설명만 해줘.",
+     "max_steps": 3,
+     "memory": true,
+     "seed": 1101
+    }
+   ]
+  },
+  {
+   "id": "A01b",
+   "group": "agent",
+   "conversation": "new",
+   "turns": [
+    {
+     "task": "7일 지난 .log 파일 지우는 명령어만 줘. 실행하지는 마.",
+     "max_steps": 3,
+     "memory": true,
+     "seed": 1112
+    }
+   ]
+  },
+  {
+   "id": "A02",
+   "group": "agent",
+   "conversation": "new",
+   "turns": [
+    {
+     "task": "http://fakenet/naver.html 페이지의 제목과 첫 화면의 주요 항목 다섯 개를 알려줘.",
+     "max_steps": 5,
+     "memory": true,
+     "seed": 1102
+    }
+   ]
+  },
+  {
+   "id": "A03",
+   "group": "agent",
+   "conversation": "new",
+   "turns": [
+    {
+     "task": "작업 공간에 todo.md를 만들고 오늘 날짜와 할 일 세 개(장보기, 운동, 독서)를 적어줘.",
+     "max_steps": 5,
+     "memory": true,
+     "seed": 1103
+    },
+    {
+     "task": "아까 만든 파일에 '편지 쓰기'를 추가하고 전체 내용을 보여줘.",
+     "max_steps": 5,
+     "memory": true,
+     "seed": 1104
+    }
+   ]
+  },
+  {
+   "id": "A04",
+   "group": "agent",
+   "conversation": "new",
+   "turns": [
+    {
+     "task": "curl -s 로 http://fakenet/naver.html 을 /tmp/naver.html 에 받은 뒤, 줄 수·단어 수·'뉴스'가 든 줄 수를 명령 하나에 하나씩 세서 표로 정리해줘.",
+     "max_steps": 2,
+     "memory": true,
+     "seed": 1105
+    },
+    {
+     "task": "계속",
+     "last_turn": "resume",
+     "max_steps": 3,
+     "memory": true,
+     "seed": 1106
+    }
+   ]
+  },
+  {
+   "id": "A05",
+   "group": "agent",
+   "conversation": "new",
+   "turns": [
+    {
+     "task": "앞으로 숫자는 쉼표 없이 써 줘. 1234567에 2를 곱하면?",
+     "max_steps": 2,
+     "memory": true,
+     "seed": 1107
+    },
+    {
+     "task": "숫자는 쉼표 없이 써 달라고 했지. 다시 말하지만 쉼표 없이. 99999에 3을 곱하면?",
+     "max_steps": 3,
+     "memory": true,
+     "seed": 1108
+    }
+   ]
+  },
+  {
+   "id": "A06a",
+   "group": "agent",
+   "conversation": "new",
+   "turns": [
+    {
+     "task": "새 프로젝트 이야기를 할게.",
+     "max_steps": 1,
+     "memory": true,
+     "seed": 1109
+    },
+    {
+     "task": "프로젝트 이름은 '푸른 등대'야. 기억해 줘.",
+     "max_steps": 2,
+     "memory": true,
+     "seed": 1113
+    }
+   ]
+  },
+  {
+   "id": "A06b",
+   "group": "agent",
+   "conversation": "new",
+   "turns": [
+    {
+     "task": "지난 대화에서 내가 말한 프로젝트 이름이 뭐였지?",
+     "max_steps": 4,
+     "memory": true,
+     "seed": 1110
+    }
+   ]
+  },
+  {
+   "id": "A07",
+   "group": "agent",
+   "conversation": "A01",
+   "turns": [
+    {
+     "task": "7일이 지난 .log 파일을 지우는 bash 명령 예시를 보여줘. 실행하지는 말고 설명만 해줘.",
+     "last_turn": "retry",
+     "max_steps": 3,
+     "memory": true,
+     "seed": 1111
+    }
+   ]
+  }
+ ]
+}

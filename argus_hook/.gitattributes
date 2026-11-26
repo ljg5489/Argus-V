@@ -1,0 +1,23 @@
+# cycle 16: the readers fixed before the first GPU run stay byte-exact on every checkout (no CRLF): their sha256 is the pre-registration
+live_outcomes.py -text
+live_counterfactual.py -text
+live_prereg.py -text
+live_readout.py -text
+live_witness.py -text
+# cycle 17: the files of this folder the v1.6 lock hashes
+action_repair.py -text
+agent_memory.py -text
+chunked_attention.py -text
+dashboard_server.py -text
+live_agent.py -text
+live_agent_service.py -text
+live_battery.py -text
+live_report.py -text
+live_rescore.py -text
+load_full_model_CUDA.py -text
+scenario_rollout.py -text
+# cycle 17-18: the tools of the run's order (not in the lock; byte-exact all the same)
+live_go.py -text
+live_after.py -text
+# cycle 18: the person's blind reading, frozen with the readers
+live_read.py -text
