@@ -1,0 +1,103 @@
+#!/usr/local/bin/python3 -I
+"""sandbox-info: what this sandbox has, looked at now (the screen, the internet, python and its packages, the tools).
+
+    sandbox-info           everything, in a dozen lines
+    sandbox-info --quick   without asking a web site (the internet line then says what is allowed, not what answered)
+
+Run it before saying that something is not available here.
+"""
+
+import glob
+import importlib.metadata
+import os
+import shutil
+import sys
+import time
+
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+import argus_screen as S  # noqa: E402
+import argus_web as W  # noqa: E402
+
+PACKAGES = ("panda3d", "pygame", "numpy", "pillow", "matplotlib", "requests", "python-xlib")
+TOOLS = (("apply_patch", "create and change files from a '*** Begin Patch' patch (apply_patch <<'EOF' … EOF)"),
+         ("websearch", 'search the web: websearch "<words>"'),
+         ("webread", "a web page as text, a part at a time: webread <url>"),
+         ("wiki", 'an encyclopedia article as text: wiki "<title>"'),
+         ("gui-run", "start a program that opens a window: gui-run python3 game.py"),
+         ("gui-look", "what is on the screen, in words (you cannot see a picture)"),
+         ("sandbox-info", "this list"))
+PROBE = "https://example.com/"
+
+
+def size(count: float) -> str:
+    for unit in ("B", "K", "M", "G"):
+        if count < 1024 or unit == "G":
+            return f"{count:.0f}{unit}" if unit in ("B", "K") else f"{count:.1f}{unit}"
+        count /= 1024
+    return f"{count:.1f}G"
+
+
+def disk(path: str) -> str:
+    try:
+        usage = shutil.disk_usage(path)
+    except OSError:
+        return f"{path}: not there"
+    return f"{path}: {size(usage.used)} used of {size(usage.total)}"
+
+
+def internet(quick: bool) -> str:
+    allowed = ("HTTP and HTTPS to public web addresses, through a proxy that is already set up (curl, wget, python3, pip and "
+               "git over https work; ping, ssh and other ports do not)")
+    if quick:
+        return f"Internet: allowed: {allowed}. Not asked now."
+    began = time.monotonic()
+    try:
+        page = W.fetch(PROBE, limit=20_000, timeout=10)
+    except W.FetchError as error:
+        return f"Internet: {PROBE} did NOT answer just now ({error}). What is allowed: {allowed}."
+    return f"Internet: ON. {PROBE} answered {page['status']} in {time.monotonic() - began:.1f} s just now. Reachable: {allowed}."
+
+
+def versions() -> str:
+    found = []
+    for name in PACKAGES:
+        try:
+            found.append(f"{name} {importlib.metadata.version(name)}")
+        except importlib.metadata.PackageNotFoundError:
+            found.append(f"{name} (not installed)")
+    return ", ".join(found)
+
+
+def own_packages() -> str:
+    home = os.environ.get("HOME") or "/workspace/.home"
+    names = sorted({os.path.basename(path).rsplit("-", 1)[0] for path in glob.glob(os.path.join(home, ".local/lib/python3*/site-packages/*.dist-info"))})
+    return ", ".join(names[:40]) + (" …" if len(names) > 40 else "") if names else "none yet"
+
+
+def main(argv=None) -> int:
+    args = list(sys.argv[1:] if argv is None else argv)
+    if args and args[0] in ("-h", "--help"):
+        print(__doc__.strip())
+        return 0
+    screen = S.size()
+    shown = S.windows() if screen else []
+    lines = [
+        "This sandbox, looked at now:",
+        (f"Screen: ON, {screen} (display {S.DISPLAY}). The user watches it. Windows on it: "
+         + (", ".join(f'"{window["title"] or "(no title)"}"' for window in shown) or "none")
+         if screen else f"Screen: there is one (display {S.DISPLAY}); it is off now and `gui-run <command>` turns it on."),
+        internet("--quick" in args),
+        f"Python {sys.version.split()[0]} with {versions()}.",
+        f"Packages added with pip here: {own_packages()}. `pip install <package>` works (it installs for this user).",
+        "Tools:",
+        *[f"  {name}: {what}" for name, what in TOOLS if shutil.which(name)],
+        "Disks: " + " · ".join(disk(path) for path in ("/workspace", "/tmp")) + ". Files can be written there only.",
+        "A command that runs past its time limit is stopped and the sandbox restarts: start long-running programs in "
+        "the background (gui-run for one with a window).",
+    ]
+    print("\n".join(lines))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,32 @@
+
+Tools of this sandbox (ordinary commands; each explains itself with --help):
+- apply_patch creates and edits files, and makes their folders:
+    apply_patch <<'EOF'
+    *** Begin Patch
+    *** Add File: game/main.py
+    +import pygame
+    +print("hello")
+    *** End Patch
+    EOF
+  (`*** Update File: <path>` with " ", "-" and "+" lines changes a file. `cat > file <<'EOF'` works too.)
+  Write commands directly in your bash block. Do not wrap them in bash -lc '...': quotes inside it break.
+  Code goes into files, never into your answer: the answer says what you made and the command that runs it.
+  A long file is written in parts: `*** Add File` with its first hundred lines or so, then `*** Update File`
+  in the next steps to add the rest. A reply that is too long is cut and nothing of it runs.
+- websearch "<words>" searches the web. webread <url> prints a page as text, its start first (--start N goes on).
+  wiki "<title>" prints an encyclopedia article. Use them when a task says to look something up. You read text
+  there, not pictures or video.
+- gui-run <command> starts a program that opens a window, for example: gui-run python3 game/main.py
+  It turns the screen on if needed, runs the program in the background and reports whether its window is on the
+  user's screen or why the program ended, and what the window shows. Fix what it reports and run it again until the
+  window is there and shows a picture. Prefer it to nohup.
+- gui-look says what is on the screen in words: you cannot see a picture, so never describe a window from the code
+  alone. "Almost one flat color" means nothing is drawn. Run it before you tell the user what a window shows.
+- sandbox-info says what is here, checked now (screen, internet, packages). Run it before you answer that something
+  is not available.
+
+Reuse before you write. For a program of any size (a game, a tool) first look for one that exists:
+websearch "<what it is> github", then `git clone --depth 1 <its address>`, read its README, run it (gui-run) and
+look at it (gui-look), and change it into what the user asked for. Prefer a project with a license and a README.
+Writing a large program from nothing is the last resort. When you are not sure how a library is used, read its
+documentation or an example (websearch, webread) instead of guessing a function's name.

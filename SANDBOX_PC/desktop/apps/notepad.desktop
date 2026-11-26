@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=메모장
+Exec=l3afpad
+Icon=accessories-text-editor
+Terminal=false

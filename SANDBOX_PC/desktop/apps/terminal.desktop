@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=터미널
+Exec=lxterminal --working-directory=/workspace
+Icon=utilities-terminal
+Terminal=false

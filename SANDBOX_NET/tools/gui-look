@@ -1,0 +1,59 @@
+#!/usr/local/bin/python3 -I
+"""gui-look: what is on the sandbox's screen, in words and numbers (you cannot see a picture; this reads it for you).
+
+    gui-look                    every program window: its colors, where they lie, and whether anything moves
+    gui-look --window "Kart"    only the window whose title holds these words
+    gui-look --wait 3           compare two looks 3 seconds apart (default 1)
+
+A window that is "almost one flat color" has nothing drawn in it: the program runs but shows an empty picture.
+Letters in a window (a score, a menu) cannot be read by this tool: print such values to the program's log instead.
+"""
+
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+import argus_screen as S  # noqa: E402
+
+
+def main(argv=None) -> int:
+    args = list(sys.argv[1:] if argv is None else argv)
+    if args and args[0] in ("-h", "--help"):
+        print(__doc__.strip())
+        return 0
+    wait, wanted = 1.0, None
+    while args:
+        arg = args.pop(0)
+        if arg in ("--wait", "--window") and args:
+            value = args.pop(0)
+            if arg == "--window":
+                wanted = value
+            else:
+                try:
+                    wait = max(0.0, min(float(value), 30.0))
+                except ValueError:
+                    print("gui-look: --wait takes a number of seconds", file=sys.stderr)
+                    return 2
+        else:
+            print(f"gui-look: unknown argument {arg!r} (see gui-look --help)", file=sys.stderr)
+            return 2
+    size = S.size()
+    if not size:
+        print("Screen: off. Nothing is shown. `gui-run <command>` turns it on and starts a program.")
+        return 1
+    found = S.windows()
+    shown = [window for window in found if wanted is None or wanted.lower() in window["title"].lower()]
+    print(f"Screen: on, {size}. Windows: " + (", ".join(f'"{window["title"] or "(no title)"}" {window["width"]}x{window["height"]}' for window in found) or "none"))
+    if not shown:
+        print(f'No window with "{wanted}" in its title is on the screen.' if wanted else "No program window is on the screen (the program ended, or never opened one).")
+        return 1
+    for window in shown[:4]:
+        lines = S.look(window, wait)
+        print(f'Window "{window["title"] or "(no title)"}" {window["width"]}x{window["height"]}:')
+        print("\n".join("  " + line for line in lines) if lines else "  (its picture could not be read)")
+    print("(Letters inside a window cannot be read by this tool.)")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

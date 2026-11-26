@@ -1,0 +1,267 @@
+#!/usr/local/bin/python3 -I
+"""apply_patch: create, change and delete files from a patch in the "*** Begin Patch" format.
+
+    apply_patch <<'EOF'
+    *** Begin Patch
+    *** Add File: game/main.py
+    +print("hello")
+    *** Update File: game/util.py
+    @@ def speed():
+    -    return 1
+    +    return 2
+    *** Delete File: old.txt
+    *** End Patch
+    EOF
+
+The patch comes on standard input (a heredoc), as the first argument (the patch text itself) or in a file named by
+the first argument. Paths are relative to the current folder; folders are made as needed. Nothing is written unless
+every part of the patch applies. In an Add File part every line of the new file starts with "+". In an Update File
+part " " keeps a line, "-" removes it, "+" adds one, and "@@ <a line of the file>" says where to look.
+A unified diff (diff --git, ---/+++) is given to `git apply` instead.
+
+(The Panda3D program that had this name is `panda3d-apply-patch`.)
+"""
+
+import os
+import re
+import subprocess
+import sys
+
+HEADER = re.compile(r"^\*\*\* (Add|Update|Delete) File: (.+?)\s*$")
+MOVE = re.compile(r"^\*\*\* Move to: (.+?)\s*$")
+PANDA = "/usr/local/bin/panda3d-apply-patch"
+
+
+class PatchError(Exception):
+    pass
+
+
+def named(path: str) -> str:
+    path = path.strip()
+    if len(path) >= 2 and path[0] == path[-1] and path[0] in "\"'`":
+        path = path[1:-1]
+    if not path:
+        raise PatchError("a file part names no path")
+    return os.path.normpath(path)
+
+
+def parse(text: str) -> list[dict]:
+    """The parts of a patch: {"kind": add|update|delete, "path", "lines" (add), "move", "hunks" (update)}."""
+    lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    begin = next((index for index, line in enumerate(lines) if line.strip() == "*** Begin Patch"), None)
+    if begin is not None:
+        lines = lines[begin + 1:]
+    else:  # (the first line left out: start at the first file part)
+        first = next((index for index, line in enumerate(lines) if HEADER.match(line)), None)
+        if first is None:
+            raise PatchError("no patch found: it starts with '*** Begin Patch' and names files with "
+                             "'*** Add File: <path>', '*** Update File: <path>' or '*** Delete File: <path>'")
+        lines = lines[first:]
+    end = next((index for index, line in enumerate(lines) if line.strip() == "*** End Patch"), None)
+    if end is not None:
+        lines = lines[:end]
+    else:  # (the last line left out: blank lines at the end are not part of a file)
+        while lines and not lines[-1].strip():
+            lines.pop()
+    parts, part, hunk = [], None, None
+    for number, line in enumerate(lines, 1):
+        header = HEADER.match(line)
+        if header:
+            part = {"kind": header.group(1).lower(), "path": named(header.group(2)), "lines": [], "move": None, "hunks": []}
+            parts.append(part)
+            hunk = None
+            continue
+        if part is None:
+            if not line.strip():
+                continue
+            raise PatchError(f"line {number} of the patch is outside any file part: {line[:80]!r}")
+        if part["kind"] == "delete":
+            continue
+        if part["kind"] == "add":
+            part["lines"].append(line[1:] if line.startswith("+") else line)
+            continue
+        move = MOVE.match(line)
+        if move and not part["hunks"]:
+            part["move"] = named(move.group(1))
+            continue
+        if line.startswith("@@"):
+            hunk = {"anchor": line[2:].strip() or None, "old": [], "new": [], "eof": False}
+            part["hunks"].append(hunk)
+            continue
+        if line.strip() == "*** End of File":
+            if hunk is not None:
+                hunk["eof"] = True
+            continue
+        if hunk is None:  # (the first change of a file may come without "@@")
+            hunk = {"anchor": None, "old": [], "new": [], "eof": False}
+            part["hunks"].append(hunk)
+        if line.startswith("+"):
+            hunk["new"].append(line[1:])
+        elif line.startswith("-"):
+            hunk["old"].append(line[1:])
+        else:  # a line that stays (its leading space is often dropped on an empty line)
+            kept = line[1:] if line.startswith(" ") else line
+            hunk["old"].append(kept)
+            hunk["new"].append(kept)
+    return parts
+
+
+SAME = (lambda a, b: a == b, lambda a, b: a.rstrip() == b.rstrip(), lambda a, b: a.strip() == b.strip())
+
+
+def seek(lines: list[str], wanted: list[str], start: int) -> int:
+    """Where ``wanted`` lies in ``lines`` at or after ``start`` (exactly, then but for spaces at line ends, then but
+    for indentation), or -1."""
+    if not wanted:
+        return start
+    for same in SAME:
+        for index in range(max(start, 0), len(lines) - len(wanted) + 1):
+            if all(same(lines[index + offset], wanted[offset]) for offset in range(len(wanted))):
+                return index
+    return -1
+
+
+def changed(path: str, text: str, hunks: list[dict]) -> str:
+    """``text`` with the hunks of an Update File part applied."""
+    lines = text.split("\n")
+    if lines and lines[-1] == "":
+        lines.pop()
+    cursor = 0
+    for number, hunk in enumerate(hunks, 1):
+        old, new, anchored = hunk["old"], hunk["new"], None
+        if hunk["anchor"]:
+            wanted = hunk["anchor"].strip()
+            anchored = next((index for index in range(cursor, len(lines)) if lines[index].strip() == wanted), None)
+            if anchored is None:
+                anchored = next((index for index in range(len(lines)) if lines[index].strip() == wanted), None)
+            if anchored is not None:
+                cursor = anchored + 1
+        if not old:  # nothing to find: lines are added (after the "@@" line when there is one, else at the end)
+            at = cursor if anchored is not None and not hunk["eof"] else len(lines)
+            lines[at:at] = new
+            cursor = at + len(new)
+            continue
+        at = seek(lines, old, cursor)
+        if at < 0:
+            at = seek(lines, old, 0)
+        if at < 0 and len(old) > 1 and old[-1] == "" and new and new[-1] == "":  # an empty last line the file does not have
+            at = seek(lines, old[:-1], 0)
+            if at >= 0:
+                old, new = old[:-1], new[:-1]
+        if at < 0 and not any(line.strip() for line in old):  # only empty lines to find and none there: lines are added
+            at = cursor if anchored is not None and not hunk["eof"] else len(lines)
+            lines[at:at] = new
+            cursor = at + len(new)
+            continue
+        if at < 0:
+            absent = next((line for line in old if line.strip() and not any(line.strip() == have.strip() for have in lines)), None)
+            raise PatchError(f"{path}: change {number} does not fit the file: "
+                             + (f"this line is not in it: {absent.strip()[:100]!r}" if absent is not None
+                                else "its lines are in the file, but not together in this order")
+                             + f". Print the file (cat -n {path}) and copy the lines to change exactly.")
+        lines[at:at + len(old)] = new
+        cursor = at + len(new)
+    return "\n".join(lines) + ("\n" if lines else "")
+
+
+def read(path: str) -> str:
+    with open(path, encoding="utf-8", errors="surrogateescape", newline="") as handle:
+        return handle.read()
+
+
+def apply(parts: list[dict]) -> list[tuple[str, str]]:
+    """Work every part out first, then write: -> [("A" | "M" | "D", path)]."""
+    if not parts:
+        raise PatchError("the patch names no file")
+    done, writes, removes = [], {}, []
+    for part in parts:
+        path = part["path"]
+        if part["kind"] == "add":
+            if os.path.isdir(path):
+                raise PatchError(f"{path}: is a folder")
+            writes[path] = "\n".join(part["lines"]) + "\n" if part["lines"] else ""
+            done.append(("A", path))
+        elif part["kind"] == "delete":
+            if not os.path.isfile(path) and path not in writes:
+                raise PatchError(f"{path}: no such file to delete")
+            writes.pop(path, None)
+            removes.append(path)
+            done.append(("D", path))
+        else:
+            if path in writes:  # (made or changed earlier in the same patch)
+                text = writes[path]
+            elif os.path.isfile(path):
+                text = read(path)
+            else:
+                raise PatchError(f"{path}: no such file to update. To create it use '*** Add File: {path}' with a '+' before every line.")
+            if not part["hunks"] and not part["move"]:
+                raise PatchError(f"{path}: the Update File part has no change")
+            target = part["move"] or path
+            if part["move"]:
+                writes.pop(path, None)
+                removes.append(path)
+            writes[target] = changed(path, text, part["hunks"])
+            done.append(("M", target))
+    try:
+        for path, text in writes.items():
+            folder = os.path.dirname(path)
+            if folder:
+                os.makedirs(folder, exist_ok=True)
+            with open(path, "w", encoding="utf-8", errors="surrogateescape", newline="") as handle:
+                handle.write(text)
+        for path in removes:
+            if path not in writes and os.path.isfile(path):
+                os.remove(path)
+    except OSError as error:
+        raise PatchError(f"could not write {error.filename or ''}: {error.strerror or error} "
+                         "(files can be written under /workspace and /tmp only)") from error
+    return done
+
+
+def patch_text(args: list[str], stdin) -> str | None:
+    """The patch: the first argument when it is one, the file it names, or standard input."""
+    if args:
+        first = args[0]
+        if "*** Begin Patch" in first or any(HEADER.match(line) for line in first.split("\n")):
+            return first
+        if os.path.isfile(first):
+            return read(first)
+        raise PatchError(f"{first[:60]!r} is neither a patch nor a file. Give the patch on standard input: apply_patch <<'EOF' … EOF")
+    if stdin is None or stdin.isatty():
+        return None
+    return stdin.read()
+
+
+def main(argv=None, stdin=None) -> int:
+    args = list(sys.argv[1:] if argv is None else argv)
+    stdin = sys.stdin if stdin is None else stdin
+    if args and args[0] in ("-h", "--help"):
+        print(__doc__.strip())
+        return 0
+    try:
+        if len(args) == 2 and all(os.path.isfile(arg) for arg in args) and os.path.exists(PANDA):
+            head = read(args[0])[:2000]
+            if "*** " not in head and not head.lstrip().startswith(("diff ", "--- ", "Index: ")):
+                os.execv(PANDA, [PANDA, *args])  # Panda3D's own patch file and the file it patches: its program
+        text = patch_text(args, stdin)
+        if text is None or not text.strip():
+            print(__doc__.strip(), file=sys.stderr)
+            return 2
+        if "*** Begin Patch" not in text and not any(HEADER.match(line) for line in text.split("\n")) \
+                and re.search(r"^(diff --git |--- \S|Index: )", text, re.M):
+            done = subprocess.run(["git", "apply", "--whitespace=nowarn", "-"], input=text, text=True, capture_output=True)
+            sys.stdout.write(done.stdout or ("Success. The diff was applied with git apply.\n" if done.returncode == 0 else ""))
+            sys.stderr.write(done.stderr)
+            return done.returncode
+        done = apply(parse(text))
+    except PatchError as error:
+        print(f"apply_patch: {error}", file=sys.stderr)
+        return 1
+    print("Success. Updated the following files:")
+    for letter, path in done:
+        print(f"{letter} {path}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,7 @@
+*
+!Dockerfile
+!proxy_open.py
+!tools
+!tools/**
+**/__pycache__
+**/*.pyc

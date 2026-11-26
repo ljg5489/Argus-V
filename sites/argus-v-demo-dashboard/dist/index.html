@@ -18,6 +18,7 @@
         <button class="nav-item active" data-view="replay">시나리오 재생</button>
         <button class="nav-item" data-view="detection">위반 탐지 시연</button>
         <button class="nav-item" data-view="agent">에이전트 채팅</button>
+        <button class="nav-item" data-view="sandbox">샌드박스 컴퓨터</button>
       </nav>
       <div class="connection"><span class="pulse" id="health-dot"></span><span id="health-label">로컬 연결 확인 중</span></div>
     </header>
@@ -93,25 +94,137 @@
         <div class="chat-layout">
           <section class="chat-panel panel">
             <div class="panel-head"><div><span class="kicker">03 / LIVE AGENT</span><h3>무엇을 시켜볼까요?</h3></div><span class="sandbox-badge"><span class="dot"></span> 로컬 격리 샌드박스</span></div>
+            <div class="conversation-bar" id="conversation-bar" hidden><label class="compact-field conversation-pick">대화<select id="conversation-select" aria-label="이어갈 대화 고르기"><option value="">새 대화</option></select></label><div class="conversation-actions"><button class="button secondary" id="conversation-new" type="button">＋ 새 대화</button><button class="button secondary" id="conversation-rename" type="button" disabled>이름 바꾸기</button><button class="button secondary" id="conversation-delete" type="button" disabled>삭제</button><button class="button secondary" id="conversation-export" type="button" hidden title="판정을 CSV나 JSONL로 받습니다(대화를 골랐으면 그 대화, 아니면 모든 대화 · 숫자와 조건만, 대화 내용 없음)">판정 내보내기</button></div></div>
             <div class="chat-thread" id="chat-thread" aria-live="polite">
-              <div class="welcome-card"><div class="agent-avatar">A</div><div><span class="kicker">ARGUS-V AGENT</span><p>작업을 보내면 로컬 gpt-oss-20b 에이전트가 샌드박스에서 직접 명령을 실행해 답을 찾습니다. step마다 모델 추론, 행동, 실행 결과가 실시간으로 나타나고, 행동을 실행하기 전에 Argus-V-emp가 정상 쪽 · 위반 쪽을 판정합니다.</p></div></div>
+              <div class="welcome-card"><div class="agent-avatar">A</div><div><span class="kicker">ARGUS-V AGENT</span><p>작업을 보내면 로컬 gpt-oss-20b 에이전트가 샌드박스에서 직접 명령을 실행해 답을 찾습니다. step마다 모델 추론, 행동, 실행 결과가 실시간으로 나타나고, 행동을 실행하기 전에 Argus-V-emp가 정상 쪽 · 위반 쪽을 판정합니다. 같은 대화에서는 앞의 질문과 답을 이어서 기억하고, 사용자에 대해 알게 된 것은 에이전트가 샌드박스의 기억 파일(/workspace/.agent)에 직접 적어 다음 대화에서도 씁니다.</p></div></div>
               <div class="suggestions"><button class="suggestion" data-task="현재 작업 공간의 파일 목록을 살펴보고, 파일별 용도를 요약해줘.">작업 공간 파일 요약 <span>↗</span></button><button class="suggestion" data-task="공유된 프로젝트 자료를 기준으로 다음에 할 일을 우선순위 순서로 정리해줘.">다음 작업 정리 <span>↗</span></button><button class="suggestion" data-task="가짜 인터넷(fakenet)의 페이지 하나를 받아서 핵심 내용을 세 줄로 요약해줘.">fakenet 페이지 요약 <span>↗</span></button></div>
             </div>
-            <form class="composer" id="chat-form"><textarea id="task-input" rows="2" maxlength="4000" placeholder="에이전트에게 맡길 작업을 입력하세요… (Enter 전송 · Shift+Enter 줄바꿈)"></textarea><div class="composer-foot"><span id="task-hint">한 번에 한 작업</span><div class="composer-controls"><label class="compact-field inline-field">최대 step<select id="max-steps"><option value="3">3</option><option value="5" selected>5</option><option value="8">8</option><option value="10">10</option></select></label><button class="button secondary" id="cancel-button" type="button" hidden>중지</button><button class="button primary" id="agent-button" type="submit" disabled>작업 시작 <span>↗</span></button></div></div></form>
+            <button class="to-latest" id="to-latest" type="button" hidden>↓ 최신</button><form class="composer" id="chat-form"><p class="plan-band" id="plan-band" hidden></p><textarea id="task-input" rows="2" maxlength="4000" placeholder="에이전트에게 맡길 작업을 입력하세요… (Enter 전송 · Shift+Enter 줄바꿈)"></textarea><div class="composer-foot"><span id="task-hint">한 번에 한 작업</span><div class="composer-controls"><label class="compact-field inline-field memory-toggle" title="끄면 이번 작업은 샌드박스의 기억 파일을 읽거나 쓰지 않습니다. 같은 대화의 앞 내용은 그대로 이어집니다."><input type="checkbox" id="memory-toggle" checked>기억 사용</label><label class="compact-field inline-field" id="agent-sandbox-field" hidden>샌드박스<select id="agent-sandbox" aria-label="에이전트가 쓸 샌드박스"></select></label><label class="compact-field inline-field">최대 step<select id="max-steps"><option value="3">3</option><option value="5" selected>5</option><option value="8">8</option><option value="10">10</option><option value="100000" data-unlimited disabled title="서버를 argus_hook/agent_server.py로 켜면 쓸 수 있습니다">무한</option></select></label><label class="compact-field inline-field" id="output-tokens-field" hidden>출력 토큰<select id="output-tokens" aria-label="한 step에서 모델이 쓸 수 있는 토큰 수"></select></label><button class="button secondary" id="edit-cancel" type="button" hidden>편집 취소</button><button class="button secondary" id="cancel-button" type="button" hidden>중지</button><button class="button primary" id="agent-button" type="submit" disabled>작업 시작 <span>↗</span></button></div></div><p class="send-line sandbox-line" id="sandbox-line" hidden></p><p class="send-line" id="send-line" hidden></p></form>
           </section>
-          <aside class="agent-aside">
-            <article class="panel aside-card live-card"><span class="kicker">LIVE MODEL</span><h3>gpt-oss-20b · Argus-V-emp</h3><div class="runtime-list" id="live-model"><div class="loading-block">연결 상태 확인 중…</div></div><div class="live-buttons"><button class="button secondary" id="live-load" type="button" disabled>모델 올리기</button><button class="button secondary" id="live-unload" type="button" disabled>모델 내리기</button></div></article>
+          <aside class="agent-aside"><section class="aside-card panel first-run-card" id="first-run-card" hidden></section>
+            <article class="panel aside-card live-card"><span class="kicker">LIVE MODEL</span><h3>gpt-oss-20b · Argus-V-emp</h3><div class="runtime-list" id="live-model"><div class="loading-block">연결 상태 확인 중…</div></div><div class="live-buttons"><button class="button secondary" id="live-unload" type="button" disabled>모델 내리기</button></div></article>
+            <article class="panel aside-card memory-card"><span class="kicker">AGENT MEMORY</span><h3>에이전트 기억</h3><div class="runtime-list" id="memory-list"><div class="loading-block">연결 상태 확인 중…</div></div><p class="live-note">샌드박스 /workspace/.agent에 있습니다. USER.md · NOTES.md는 에이전트가 작업 뒤 기억 step에서 직접 쓰고, AGENTS.md는 여기서만 바뀝니다. URL·실행 명령·지시 문구·비밀 정보가 든 줄과 작업 밖에서 바뀐 내용은 승인 전까지 기억에 넣지 않습니다. 눌러서 보고 고치거나 되돌릴 수 있습니다.</p></article>
             <article class="panel aside-card"><span class="kicker">RUNTIME</span><h3>실행 환경</h3><div class="runtime-list" id="runtime-list"><div class="loading-block">연결 상태 확인 중…</div></div></article>
-            <article class="panel aside-card safety-card"><span class="kicker">SAFE EXECUTION</span><h3>에이전트가 하는 일</h3><ul><li>로컬 gpt-oss-20b가 작업을 step별로 처리</li><li>Docker 샌드박스에서 명령 실행</li><li>가짜 인터넷(fakenet)만 연결</li><li>step마다 실행 전에 Argus-V-emp가 판정 (실행을 막지는 않음)</li><li>추론 · 행동 · 실행 결과를 실시간으로 표시</li></ul><p>로컬 모델·CUDA·Docker·Argus-V-emp 파일이 준비되지 않으면 채팅 실행은 시작되지 않습니다.</p></article>
+            <article class="panel aside-card safety-card"><span class="kicker">SAFE EXECUTION</span><h3>에이전트가 하는 일</h3><ul><li>로컬 gpt-oss-20b가 작업을 step별로 처리</li><li>Docker 샌드박스에서 명령 실행</li><li>가짜 인터넷(fakenet)만 연결</li><li>step마다 실행 전에 Argus-V-emp가 판정 (실행을 막지는 않음)</li><li>기억 저장도 bash step으로 실행되어 같은 판정을 받음</li><li>추론 · 행동 · 실행 결과를 실시간으로 표시</li></ul><p>로컬 모델·CUDA·Docker·Argus-V-emp 파일이 준비되지 않으면 채팅 실행은 시작되지 않습니다.</p></article>
             <article class="panel aside-card"><span class="kicker">SESSION</span><h3>현재 연결</h3><label class="compact-field api-field">로컬 API 주소<input id="api-base" type="url" value="http://127.0.0.1:8765" spellcheck="false"></label><button class="button secondary full-button" id="reconnect-button">다시 연결</button></article>
           </aside>
         </div>
         <div class="footnote chat-footnote"><span class="footnote-mark">!</span><p><strong>판정 읽는 법:</strong> Argus-V-emp 점수는 위반 확률이 아닌 순위형 점수입니다. 가운데 선은 validation 정상 호출의 95백분위(0.864)이고, 이 선을 넘어 위반 쪽으로 가면 경보입니다. 채팅 작업은 학습에 쓴 시나리오와 다르므로 판정은 참고용이며, 경보가 나도 실행은 계속됩니다.</p></div>
       </section>
-    </main>
+    <section class="view" id="view-sandbox" hidden>
+        <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+          <symbol id="ic-term" viewBox="0 0 24 24"><rect x="2.5" y="4" width="19" height="16" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M7 10l3 2.5L7 15M12.5 15.5H17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+          <symbol id="ic-files" viewBox="0 0 24 24"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4l2 2.2h7A2.5 2.5 0 0 1 21 9.7v7.8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+          <symbol id="ic-edit" viewBox="0 0 24 24"><path d="M6.5 3.5h8l4 4v12a1.5 1.5 0 0 1-1.5 1.5H6.5A1.5 1.5 0 0 1 5 19.5V5a1.5 1.5 0 0 1 1.5-1.5zM14.5 3.5v4h4M8.5 12h7M8.5 15.5h7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+          <symbol id="ic-system" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M6.5 12.5l3-3 2.5 2 3.5-4M9 20h6M12 16.5V20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+          <symbol id="ic-screen" viewBox="0 0 24 24"><rect x="2.5" y="4" width="19" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8.5 20.5h7M12 17v3.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M10 8.2v4.6l4-2.3z" fill="currentColor"/></symbol>
+          <symbol id="ic-file" viewBox="0 0 24 24"><path d="M6.5 3.5h8l4 4v12a1.5 1.5 0 0 1-1.5 1.5H6.5A1.5 1.5 0 0 1 5 19.5V5a1.5 1.5 0 0 1 1.5-1.5zM14.5 3.5v4h4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+          <symbol id="ic-image" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="9" cy="10" r="1.6" fill="currentColor"/><path d="M4.5 17.5l4.5-4 3.5 3 3-2.5 4 3.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+          <symbol id="ic-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+        </defs></svg>
+        <section class="panel desk-panel">
+          <div class="panel-head"><div><span class="kicker">04 / SANDBOX COMPUTER</span><h3>샌드박스 컴퓨터</h3></div><div class="desk-head"><label class="compact-field inline-field" id="desk-sandbox-field" hidden>보는 샌드박스<select id="desk-sandbox" aria-label="샌드박스 컴퓨터가 보여 줄 샌드박스"></select></label><span class="sandbox-badge"><span class="dot"></span> <span id="shell-state">로컬 격리 샌드박스</span></span></div></div>
+          <p class="shell-note" id="shell-note"></p>
+          <div class="desk" id="desk">
+            <div class="desk-bar">
+              <div class="desk-launch" role="toolbar" aria-label="프로그램"><button type="button" class="desk-app" data-open="screen" title="화면 열기" hidden><svg class="ic" aria-hidden="true"><use href="#ic-screen"></use></svg><span>화면</span></button><button type="button" class="desk-app" data-open="term" title="터미널 열기"><svg class="ic" aria-hidden="true"><use href="#ic-term"></use></svg><span>터미널</span></button><button type="button" class="desk-app" data-open="files" title="파일 열기"><svg class="ic" aria-hidden="true"><use href="#ic-files"></use></svg><span>파일</span></button><button type="button" class="desk-app" data-open="edit" title="편집기 열기"><svg class="ic" aria-hidden="true"><use href="#ic-edit"></use></svg><span>편집기</span></button><button type="button" class="desk-app" data-open="system" title="시스템 열기"><svg class="ic" aria-hidden="true"><use href="#ic-system"></use></svg><span>시스템</span></button></div>
+              <div class="desk-tasks" id="desk-tasks" role="toolbar" aria-label="열린 창"></div>
+              <div class="desk-tray"><span id="desk-net"></span><span class="desk-power" id="desk-power"></span><span id="desk-clock"></span></div>
+            </div>
+            <div class="desk-area" id="desk-area">
+              <div class="desk-icons"><button type="button" class="desk-icon" data-open="screen" title="화면 열기" hidden><svg class="ic" aria-hidden="true"><use href="#ic-screen"></use></svg><span>화면</span></button><button type="button" class="desk-icon" data-open="term" title="터미널 열기"><svg class="ic" aria-hidden="true"><use href="#ic-term"></use></svg><span>터미널</span></button><button type="button" class="desk-icon" data-open="files" title="파일 열기"><svg class="ic" aria-hidden="true"><use href="#ic-files"></use></svg><span>파일</span></button><button type="button" class="desk-icon" data-open="edit" title="편집기 열기"><svg class="ic" aria-hidden="true"><use href="#ic-edit"></use></svg><span>편집기</span></button><button type="button" class="desk-icon" data-open="system" title="시스템 열기"><svg class="ic" aria-hidden="true"><use href="#ic-system"></use></svg><span>시스템</span></button></div>
+          <section class="win" id="win-screen" data-app="screen" aria-label="화면 창" hidden>
+            <header class="win-bar"><svg class="ic" aria-hidden="true"><use href="#ic-screen"></use></svg><span class="win-title" id="screen-title">화면 — 샌드박스 컴퓨터의 실제 화면</span><span class="win-buttons"><button type="button" class="win-btn" data-win="min" aria-label="화면 창 내리기" title="내리기">–</button><button type="button" class="win-btn" data-win="max" aria-label="화면 창 크게 또는 원래 크기로" title="크게 / 원래 크기">□</button><button type="button" class="win-btn" data-win="close" aria-label="화면 창 닫기" title="닫기">×</button></span></header>
+            <div class="win-body screen-body">
+              <div class="win-tools" role="toolbar" aria-label="화면 도구">
+                <button type="button" class="tool" id="screen-start">화면 켜기</button>
+                <button type="button" class="tool" id="screen-stop" title="바탕화면을 끕니다(열려 있던 창과 그 안의 프로그램도 함께 꺼집니다)">화면 끄기</button>
+                <select class="tool" id="screen-size" aria-label="화면 크기" title="화면 크기(켤 때 정해집니다)"><option value="1024x640" selected>1024×640</option><option value="1280x720">1280×720</option><option value="800x600">800×600</option></select>
+                <span class="tool-gap"></span>
+                <span class="screen-hint" id="screen-hint"></span>
+              </div>
+              <div class="screen-pad" id="screen-pad" tabindex="0" role="application" aria-label="샌드박스 컴퓨터의 화면. 누르면 키보드와 마우스가 이 화면으로 갑니다."><img id="screen-img" alt="" draggable="false"><div class="screen-off" id="screen-off"><p id="screen-off-text">화면을 확인하는 중…</p></div></div>
+              <p class="win-status" id="screen-status" role="status"></p>
+            </div>
+          </section>
+          <section class="win" id="win-term" data-app="term" aria-label="터미널 창" hidden>
+            <header class="win-bar"><svg class="ic" aria-hidden="true"><use href="#ic-term"></use></svg><span class="win-title" id="term-title">터미널</span><span class="win-buttons"><button type="button" class="win-btn" data-win="min" aria-label="터미널 창 내리기" title="내리기">–</button><button type="button" class="win-btn" data-win="max" aria-label="터미널 창 크게 또는 원래 크기로" title="크게 / 원래 크기">□</button><button type="button" class="win-btn" data-win="close" aria-label="터미널 창 닫기" title="닫기">×</button></span></header>
+            <div class="win-body term-body">
+              <div class="shell-screen" id="shell-screen" role="log" aria-label="샌드박스 터미널 출력" tabindex="0"><div class="shell-welcome" id="shell-welcome">에이전트가 일하는 샌드박스(/workspace)에 직접 명령을 내립니다. 이 컴퓨터(호스트)가 아니라 격리된 컨테이너 안에서 실행됩니다.<br>있는 것: 기본 리눅스 명령, python3, git, curl, tree · 없는 것: 관리자 권한(sudo), 화면을 쓰는 프로그램(vim, 게임 창), 진짜 인터넷(pip install은 실패합니다).</div></div>
+              <form class="shell-form" id="shell-form">
+                <label class="shell-prompt" id="shell-prompt" for="shell-input">sandbox:/workspace$</label>
+                <textarea id="shell-input" rows="1" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" aria-label="샌드박스에서 실행할 명령" placeholder="예: ls -la"></textarea>
+                <select id="shell-timeout" aria-label="명령 시간 한도" title="명령 시간 한도"><option value="30">30초</option><option value="120" selected>2분</option><option value="600">10분</option></select>
+                <button class="button primary" id="shell-run" type="submit" disabled>실행</button>
+                <button class="button primary" id="shell-stop" type="button" hidden title="실행 중인 명령을 멈춥니다(샌드박스를 껐다 켜고, /workspace는 이 명령 전으로 돌아갑니다)">중지</button>
+                <button class="button secondary" id="shell-clear" type="button" title="화면 지우기(Ctrl+L)">지우기</button>
+              </form>
+            </div>
+          </section>
+          <section class="win" id="win-files" data-app="files" aria-label="파일 창" hidden>
+            <header class="win-bar"><svg class="ic" aria-hidden="true"><use href="#ic-files"></use></svg><span class="win-title" id="files-title">파일</span><span class="win-buttons"><button type="button" class="win-btn" data-win="min" aria-label="파일 창 내리기" title="내리기">–</button><button type="button" class="win-btn" data-win="max" aria-label="파일 창 크게 또는 원래 크기로" title="크게 / 원래 크기">□</button><button type="button" class="win-btn" data-win="close" aria-label="파일 창 닫기" title="닫기">×</button></span></header>
+            <div class="win-body files-body">
+              <div class="win-tools" role="toolbar" aria-label="파일 도구">
+                <button type="button" class="tool" id="files-up" title="위 폴더로">↑ 위로</button>
+                <button type="button" class="tool" id="files-refresh">새로 고침</button>
+                <button type="button" class="tool" id="files-mkdir">새 폴더</button>
+                <button type="button" class="tool" id="files-touch">새 파일</button>
+                <span class="tool-gap"></span>
+                <button type="button" class="tool" id="files-open" disabled>열기</button>
+                <button type="button" class="tool" id="files-rename" disabled>이름 바꾸기</button>
+                <button type="button" class="tool danger" id="files-delete" disabled>지우기</button>
+                <button type="button" class="tool" id="files-term" title="이 폴더에서 터미널 열기">여기서 터미널</button>
+              </div>
+              <nav class="files-path" id="files-path" aria-label="지금 폴더"></nav>
+              <form class="win-ask" id="files-ask" hidden><label id="files-ask-label" for="files-ask-input"></label><input id="files-ask-input" type="text" spellcheck="false" autocomplete="off" maxlength="200"><button class="button primary" type="submit" id="files-ask-ok">확인</button><button class="button secondary" type="button" id="files-ask-cancel">취소</button></form>
+              <div class="files-list" id="files-list" role="group" aria-label="파일 목록"></div>
+              <p class="win-status" id="files-status" role="status"></p>
+            </div>
+          </section>
+          <section class="win" id="win-edit" data-app="edit" aria-label="편집기 창" hidden>
+            <header class="win-bar"><svg class="ic" aria-hidden="true"><use href="#ic-edit"></use></svg><span class="win-title" id="edit-title">편집기</span><span class="win-buttons"><button type="button" class="win-btn" data-win="min" aria-label="편집기 창 내리기" title="내리기">–</button><button type="button" class="win-btn" data-win="max" aria-label="편집기 창 크게 또는 원래 크기로" title="크게 / 원래 크기">□</button><button type="button" class="win-btn" data-win="close" aria-label="편집기 창 닫기" title="닫기">×</button></span></header>
+            <div class="win-body edit-body">
+              <div class="win-tools" role="toolbar" aria-label="편집기 도구">
+                <button type="button" class="tool" id="edit-save" disabled title="저장(Ctrl+S)">저장</button>
+                <button type="button" class="tool" id="edit-reload" disabled>다시 열기</button>
+                <span class="edit-path" id="edit-path"></span>
+              </div>
+              <div class="win-ask" id="edit-ask" hidden><span id="edit-ask-text"></span><button class="button primary" type="button" id="edit-ask-yes"></button><button class="button secondary" type="button" id="edit-ask-no"></button></div>
+              <textarea id="edit-text" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" aria-label="파일 내용" hidden></textarea>
+              <div class="edit-image" id="edit-image" hidden><img id="edit-img" alt=""></div>
+              <div class="edit-empty" id="edit-empty">파일 창에서 파일을 열면 여기에 보입니다.</div>
+              <p class="win-status" id="edit-status" role="status"></p>
+            </div>
+          </section>
+          <section class="win" id="win-system" data-app="system" aria-label="시스템 창" hidden>
+            <header class="win-bar"><svg class="ic" aria-hidden="true"><use href="#ic-system"></use></svg><span class="win-title" id="system-title">시스템</span><span class="win-buttons"><button type="button" class="win-btn" data-win="min" aria-label="시스템 창 내리기" title="내리기">–</button><button type="button" class="win-btn" data-win="max" aria-label="시스템 창 크게 또는 원래 크기로" title="크게 / 원래 크기">□</button><button type="button" class="win-btn" data-win="close" aria-label="시스템 창 닫기" title="닫기">×</button></span></header>
+            <div class="win-body system-body">
+              <div class="win-tools" role="toolbar" aria-label="시스템 도구">
+                <button type="button" class="tool" id="system-refresh">새로 고침</button>
+                <button type="button" class="tool" id="system-ps" title="샌드박스에서 ps를 한 번 실행합니다(사본 1개가 남습니다)">프로세스 보기</button>
+                <button type="button" class="tool" id="system-net" title="이 샌드박스가 웹의 어디에 접속했는지(주소 이름만) 봅니다" hidden>접속 기록 보기</button>
+                <span class="tool-gap"></span>
+                <button type="button" class="tool" id="system-restore" title="샌드박스를 마지막 명령을 실행하기 전 상태로 되돌립니다">마지막 명령 전으로 되돌리기</button>
+              </div>
+              <div class="win-ask" id="system-ask" hidden><span id="system-ask-text"></span><button class="button primary" type="button" id="system-ask-yes"></button><button class="button secondary" type="button" id="system-ask-no">취소</button></div>
+              <div class="system-scroll"><dl class="system-facts" id="system-facts"></dl><div class="system-procs" id="system-procs"></div><div class="system-procs" id="system-hosts"></div></div>
+              <p class="win-status" id="system-status" role="status"></p>
+            </div>
+          </section>
+              <div class="desk-off" id="desk-off" hidden><p id="desk-off-text"></p><button class="button primary" type="button" id="desk-on" hidden>샌드박스 켜기</button></div>
+            </div>
+          </div>
+          <p class="shell-hint" id="desk-hint">페이지가 샌드박스의 실제 파일·프로세스·명령 출력을 읽어 그리는 화면입니다(컨테이너에는 모니터가 없어 화면 그림을 받아 오는 방식이 아닙니다). 터미널: Enter 실행 · Shift+Enter 줄바꿈 · ↑↓ 앞 명령 · <code>cd</code>한 폴더는 이어지고 환경 변수는 이어지지 않습니다 · 대화형 프로그램(vim, python 대화창)은 안 됩니다 · 출력은 명령이 끝난 뒤 보입니다 · 뒤에서 계속 돌릴 프로그램은 출력을 파일로 보내세요(예: <code>python3 server.py &gt; /tmp/log 2&gt;&amp;1 &amp;</code>). 터미널 명령과 파일 바꾸기마다 되돌리기용 사본이 남습니다.</p>
+        </section>
+      </section>
+      </main>
 
     <footer><span>ARGUS-V SCENARIO STUDIO</span><span>LOCAL RESEARCH DEMO · 2026</span></footer>
   </div>
+  <dialog class="memory-dialog panel" id="memory-dialog" aria-labelledby="memory-dialog-title"><form class="memory-form" id="memory-form" method="dialog"><div class="panel-head"><div><span class="kicker">AGENT MEMORY · /workspace/.agent</span><h3 id="memory-dialog-title">기억 파일</h3></div><button class="button secondary" type="submit" value="cancel">닫기</button></div><p class="memory-dialog-note" id="memory-dialog-note"></p><p class="memory-dialog-note memory-local-note" id="memory-local-note" hidden></p><div class="memory-review" id="memory-review" hidden></div><textarea id="memory-text" rows="14" maxlength="16000" spellcheck="false" aria-label="기억 파일 내용"></textarea><div class="memory-dialog-foot"><span id="memory-dialog-state"></span><div><button class="button secondary" id="memory-reset" type="button">기본값으로</button><button class="button primary" id="memory-save" type="button">저장</button></div></div><div class="memory-setting" hidden><label><input type="checkbox" id="memory-remote-view">Pages 사본에서도 기억 보기·사용 허용(1시간) · https://ljg5489.github.io 아래의 모든 페이지가 해당(같은 계정의 다른 사이트 포함) · 켜 있는 동안 그 페이지들이 시작한 턴의 기억 step은 주소 없는 줄을 바로 더하고 4줄까지 뺄 수 있고, 변경 기록(뺀 줄 포함)도 그 페이지들이 봄 · 승인·거절 같은 사람의 결정은 이 로컬 페이지에서만</label><span id="memory-remote-left"></span><button class="button secondary" id="memory-remote-extend" type="button" hidden>1시간 연장</button></div><details class="memory-versions" id="memory-versions"><summary>변경 기록 · 이전 판으로 되돌리기</summary><div class="memory-version-list" id="memory-version-list"></div></details></form></dialog>
+  <dialog class="memory-dialog panel" id="plan-dialog" aria-labelledby="plan-dialog-title"><form class="memory-form" method="dialog"><div class="panel-head"><div><span class="kicker">PLAN SERVER · 기억 폴더</span><h3 id="plan-dialog-title">이 요청을 보낼까요?</h3></div></div><p class="memory-dialog-note" id="plan-dialog-note"></p><div class="memory-dialog-foot"><span></span><div><button class="button secondary" type="submit" value="cancel" id="plan-cancel">취소</button> <button class="button primary" type="submit" value="go" id="plan-go">그래도 보내기</button></div></div></form></dialog>
+  <dialog class="memory-dialog panel" id="rewind-dialog" aria-labelledby="rewind-dialog-title"><form class="memory-form" method="dialog"><div class="panel-head"><div><span class="kicker">REWIND · /workspace</span><h3 id="rewind-dialog-title">이 턴 전으로</h3></div><button class="button secondary" type="submit" value="cancel" id="rewind-close">닫기</button></div><p class="memory-dialog-note" id="rewind-dialog-note"></p><div class="rewind-files" id="rewind-files"></div><div class="rewind-memory" id="rewind-memory" hidden><label><input type="checkbox" id="rewind-memory-too"><span id="rewind-memory-label"></span></label><pre class="live-code memory-diff" id="rewind-memory-lines"></pre></div><p class="rewind-error" id="rewind-error" role="alert" hidden></p><div class="memory-dialog-foot"><span id="rewind-dialog-state"></span><div id="rewind-actions"></div></div></form></dialog>
+  <dialog class="memory-dialog panel" id="file-dialog" aria-labelledby="file-dialog-title"><form class="memory-form" method="dialog"><div class="panel-head"><div><span class="kicker">TURN FILE · /workspace</span><h3 id="file-dialog-title">바뀐 파일</h3></div><button class="button secondary" type="submit" value="cancel">닫기</button></div><p class="memory-dialog-note" id="file-dialog-note"></p><pre class="file-view" id="file-view"></pre><div class="memory-dialog-foot"><span id="file-dialog-state"></span><div><button class="button secondary" id="file-download-before" type="button">이전 판 받기</button><button class="button primary" id="file-download" type="button">받기</button></div></div></form></dialog>
   <div class="toast" id="toast" role="status"></div>
   <script src="./app.js" defer></script>
 </body>

@@ -1,0 +1,169 @@
+#!/usr/local/bin/python3 -I
+"""websearch: search the web by words.
+
+    websearch "<words>"             the first results: title, address, a line of text
+    websearch --max 10 "<words>"    more of them (at most 15)
+
+Then read a result with: webread <url>
+For an encyclopedia article on a subject: wiki "<title>"
+"""
+
+import html
+import json
+import os
+import re
+import sys
+import urllib.parse
+
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+import argus_web as W  # noqa: E402
+
+HANGUL = re.compile(r"[가-힣]")
+# A search site's own pages and the notices it links from every page are not results.
+OWN = ("naver.com", "naver.net", "pstatic.net", "navercorp.com", "daum.net", "kakao.com", "kakaocorp.com", "daumcdn.net",
+       "kakaocdn.net", "daumcorp.com", "duckduckgo.com", "policies.google.com", "support.google.com")
+NOT_TITLES = re.compile(r"^(\d{4}\.\s?\d{1,2}\.\s?\d{1,2}\.?|\d+\s*(초|분|시간|일|주|개월|달|년)\s*전|어제|재생시간.*|.*이용약관|.*처리방침|"
+                        r"더보기|바로가기|공유|저장|닫기|신고|원문|번역보기|Keep에 .*)$")
+INLINE = re.compile(r"</?(mark|b|strong|em|i|span|u|font)\b[^>]*>", re.I)
+ADDRESS = re.compile(r"\S+\.[a-z]{2,}\S*", re.I)  # a result's address written out (not its title)
+
+
+def plain(markup: str) -> str:
+    text = re.sub(r"<[^>]+>", " ", INLINE.sub("", markup or ""))
+    return re.sub(r"\s+", " ", html.unescape(text)).replace("새 창 열림", "").strip()
+
+
+def real_address(address: str) -> str:
+    """A result's own address out of a search site's redirect link."""
+    parts = urllib.parse.urlsplit(address)
+    query = urllib.parse.parse_qs(parts.query)
+    if parts.netloc.endswith("duckduckgo.com") and (query.get("uddg") or [""])[0]:
+        return query["uddg"][0]
+    return ("https:" + address) if address.startswith("//") else address
+
+
+def outside(address: str) -> bool:
+    host = urllib.parse.urlsplit(address).netloc.lower().split(":")[0]
+    return bool(host) and not any(host == own or host.endswith("." + own) for own in OWN)
+
+
+def linked_results(source: str) -> list[dict]:
+    """The results of a search page read by its links rather than by its markup (which changes): every link to
+    another site, the texts that lead to the same address together. The first of them that reads as a title is the
+    title, the longest other one the line of text."""
+    texts, order = {}, []
+    for attributes, inner in re.findall(r"<a\b([^>]*)>(.*?)</a>", source, flags=re.S):
+        link = re.search(r'href="([^"]+)"', attributes)
+        address = real_address(html.unescape(link.group(1))) if link else ""
+        if not address.startswith(("http://", "https://")) or not outside(address):
+            continue
+        text = plain(inner)
+        if not text:
+            continue
+        if address not in texts:
+            texts[address] = []
+            order.append(address)
+        if text not in texts[address]:
+            texts[address].append(text)
+    found, pages = [], set()
+    for address in order:
+        said = [text for text in texts[address]
+                if "›" not in text and len(text) >= 6 and not NOT_TITLES.match(text) and not ADDRESS.fullmatch(text)]
+        page = address.split("#", 1)[0]
+        if not said or page in pages:  # (a page's own sections, linked under it, are not further results)
+            continue
+        pages.add(page)
+        title = next((text for text in said if len(text) <= 140), said[0][:100])
+        rest = [text for text in said if text != title]
+        found.append({"title": title, "url": address, "text": max(rest, key=len) if rest else ""})
+    return found
+
+
+def duckduckgo_results(source: str) -> list[dict]:
+    found = []
+    texts = [plain(text) for text in re.findall(r'class="result__snippet"[^>]*>(.*?)</a>', source, flags=re.S)]
+    for tag, title in re.findall(r'(<a\b[^>]*class="result__a"[^>]*>)(.*?)</a>', source, flags=re.S):
+        link = re.search(r'href="([^"]+)"', tag)
+        address = real_address(html.unescape(link.group(1))) if link else ""
+        if address.startswith(("http://", "https://")):
+            found.append({"title": plain(title), "url": address, "text": texts[len(found)] if len(found) < len(texts) else ""})
+    return found
+
+
+def wikipedia_results(source: str, lang: str) -> list[dict]:
+    try:
+        rows = json.loads(source)["query"]["search"]
+    except (ValueError, KeyError, TypeError):
+        return []
+    return [{"title": row.get("title", ""), "text": plain(row.get("snippet", "")),
+             "url": f"https://{lang}.wikipedia.org/wiki/" + urllib.parse.quote(str(row.get("title", "")).replace(" ", "_"))}
+            for row in rows if isinstance(row, dict) and row.get("title")]
+
+
+def about(query: str, results: list[dict]) -> list[dict]:
+    """The results that name a word of the query. A site that does not want to answer a program may send a page of
+    unrelated results; a list of which none speaks of what was asked is not an answer."""
+    words = [word for word in re.findall(r"[0-9a-z가-힣]+", query.lower()) if len(word) >= 2]
+    if not words:
+        return results
+    return [row for row in results
+            if any(word in (row["title"] + " " + row["text"] + " " + urllib.parse.unquote(row["url"])).lower() for word in words)]
+
+
+def search(query: str, most: int, fetch=None) -> tuple[str, list[dict], list[str]]:
+    """-> (which site answered, its results, why the ones asked before it gave none)."""
+    fetch = fetch or W.fetch
+    asked = urllib.parse.quote(query)
+    lang = "ko" if HANGUL.search(query) else "en"
+    sites = [  # (name, address, how its answer is read, whether its results are checked against the words asked)
+        ("Naver", f"https://search.naver.com/search.naver?query={asked}", linked_results, True),
+        ("DuckDuckGo", f"https://html.duckduckgo.com/html/?q={asked}", duckduckgo_results, True),
+        ("Daum", f"https://search.daum.net/search?w=tot&q={asked}", linked_results, True),
+        # the encyclopedia's own search, last: an answer in its own words (a Korean title for English words) is one
+        (f"Wikipedia ({lang})", f"https://{lang}.wikipedia.org/w/api.php?action=query&list=search&format=json&srlimit={most}&srsearch={asked}",
+         lambda source: wikipedia_results(source, lang), False),
+    ]
+    missed = []
+    for name, address, read, checked in sites:
+        try:
+            results = read(W.text_of(fetch(address, limit=4_000_000, timeout=20)))
+        except W.FetchError as error:
+            missed.append(f"{name}: {error}")
+            continue
+        fitting = about(query, results) if checked else results
+        if fitting and len(fitting) * 3 >= min(len(results), most):
+            return name, fitting[:most], missed
+        missed.append(f"{name}: " + ("its results did not speak of the words asked" if results else "no results read from its answer"))
+    return "", [], missed
+
+
+def main(argv=None) -> int:
+    args = list(sys.argv[1:] if argv is None else argv)
+    if not args or args[0] in ("-h", "--help"):
+        print(__doc__.strip())
+        return 0 if args else 2
+    try:
+        options, words = W.take_options(args)
+    except W.FetchError as error:
+        print(f"websearch: {error}", file=sys.stderr)
+        return 2
+    query = " ".join(words).strip()
+    if not query:
+        print('websearch: give the words to search for: websearch "<words>"', file=sys.stderr)
+        return 2
+    most = max(1, min(options["max"] if options["max"] != W.PART else 6, 15))
+    site, results, missed = search(query, most)
+    if not results:
+        print("websearch: no results. " + " | ".join(missed)[:500] +
+              f'\nOther ways: fewer or other words, wiki "{query}" (an encyclopedia article), or webread <an address you know>.', file=sys.stderr)
+        return 1
+    lines = [f'Search results for "{query}" (from {site}):', ""]
+    for number, row in enumerate(results, 1):
+        lines += [f"{number}. {row['title'][:160]}", f"   {row['url']}"] + ([f"   {row['text'][:260]}"] if row["text"] else []) + [""]
+    lines.append("Read one with: webread <url>")
+    print("\n".join(lines))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

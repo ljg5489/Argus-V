@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=파일
+Exec=pcmanfm /workspace
+Icon=system-file-manager
+Terminal=false

@@ -1,0 +1,71 @@
+#!/usr/local/bin/python3 -I
+"""webread: a web page as text.
+
+    webread <url>                  the start of the page (6,000 characters)
+    webread --start 6000 <url>     the next part (each part says where the next one starts)
+    webread --links <url>          with the addresses its links lead to
+    webread --max 3000 <url>       a shorter part
+
+Menus, scripts and styles are left out; headings read "# …", list items "- …".
+An address that is not text (a picture, an archive) is named with its size: save it with curl -sSL -o <file> '<url>'.
+"""
+
+import os
+import re
+import shlex
+import sys
+import urllib.parse
+
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+import argus_web as W  # noqa: E402
+
+TEXT_TYPES = ("application/json", "application/xml", "application/javascript", "application/x-ndjson", "application/x-yaml")
+
+
+def render(page: dict, options: dict) -> str:
+    """What webread prints for a fetched page."""
+    kind, address = page["type"], page["url"]
+    looks_html = b"<html" in page["body"][:3000].lower() or b"<!doctype html" in page["body"][:3000].lower()
+    if kind in ("text/html", "application/xhtml+xml") or (kind in ("", "application/octet-stream", "text/plain") and looks_html):
+        title, text, links = W.html_to_text(W.text_of(page), address, options.get("links", False))
+    elif kind.startswith("text/") or kind in TEXT_TYPES or kind.endswith(("+json", "+xml")):
+        title, text, links = "", W.text_of(page), []
+    else:
+        name = os.path.basename(urllib.parse.urlsplit(address).path) or "download"
+        return (f"URL: {address}\nThis is {kind or 'a file'} ({len(page['body']):,} bytes{' or more' if page.get('cut') else ''}), "
+                f"not a page of text.\nSave it with: curl -sSL -o {shlex.quote(name)} {shlex.quote(address)}")
+    piece, start, end, total = W.part(text, options.get("start", 0), options.get("max", W.PART))
+    lines = ([f"Title: {title}"] if title else []) + [f"URL: {address}", f"Text: {W.span(start, end, total)}", ""]
+    if not total:
+        lines.append("The page has no text of its own (it may be drawn by a script, or ask for a login). "
+                     f"Its source: curl -sSL {shlex.quote(address)} | head -c 3000")
+        return "\n".join(lines)
+    lines.append(piece.strip("\n"))
+    if options.get("links"):
+        shown = sorted({int(number) for number in re.findall(r"\[(\d+)\]", piece) if 0 < int(number) <= len(links)})
+        if shown:
+            lines += ["", "Links in this part:"] + [f"[{number}] {links[number - 1]}" for number in shown[:60]]
+    if end < total:
+        again = "webread --start {} {}{}".format(end, "--links " if options.get("links") else "", shlex.quote(address))
+        lines += ["", f"[The page goes on. Next part: {again}]"]
+    return "\n".join(lines)
+
+
+def main(argv=None) -> int:
+    args = list(sys.argv[1:] if argv is None else argv)
+    if not args or args[0] in ("-h", "--help"):
+        print(__doc__.strip())
+        return 0 if args else 2
+    try:
+        options, words = W.take_options(args, flags=("links",))
+        if len(words) != 1:
+            raise W.FetchError("give one address: webread <url>   (to search by words: websearch \"<words>\")")
+        print(render(W.fetch(words[0]), options))
+    except W.FetchError as error:
+        print(f"webread: {error}", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

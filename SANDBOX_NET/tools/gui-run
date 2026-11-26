@@ -1,0 +1,251 @@
+#!/usr/local/bin/python3 -I
+"""gui-run: start a program that opens a window, and say what became of it.
+
+    gui-run python3 game/main.py    turn the screen on if it is off, start the program in the background, wait a
+                                    little, and say whether its window is on the screen (or show why it ended)
+    gui-run --wait 20 <command>     wait longer for the window (default 10 seconds, at most 60)
+    gui-run --list                  the windows on the screen and the programs started this way
+    gui-run --stop <pid>            end one of them (--stop all: every one)
+
+The program keeps running after this command returns: the user sees and uses its window on the sandbox's screen.
+What it prints goes to /tmp/gui-run/<pid>.log. Do not start a window program any other way: a command that waits for
+a window to close is stopped at its time limit, and the sandbox restarts.
+"""
+
+import json
+import os
+import signal
+import subprocess
+import sys
+import time
+
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+import argus_screen as S  # noqa: E402
+
+HOME = "/tmp/gui-run"
+TAIL = 1800  # characters of a program's output shown
+
+
+# Lines every window program prints here whether or not anything is wrong (no sound card, no input devices, the
+# libraries' greetings). They are left out of what is shown, so that the program's own error is what is read.
+NOISE = ("ALSA lib ", "AL lib: ", ":audio(error)", ":device(error): Error ", "Known pipe types:", "  glxGraphicsPipe",
+         "aux display modules not yet loaded", 'extension "XFree86-DGA" missing', "Hello from the pygame community", "pygame ")
+
+
+def tail(path: str) -> str:
+    """The end of a program's output without the usual noise; a Python traceback in it is always shown whole."""
+    try:
+        with open(path, encoding="utf-8", errors="replace") as handle:
+            text = handle.read()
+    except OSError:
+        return ""
+    lines = text.strip().split("\n") if text.strip() else []
+    kept = [line for line in lines if not any(line.startswith(mark) or mark in line[:60] for mark in NOISE)]
+    left = len(lines) - len(kept)
+    shown = "\n".join(kept).strip()
+    at = shown.rfind("Traceback (most recent call last):")
+    if len(shown) > TAIL:
+        shown = "…" + (shown[at:][:TAIL] if at >= 0 and len(shown) - at > TAIL else shown[-TAIL:] if at < 0 or len(shown) - at <= TAIL else shown[at:])
+    if left and shown:
+        shown += f"\n({left} usual lines about sound, input devices and library greetings left out.)"
+    return shown
+
+
+def indented(text: str) -> str:
+    return "\n".join("  " + line for line in text.splitlines())
+
+
+def alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    try:  # (ended but not yet collected: not running)
+        with open(f"/proc/{pid}/stat", encoding="utf-8", errors="replace") as handle:
+            return handle.read().rsplit(")", 1)[1].split()[0] != "Z"
+    except (OSError, IndexError):
+        return True
+
+
+def records() -> list[dict]:
+    found = []
+    try:
+        names = sorted(os.listdir(HOME))
+    except OSError:
+        return found
+    for name in names:
+        if name.endswith(".json"):
+            try:
+                with open(os.path.join(HOME, name), encoding="utf-8") as handle:
+                    data = json.load(handle)
+                if isinstance(data, dict) and isinstance(data.get("pid"), int):
+                    found.append(data)
+            except (OSError, ValueError):
+                continue
+    return found
+
+
+def titled(found: list[dict]) -> str:
+    return ", ".join(f'"{window["title"] or "(no title)"}" {window["width"]}x{window["height"]}' for window in found)
+
+
+def start(command: list[str], wait: float) -> int:
+    try:
+        note = S.turn_on()
+    except RuntimeError as error:
+        print(f"gui-run: {error}", file=sys.stderr)
+        return 1
+    os.makedirs(HOME, exist_ok=True)
+    before = {window["id"] for window in S.windows()}
+    waiting = os.path.join(HOME, f"starting-{os.getpid()}.log")
+    env = {**os.environ, "DISPLAY": S.DISPLAY, "PYTHONUNBUFFERED": "1"}
+    env.setdefault("SDL_AUDIODRIVER", "dummy")
+    began = time.monotonic()
+    try:
+        with open(waiting, "wb") as log:
+            process = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
+                                       start_new_session=True, env=env)
+    except (FileNotFoundError, PermissionError, OSError) as error:
+        os.unlink(waiting)
+        print(f"gui-run: could not start {command[0]!r}: {error.strerror or error}. "
+              "Give the command as you would type it, for example: gui-run python3 game/main.py", file=sys.stderr)
+        return 127
+    log_path = os.path.join(HOME, f"{process.pid}.log")
+    os.replace(waiting, log_path)
+    with open(os.path.join(HOME, f"{process.pid}.json"), "w", encoding="utf-8") as handle:
+        json.dump({"pid": process.pid, "command": command, "cwd": os.getcwd(), "log": log_path, "started": time.time()}, handle)
+    lines = [note] if note else []
+    seen, code = [], None
+    while time.monotonic() - began < wait:
+        code = process.poll()
+        if code is not None:
+            break
+        seen = [window for window in S.windows() if window["id"] not in before]
+        if seen:
+            time.sleep(0.8)  # (a window that opens and closes at once is not one the user sees)
+            code = process.poll()
+            seen = [window for window in S.windows() if window["id"] not in before]
+            break
+        time.sleep(0.25)
+    shown, opened = [], bool(seen)
+    if seen and code is None:
+        try:  # what the window shows, since a picture cannot be looked at: flat (nothing drawn) or colors, and whether it moves
+            shown = S.look(seen[-1], wait=1.0, grid=False)
+        except Exception:
+            shown = []
+        code = process.poll()  # (a program may open its window and fail a moment later: looked at again)
+        if code is None:
+            seen = [window for window in S.windows() if window["id"] not in before]
+    output = tail(log_path)
+    if code is None and "Traceback (most recent call last)" in output:
+        for _ in range(16):  # an error is printed: a program that failed may take a few seconds to let go of its window
+            time.sleep(0.25)
+            code = process.poll()
+            if code is not None:
+                break
+        output = tail(log_path)
+    took = time.monotonic() - began
+    if code is not None:
+        lines.append(f"gui-run: the program ended after {took:.1f} s with exit code {code}: "
+                     + ("its window opened and closed again. No window of it is on the screen." if opened else "no window of it is on the screen."))
+        lines.append(f"What it printed ({log_path}):\n{indented(output)}" if output else "It printed nothing.")
+        print("\n".join(lines))
+        return 1
+    if seen:
+        lines.append(f"Running: pid {process.pid} · its window {titled(seen)} is on the user's screen.")
+        if shown:
+            lines.append("What it shows: " + " ".join(shown) + " (`gui-look` says where the colors lie.)")
+        if "Traceback (most recent call last)" in output:
+            lines.append("Its output has an error (below): the window may not show what the program was meant to show.")
+    else:
+        lines.append(f"Running: pid {process.pid}, but no window of it appeared within {wait:.0f} s "
+                     "(a program without a window, or one still loading: check again with gui-run --list).")
+    if output:
+        lines.append(f"What it has printed so far ({log_path}):\n{indented(output)}")
+    else:
+        lines.append(f"Its output goes to {log_path}.")
+    lines.append(f"It keeps running after this command. Stop it with: gui-run --stop {process.pid}")
+    print("\n".join(lines))
+    return 0
+
+
+def listing() -> int:
+    screen = S.size()
+    print(f"Screen: on, {screen}" if screen else "Screen: off (gui-run <command> turns it on)")
+    found = S.windows()
+    print("Windows: " + (titled(found) if found else "none"))
+    started = sorted(records(), key=lambda item: item.get("started") or 0)
+    running = [item for item in started if alive(item["pid"])]
+    ended = [item for item in started if item not in running][-3:]  # (the latest few: their logs say why)
+    if not running and not ended:
+        print("Programs started with gui-run: none")
+    for item, state in [(item, "running") for item in running] + [(item, "ended") for item in ended]:
+        print(f"- pid {item['pid']} ({state}): {' '.join(item.get('command') or [])} · log {item.get('log')}")
+    return 0
+
+
+def stop(target: str) -> int:
+    started = {item["pid"]: item for item in records()}
+    if target == "all":
+        wanted = [pid for pid in started if alive(pid)]
+    else:
+        try:
+            wanted = [int(target)]
+        except ValueError:
+            print("gui-run: --stop takes a pid (see gui-run --list) or all", file=sys.stderr)
+            return 2
+        if wanted[0] not in started:
+            print(f"gui-run: pid {target} was not started with gui-run (see gui-run --list)", file=sys.stderr)
+            return 1
+    if not wanted:
+        print("Nothing started with gui-run is running.")
+        return 0
+    for pid in wanted:
+        for sign in (signal.SIGTERM, signal.SIGKILL):
+            if not alive(pid):
+                break
+            try:
+                os.killpg(pid, sign)  # (it leads its own group: what it started ends with it)
+            except (ProcessLookupError, PermissionError):
+                try:
+                    os.kill(pid, sign)
+                except (ProcessLookupError, PermissionError):
+                    break
+            for _ in range(12):
+                if not alive(pid):
+                    break
+                time.sleep(0.25)
+        print(f"pid {pid}: " + ("still running" if alive(pid) else "ended"))
+    return 0
+
+
+def main(argv=None) -> int:
+    args = list(sys.argv[1:] if argv is None else argv)
+    if not args or args[0] in ("-h", "--help"):
+        print(__doc__.strip())
+        return 0 if args else 2
+    if args[0] == "--list":
+        return listing()
+    if args[0] == "--stop":
+        return stop(args[1] if len(args) > 1 else "all")
+    wait = 10.0
+    if args[0] == "--wait" or args[0].startswith("--wait="):
+        value = args[0].partition("=")[2] or (args[1] if len(args) > 1 else "")
+        args = args[1:] if "=" in args[0] else args[2:]
+        try:
+            wait = max(1.0, min(float(value), 60.0))
+        except ValueError:
+            print("gui-run: --wait takes a number of seconds", file=sys.stderr)
+            return 2
+    if args and args[0] == "--":
+        args = args[1:]
+    if not args:
+        print("gui-run: give the command to start, for example: gui-run python3 game/main.py", file=sys.stderr)
+        return 2
+    return start(args, wait)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
